@@ -2,18 +2,21 @@
 # spaceage-defaults.yaml, so these merge onto specific actors (which already inherit
 # the ^Soldier vacuum traits).
 
-E1:            # Rifle Infantry — small tank, suffocates quickly
+# Rifle Infantry — small tank, suffocates quickly
+E1:
 	Oxygen:
 		Capacity: 5000
 		DrainRate: 3
 	DamagedByVacuum:
 		Damage: 350
 
-E3:            # Rocket Soldier — standard suit
+# Rocket Soldier — standard suit
+E3:
 	Oxygen:
 		Capacity: 6000
 
-E6:            # Engineer — oversized life-support pack, lasts much longer
+# Engineer — oversized life-support pack, lasts much longer
+E6:
 	Oxygen:
 		Capacity: 9000
 		DrainRate: 1

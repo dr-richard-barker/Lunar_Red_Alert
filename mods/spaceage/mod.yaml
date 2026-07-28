@@ -1,9 +1,11 @@
 Metadata:
-	Title: Lunar Red Alert — Space-Age
+	# Titles must be fluent keys (lint enforces this); the values currently come
+	# from ra|fluent/ra.ftl. TODO: brand via a spaceage.ftl overriding these keys.
+	Title: mod-title
 	Version: {DEV_VERSION}
 	Website: https://github.com/dr-richard-barker/Lunar_Red_Alert
 	WebIcon32: https://www.openra.net/images/icons/ra_32x32.png
-	WindowTitle: Lunar Red Alert
+	WindowTitle: mod-windowtitle
 
 PackageFormats: Mix
 

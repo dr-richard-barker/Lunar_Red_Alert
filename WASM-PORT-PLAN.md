@@ -70,5 +70,15 @@ verdict → iterate.
 
 ## Status log
 
-- **2026-07-28:** Audit done. W0 harness + probe committed. First probe run: pending.
-  Site/roadmap will only claim what CI has proven.
+- **2026-07-28:** Audit done. W0 harness + probe committed. Site/roadmap will only
+  claim what CI has proven.
+- **2026-07-28 (later): W0 PROVEN.** First probe run green: `dotnet publish` of
+  OpenRA.Game's full managed closure for browser-wasm succeeded (Emscripten
+  wasm-ld linked dotnet.native.wasm; wasm-opt ran; bundle produced). Native
+  Eluant did not block publish — DllImport resolution is a runtime concern.
+- **2026-07-28 (later): W1 started.** Probe now parses SpaceAge-flavoured rules
+  via `MiniYaml.FromString` and executes under Node in CI (`noderun.mjs` +
+  "Execute probe under Node" step) — closing W0's publish-vs-run gap. Also fixed
+  by CI iteration this session: 4 trait compile errors, IDE0005, the
+  GetVariableObservers override lint, spaceage YAML whitespace lint, and
+  fluent-key mod titles. Verdict of the first execution run: pending.

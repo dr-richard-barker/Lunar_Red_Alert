@@ -7,7 +7,8 @@
 FACT:
 	ProximityExternalCondition@LIFESUPPORT:
 		Condition: pressurised
-		Range: 8c0              # 8 cells
+		# 8 cells
+		Range: 8c0
 		ValidRelationships: Ally
 
 # Power plants double as smaller atmosphere processors — forward pressure.

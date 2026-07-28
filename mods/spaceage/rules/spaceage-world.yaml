@@ -3,4 +3,5 @@
 # projectiles.
 World:
 	LowGravity:
-		GravityPercent: 16      # 16 = Moon, 38 = Mars, 100 = Earth
+		# 16 = Moon, 38 = Mars, 100 = Earth
+		GravityPercent: 16

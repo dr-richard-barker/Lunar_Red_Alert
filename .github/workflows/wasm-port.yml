@@ -43,6 +43,19 @@ jobs:
           find bin/publish -type f | head -40
           du -sh bin/publish/wwwroot 2>/dev/null || du -sh bin/publish 2>/dev/null || true
 
+      - name: Execute probe under Node (Phase W1)
+        if: success()
+        # The real W1 milestone: the wasm bundle must EXECUTE, not just publish.
+        # The probe prints "[probe] SUCCESS" from managed code running in-wasm.
+        run: |
+          set -o pipefail
+          WWWROOT=$(dirname "$(find bin/publish -name dotnet.js -path '*_framework*' | head -1)")/..
+          echo "wwwroot: $WWWROOT"; node --version
+          cp OpenRA.WasmProbe/noderun.mjs "$WWWROOT/"
+          cd "$WWWROOT"
+          node noderun.mjs 2>&1 | tee ../../wasm-run.log
+          grep -q "\[probe\] SUCCESS" ../../wasm-run.log
+
       - name: Upload probe logs & payload
         if: always()
         uses: actions/upload-artifact@v4
