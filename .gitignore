@@ -34,6 +34,9 @@ WEAPONS.md
 Lua-API.md
 Settings.md
 *.html
+# ...but keep the GitHub Pages site (docs/) — it is hand-written, not auto-generated
+!docs/*.html
+!docs/**/*.html
 openra.6
 update.log
 

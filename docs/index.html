@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lunar Red Alert — Space-Age RTS</title>
+<meta name="description" content="A cold-vacuum, low-gravity total conversion of the OpenRA engine. Manage oxygen, not fuel; bound in 1/6 gravity; shelter under pressurised domes. A GPLv3 desktop RTS.">
+<link rel="icon" type="image/png" href="assets/moon.png">
+<style>
+  :root{
+    --bg:#0a0e14; --bg2:#0e141d; --panel:#121a24; --panel2:#16202c;
+    --line:#233042; --text:#cdd6e2; --muted:#8b98a9; --dim:#5f6b7a;
+    --o2:#5ec8ff; --o2dim:#2a6f95; --rim:#c3b9a5; --amber:#e3b341; --vac:#ff6b6b;
+    --max:1080px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  code,kbd,.mono{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+  a{color:var(--o2);text-decoration:none}
+  a:hover{text-decoration:underline}
+  h1,h2,h3{line-height:1.2;letter-spacing:-.01em}
+  .wrap{max-width:var(--max);margin:0 auto;padding:0 22px}
+  section{padding:64px 0;border-top:1px solid var(--line)}
+  .eyebrow{font:600 12px/1 ui-monospace,monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--o2);margin:0 0 14px}
+  .lede{color:var(--muted);font-size:1.08rem;max-width:64ch}
+
+  /* nav */
+  nav{position:sticky;top:0;z-index:20;backdrop-filter:blur(10px);
+    background:rgba(10,14,20,.82);border-bottom:1px solid var(--line)}
+  nav .wrap{display:flex;align-items:center;gap:20px;height:56px}
+  nav .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.01em}
+  nav .brand img{width:24px;height:24px}
+  nav .links{margin-left:auto;display:flex;gap:22px;font-size:.92rem}
+  nav .links a{color:var(--muted)} nav .links a:hover{color:var(--text);text-decoration:none}
+  @media(max-width:640px){nav .links a:not(.gh){display:none}}
+
+  /* hero */
+  .hero{position:relative;overflow:hidden;border-top:none}
+  .hero .bg{position:absolute;inset:0;background:url(assets/lunar_surface.png) center/cover;
+    filter:grayscale(.25) brightness(.5) contrast(1.05);opacity:.5}
+  .hero .bg:after{content:"";position:absolute;inset:0;
+    background:radial-gradient(120% 90% at 50% -10%,transparent 30%,var(--bg) 78%)}
+  .hero .wrap{position:relative;padding:96px 22px 84px}
+  .hero h1{font-size:clamp(2.3rem,6vw,4rem);margin:.1em 0 .2em;font-weight:800}
+  .hero .tag{font-size:clamp(1.05rem,2.4vw,1.35rem);color:var(--text);max-width:40ch}
+  .hero .tag b{color:var(--o2)}
+  .badges{display:flex;flex-wrap:wrap;gap:10px;margin:26px 0 30px}
+  .badge{font:600 12px/1 ui-monospace,monospace;letter-spacing:.03em;padding:7px 11px;border-radius:999px;
+    border:1px solid var(--line);background:var(--panel);color:var(--muted)}
+  .badge.on{color:var(--o2);border-color:var(--o2dim)}
+  .badge.warn{color:var(--amber);border-color:#5c4a1e}
+  .cta{display:flex;flex-wrap:wrap;gap:12px}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:11px 18px;border-radius:10px;font-weight:600;
+    border:1px solid var(--line);background:var(--panel2);color:var(--text)}
+  .btn:hover{border-color:var(--o2dim);text-decoration:none}
+  .btn.primary{background:linear-gradient(180deg,#1b2b3a,#132030);border-color:var(--o2dim);color:var(--o2)}
+
+  /* generic layout helpers */
+  .grid{display:grid;gap:18px}
+  .cards{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}
+  .card h3{margin:.1em 0 .4em;font-size:1.08rem;display:flex;align-items:center;gap:9px}
+  .card p{margin:0;color:var(--muted);font-size:.95rem}
+  .ic{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;font-size:16px;flex:none}
+  .ic.o2{background:#0e2a3b;color:var(--o2)} .ic.vac{background:#331616;color:var(--vac)}
+  .ic.grav{background:#2a2410;color:var(--amber)} .ic.dome{background:#10281f;color:#63d29b}
+
+  /* condition flow */
+  .flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:10px;margin-top:26px}
+  .step{flex:1 1 150px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px 15px}
+  .step .k{font:600 11px/1 ui-monospace,monospace;letter-spacing:.05em;text-transform:uppercase;color:var(--dim)}
+  .step .v{font-size:.94rem;margin-top:6px}
+  .step .v b{color:var(--o2)}
+  .arrow{align-self:center;color:var(--dim);font-size:20px}
+  @media(max-width:720px){.arrow{transform:rotate(90deg)}}
+
+  /* gallery */
+  figure{margin:0;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  figure img{display:block;width:100%;height:auto}
+  figcaption{padding:12px 15px;color:var(--muted);font-size:.86rem;border-top:1px solid var(--line)}
+  figcaption b{color:var(--text)}
+
+  /* code */
+  pre{background:#0b1219;border:1px solid var(--line);border-radius:12px;padding:16px 18px;overflow:auto;
+    font-size:.86rem;line-height:1.55;color:#b9c6d6}
+  pre .c{color:var(--dim)} pre .k{color:var(--o2)}
+  .filelist{columns:2;column-gap:26px;margin:12px 0 0;padding:0;list-style:none;font-size:.9rem}
+  .filelist li{break-inside:avoid;padding:3px 0;color:var(--muted)}
+  .filelist code{color:var(--text)}
+  @media(max-width:560px){.filelist{columns:1}}
+
+  /* note */
+  .note{display:flex;gap:14px;background:#1a1608;border:1px solid #4d3f14;border-radius:12px;padding:16px 18px;margin-top:22px}
+  .note .m{color:#f0d38a;font-size:.95rem}
+  .note b{color:var(--amber)}
+
+  /* roadmap */
+  .phase{display:flex;gap:16px;padding:16px 0;border-bottom:1px solid var(--line)}
+  .phase:last-child{border-bottom:none}
+  .pnum{font:700 13px/1 ui-monospace,monospace;color:var(--dim);flex:none;width:74px;padding-top:3px}
+  .pbody h3{margin:0 0 3px;font-size:1rem}
+  .pbody p{margin:0;color:var(--muted);font-size:.92rem}
+  .tagly{display:inline-block;font:600 10px/1 ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;
+    padding:4px 8px;border-radius:6px;margin-left:8px;vertical-align:1px}
+  .tagly.done{background:#0f2a1c;color:#63d29b} .tagly.next{background:#0e2333;color:var(--o2)}
+  .tagly.todo{background:#20242b;color:var(--dim)}
+
+  footer{border-top:1px solid var(--line);padding:40px 0 60px;color:var(--muted);font-size:.9rem}
+  footer .wrap{display:flex;flex-wrap:wrap;gap:8px 24px;align-items:center}
+  footer a{color:var(--muted)} footer a:hover{color:var(--text)}
+  .sep{color:var(--line)}
+</style>
+</head>
+<body>
+
+<nav><div class="wrap">
+  <span class="brand"><img src="assets/moon.png" alt=""> Lunar Red Alert</span>
+  <span class="links">
+    <a href="#overview">Overview</a>
+    <a href="#mechanics">Mechanics</a>
+    <a href="#built">What's built</a>
+    <a href="#build">Build &amp; play</a>
+    <a href="#roadmap">Roadmap</a>
+    <a class="gh" href="https://github.com/dr-richard-barker/Lunar_Red_Alert">GitHub ↗</a>
+  </span>
+</div></nav>
+
+<header class="hero">
+  <div class="bg"></div>
+  <div class="wrap">
+    <p class="eyebrow">Space-Age total conversion · OpenRA · GPLv3</p>
+    <h1>Lunar Red Alert</h1>
+    <p class="tag">A real-time strategy game where you fight on the Moon — manage <b>oxygen</b> instead of fuel, bound across the surface in <b>1/6 gravity</b>, and keep your troops alive under <b>pressurised domes</b>.</p>
+    <div class="badges">
+      <span class="badge on">● Desktop RTS</span>
+      <span class="badge">Windows · Linux · macOS</span>
+      <span class="badge">GPLv3 · open source</span>
+      <span class="badge warn">Status: in development — not yet compiled</span>
+    </div>
+    <div class="cta">
+      <a class="btn primary" href="#build">▶ How to build &amp; play</a>
+      <a class="btn" href="https://github.com/dr-richard-barker/Lunar_Red_Alert">View source on GitHub</a>
+      <a class="btn" href="https://github.com/dr-richard-barker/Lunar_Red_Alert/blob/main/mods/spaceage/SPACE-AGE-DESIGN.md">Read the design doc</a>
+    </div>
+  </div>
+</header>
+
+<section id="overview"><div class="wrap">
+  <p class="eyebrow">Overview</p>
+  <h2>Command &amp; Conquer, in a vacuum</h2>
+  <p class="lede">Lunar Red Alert keeps the fast, classic RTS gameplay of <a href="https://www.openra.net">OpenRA</a>’s Red Alert and moves the whole war to a cold, airless world. Every design decision follows one question: <em>what changes when there’s no air and barely any gravity?</em> Your infantry carry a finite air supply. Step outside a pressurised zone and the countdown begins. Artillery hangs in the low-gravity sky. Craters wall off the battlefield into natural chokepoints.</p>
+  <div class="grid cards" style="margin-top:26px">
+    <div class="card"><h3>Built on a real engine</h3><p>A total conversion of OpenRA — the mature, open-source C#/.NET remake of the Westwood RTS engine. Not a mock-up: real traits, real YAML, real gameplay.</p></div>
+    <div class="card"><h3>Desktop game</h3><p>OpenRA runs natively on Windows, Linux and macOS via SDL2 + OpenGL. It does <b>not</b> run in a browser — this website is the intro &amp; download hub, not the game itself.</p></div>
+    <div class="card"><h3>Free &amp; open (GPLv3)</h3><p>Evolved from OpenRA and released under the same GNU GPLv3. You can read, build, modify and share every line.</p></div>
+  </div>
+</div></section>
+
+<section id="mechanics"><div class="wrap">
+  <p class="eyebrow">Environment</p>
+  <h2>Four rules of a lunar battlefield</h2>
+  <div class="grid cards" style="margin-top:24px">
+    <div class="card">
+      <h3><span class="ic o2">◉</span> Oxygen, not fuel</h3>
+      <p>Every soldier carries an air tank that drains tick-by-tick in vacuum and refills inside a pressurised bubble. An empty tank grants a “suffocating” state the rest of the game reacts to.</p>
+    </div>
+    <div class="card">
+      <h3><span class="ic vac">☠</span> Vacuum damage</h3>
+      <p>Out of air and out of shelter, a unit takes periodic vacuum damage until it either reaches pressure or dies. Vehicles are sealed and immune.</p>
+    </div>
+    <div class="card">
+      <h3><span class="ic grav">↧</span> Low gravity</h3>
+      <p>Infantry bound at ~140% speed in 1/6 g; vehicles handle differently; arcing shells travel farther and hang longer. Gravity is a single world-level value (Moon 16% · Mars 38%).</p>
+    </div>
+    <div class="card">
+      <h3><span class="ic dome">⌂</span> Pressurised domes</h3>
+      <p>Your base structures project a life-support field. Inside it, troops breathe and heal their air; push the front line forward by building outward.</p>
+    </div>
+  </div>
+
+  <h3 style="margin:40px 0 0;font-size:1rem;color:var(--muted)">How the systems chain together</h3>
+  <div class="flow">
+    <div class="step"><div class="k">Structure</div><div class="v">A base building projects <b>pressurised</b> to nearby units</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="k">Oxygen</div><div class="v">Refills while pressurised, else <b>drains</b>; empty → grants <b>no-oxygen</b></div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="k">Vacuum</div><div class="v">If exposed &amp; out of air → <b>periodic damage</b></div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="k">Movement</div><div class="v">Low-g <b>speed boost</b>; suffocating units slow to half</div></div>
+  </div>
+</div></section>
+
+<section id="gallery"><div class="wrap">
+  <p class="eyebrow">Look &amp; feel</p>
+  <h2>Procedurally-generated lunar terrain</h2>
+  <p class="lede">These are real outputs from the mod’s asset tools — not concept art. The generators bake regolith, crater rings and ice into game-ready terrain.</p>
+  <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:24px" >
+    <figure><img src="assets/lunar_surface.png" alt="Procedurally generated lunar regolith surface with bright-rimmed craters">
+      <figcaption><b>Regolith &amp; craters</b> — output of <code>tools/gen_tileset.py</code>. Bright-rimmed impact craters over noise-based dust.</figcaption></figure>
+    <figure><img src="assets/crater_map.png" alt="Color-coded crater-field skirmish map: grey plains, dark craters, cyan ice, spawn pads">
+      <figcaption><b>Crater-field map</b> — a <code>gen_map.py</code> layout. Grey plains, walled craters, <span style="color:var(--o2)">cyan ice deposits</span> (the resource) and corner spawn pads.</figcaption></figure>
+  </div>
+  <div class="note"><span>ℹ️</span><span class="m">No gameplay screenshots yet — the mod compiles into OpenRA but hasn’t been built on a .NET machine, so there’s nothing live to capture. These images are honest engine assets; screenshots will land here once it runs.</span></div>
+</div></section>
+
+<section id="built"><div class="wrap">
+  <p class="eyebrow">Under the hood</p>
+  <h2>What’s actually in the repo</h2>
+  <p class="lede">The mechanics are implemented as real OpenRA engine traits (C#) plus a lightweight data-only mod. Nothing here is placeholder.</p>
+
+  <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:24px;gap:22px">
+    <div class="card">
+      <h3>Engine traits <span class="mono" style="color:var(--dim);font-weight:400;font-size:.8rem">OpenRA.Mods.Common</span></h3>
+      <ul class="filelist">
+        <li><code>Oxygen.cs</code> — air supply</li>
+        <li><code>DamagedByVacuum.cs</code> — hazard</li>
+        <li><code>GravitySpeedModifier.cs</code> — low-g</li>
+        <li><code>OxygenBar.cs</code> — O₂ meter</li>
+        <li><code>LowGravity.cs</code> — world gravity</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>The mod <span class="mono" style="color:var(--dim);font-weight:400;font-size:.8rem">mods/spaceage</span></h3>
+      <ul class="filelist">
+        <li><code>mod.yaml</code> — manifest</li>
+        <li><code>spaceage-defaults.yaml</code> — traits</li>
+        <li><code>spaceage-structures.yaml</code> — domes</li>
+        <li><code>tools/gen_*.py</code> — asset gen</li>
+        <li><code>SPACE-AGE-DESIGN.md</code> — full plan</li>
+      </ul>
+    </div>
+  </div>
+
+  <p style="color:var(--muted);margin-top:26px;font-size:.95rem">A soldier’s vacuum survival, in engine terms — a trait that damages exposed, airless units, modelled on OpenRA’s own <code>DamagedByTerrain</code>:</p>
+  <pre><span class="c">// fires every DamageInterval ticks while a unit is exposed and out of air</span>
+<span class="k">void</span> ITick.Tick(Actor self)
+{
+    <span class="k">if</span> (safe) { ticks = 0; <span class="k">return</span>; }              <span class="c">// under a dome / sealed hull</span>
+    <span class="k">if</span> (Info.RequireOxygenDepleted &amp;&amp; oxygen?.Current &gt; 0) { ticks = 0; <span class="k">return</span>; }
+    <span class="k">if</span> (--ticks &lt;= 0) {
+        ticks = Info.DamageInterval;
+        self.InflictDamage(self.World.WorldActor, <span class="k">new</span> Damage(Info.Damage, Info.DamageTypes));
+    }
+}</pre>
+</div></section>
+
+<section id="build"><div class="wrap">
+  <p class="eyebrow">Play it</p>
+  <h2>Build &amp; run (desktop)</h2>
+  <p class="lede">The game is a desktop OpenRA mod, so “playing” means building the engine once on a machine with the <a href="https://dotnet.microsoft.com/download">.NET SDK</a>. First launch downloads the Red Alert content it reuses.</p>
+  <pre><span class="c"># 1. get the code</span>
+git clone https://github.com/dr-richard-barker/Lunar_Red_Alert.git
+cd Lunar_Red_Alert
+
+<span class="c"># 2. build the engine + lint the mod</span>
+make
+./utility.sh spaceage --check-yaml
+
+<span class="c"># 3. launch the Space-Age mod</span>
+./launch-game.sh Game.Mod=spaceage</span></pre>
+  <p style="color:var(--muted);font-size:.92rem">Once in a skirmish: build a base, send infantry into the open and watch the <span style="color:var(--o2)">O₂ bar</span> drain, then pull them back under the dome to refill. Full verification checklist is in <a href="https://github.com/dr-richard-barker/Lunar_Red_Alert/blob/main/SPACE-AGE-README.md">SPACE-AGE-README.md</a>.</p>
+</div></section>
+
+<section id="roadmap"><div class="wrap">
+  <p class="eyebrow">Roadmap</p>
+  <h2>Where it’s going</h2>
+  <div style="margin-top:20px">
+    <div class="phase"><div class="pnum">PHASE 1</div><div class="pbody">
+      <h3>Core physics hooks <span class="tagly done">Done</span></h3>
+      <p>World-level low gravity + low-g movement traits. No changes to the engine core.</p></div></div>
+    <div class="phase"><div class="pnum">PHASE 2</div><div class="pbody">
+      <h3>Oxygen &amp; vacuum survival <span class="tagly done">Done</span></h3>
+      <p>Air supply, vacuum damage, pressurised domes, the O₂ meter — all wired onto RA units.</p></div></div>
+    <div class="phase"><div class="pnum">PHASE 3</div><div class="pbody">
+      <h3>Lunar visuals &amp; terrain <span class="tagly next">In progress</span></h3>
+      <p>Procedural regolith/crater tilesets, ice as the resource, and cold-vacuum palettes. Generators are built; tile sprites need authoring.</p></div></div>
+    <div class="phase"><div class="pnum">PHASE 4</div><div class="pbody">
+      <h3>Compile, package &amp; release <span class="tagly todo">Planned</span></h3>
+      <p>Build on a .NET machine, verify the checklist, then package desktop installers for Windows / Linux / macOS.</p></div></div>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <span>Lunar Red Alert — Space-Age</span>
+  <span class="sep">·</span>
+  <span>GPLv3</span>
+  <span class="sep">·</span>
+  <span>Evolved from <a href="https://github.com/OpenRA/OpenRA">OpenRA</a></span>
+  <span class="sep">·</span>
+  <a href="https://github.com/dr-richard-barker/Lunar_Red_Alert">Source</a>
+  <span class="sep">·</span>
+  <a href="https://github.com/dr-richard-barker/Lunar_Red_Alert/blob/main/mods/spaceage/SPACE-AGE-DESIGN.md">Design doc</a>
+</div></footer>
+
+</body>
+</html>
