@@ -1,0 +1,54 @@
+name: WASM Port
+
+# Phase W0 harness for the OpenRA-in-browser port (see WASM-PORT-PLAN.md).
+# Manual dispatch + probe-path pushes only, so normal development doesn't pay for it.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'OpenRA.WasmProbe/**'
+      - '.github/workflows/wasm-port.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    name: browser-wasm probe (OpenRA.Game)
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Clone Repository
+        uses: actions/checkout@v7
+
+      - name: Install .NET 10.0
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install wasm-tools workload
+        run: dotnet workload install wasm-tools
+
+      - name: Publish probe for browser-wasm
+        # The actual experiment: can OpenRA.Game + its NuGet closure publish
+        # against the .NET browser runtime? Log everything; fail loudly.
+        run: |
+          set -o pipefail
+          dotnet publish OpenRA.WasmProbe/OpenRA.WasmProbe.csproj -c Release 2>&1 | tee wasm-publish.log
+
+      - name: Summarize output payload
+        if: success()
+        run: |
+          echo "== published wwwroot payload =="
+          find OpenRA.WasmProbe/bin -path '*wwwroot*' -name '*.wasm' -o -path '*wwwroot*' -name '*.js' | head -20
+          du -sh OpenRA.WasmProbe/bin/Release/*/publish/wwwroot 2>/dev/null || true
+
+      - name: Upload probe logs & payload
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasm-probe-output
+          path: |
+            wasm-publish.log
+            OpenRA.WasmProbe/bin/Release/*/publish/wwwroot
+          if-no-files-found: warn
+          retention-days: 7
