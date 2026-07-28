@@ -8,6 +8,9 @@
          closure of OpenRA.Game compile/link against the browser runtime. -->
     <PublishTrimmed>false</PublishTrimmed>
     <RunAOTCompilation>false</RunAOTCompilation>
+    <!-- Required for the [JSImport] source generator to emit its (unsafe)
+         marshalling stubs; without it every binding fails with CS8795. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\OpenRA.Game\OpenRA.Game.csproj" />
