@@ -56,6 +56,25 @@ jobs:
           node noderun.mjs 2>&1 | tee ../../wasm-run.log
           grep -q "\[probe\] SUCCESS" ../../wasm-run.log
 
+      - name: Install Playwright Chromium (Phase W2)
+        if: success()
+        run: |
+          npm init -y > /dev/null
+          npm install --no-audit --no-fund playwright > /dev/null
+          npx playwright install --with-deps chromium
+
+      - name: Execute probe in Chromium (Phase W2)
+        if: success()
+        # The W2 milestone: WebGL2 clear + textured quad driven from managed
+        # code, with framebuffer pixels read back and asserted in C#.
+        run: |
+          set -o pipefail
+          WWWROOT=$(dirname "$(find bin/publish -name dotnet.js -path '*_framework*' | head -1)")/..
+          (cd "$WWWROOT" && python3 -m http.server 8123) &
+          sleep 2
+          node OpenRA.WasmProbe/browser-test.mjs http://127.0.0.1:8123/ 2>&1 | tee wasm-browser.log
+          grep -q "W2 SUCCESS" wasm-browser.log
+
       - name: Upload probe logs & payload
         if: always()
         uses: actions/upload-artifact@v4
@@ -63,6 +82,8 @@ jobs:
           name: wasm-probe-output
           path: |
             wasm-publish.log
+            wasm-browser.log
+            wasm-screenshot.png
             bin/publish
           if-no-files-found: warn
           retention-days: 7

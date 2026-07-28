@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>OpenRA WasmProbe — Phase W2</title>
+<style>
+  body { margin: 0; background: #0a0e14; color: #cdd6e2; font: 14px/1.5 monospace; }
+  #log { padding: 10px 14px; white-space: pre-wrap; }
+  canvas { display: block; margin: 14px; border: 1px solid #233042; image-rendering: pixelated; }
+</style>
+</head>
+<body>
+<canvas id="canvas" width="256" height="256"></canvas>
+<div id="log">booting .NET wasm runtime…</div>
+<script type="module" src="./main.js"></script>
+</body>
+</html>

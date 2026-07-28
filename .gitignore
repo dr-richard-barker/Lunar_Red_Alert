@@ -37,6 +37,8 @@ Settings.md
 # ...but keep the GitHub Pages site (docs/) — it is hand-written, not auto-generated
 !docs/*.html
 !docs/**/*.html
+# ...and the wasm probe's browser host page
+!OpenRA.WasmProbe/wwwroot/*.html
 openra.6
 update.log
 

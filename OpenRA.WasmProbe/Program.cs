@@ -55,6 +55,13 @@ namespace OpenRA.WasmProbe
 			if (capacity != "5000")
 				throw new InvalidOperationException("MiniYAML round-trip mismatch");
 
+			// 3. Phase W2 (browser host only): WebGL2 clear + textured quad,
+			// pixel-verified. Under Node the stub module reports no DOM.
+			if (WebGL.HasDocument())
+				QuadDemo.Run();
+			else
+				Console.WriteLine("[probe] no DOM host - skipping W2 WebGL check (expected under Node)");
+
 			Console.WriteLine("[probe] SUCCESS: OpenRA.Game core executes under the .NET wasm runtime");
 		}
 	}
