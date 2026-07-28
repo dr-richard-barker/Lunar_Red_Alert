@@ -196,14 +196,18 @@
 <section id="gallery"><div class="wrap">
   <p class="eyebrow">Look &amp; feel</p>
   <h2>Procedurally-generated lunar terrain</h2>
-  <p class="lede">These are real outputs from the mod’s asset tools — not concept art. The generators bake regolith, crater rings and ice into game-ready terrain.</p>
-  <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:24px" >
-    <figure><img src="assets/lunar_surface.png" alt="Procedurally generated lunar regolith surface with bright-rimmed craters">
-      <figcaption><b>Regolith &amp; craters</b> — output of <code>tools/gen_tileset.py</code>. Bright-rimmed impact craters over noise-based dust.</figcaption></figure>
+  <p class="lede">These are real outputs from the mod’s asset tools — not concept art. The <b>Phase 3</b> generator bakes a cohesive, seamlessly-tiling lunar tile set (regolith, basalt, ice, crater floor &amp; cliffs) in a unified palette.</p>
+  <figure style="margin-top:24px">
+    <img src="assets/lunar_battlefield.png" alt="A composed lunar battlefield: regolith plains, dark basalt patches, cyan ice deposits and crater clusters, assembled from real game tiles">
+    <figcaption><b>Lunar battlefield</b> — the actual Phase 3 tiles (<code>tools/gen_lunar_terrain.py</code>) composed into a map region: regolith plains, dark <b>basalt</b> flats, <span style="color:var(--o2)">cyan ice deposits</span> (the resource), and walled <b>crater</b> clusters. Engine-style variant rotation breaks grid repetition.</figcaption>
+  </figure>
+  <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:18px">
+    <figure><img src="assets/lunar_tiles.png" alt="Labelled set of seamless lunar terrain tiles">
+      <figcaption><b>The tile set</b> — regolith ×3, basalt, ice, crater floor &amp; cliff. Torus-periodic noise = no seams when tiled.</figcaption></figure>
     <figure><img src="assets/crater_map.png" alt="Color-coded crater-field skirmish map: grey plains, dark craters, cyan ice, spawn pads">
-      <figcaption><b>Crater-field map</b> — a <code>gen_map.py</code> layout. Grey plains, walled craters, <span style="color:var(--o2)">cyan ice deposits</span> (the resource) and corner spawn pads.</figcaption></figure>
+      <figcaption><b>Crater-field map</b> — a <code>gen_map.py</code> layout: plains, walled craters, ice, and corner spawn pads.</figcaption></figure>
   </div>
-  <div class="note"><span>ℹ️</span><span class="m">No gameplay screenshots yet — the mod compiles into OpenRA but hasn’t been built on a .NET machine, so there’s nothing live to capture. These images are honest engine assets; screenshots will land here once it runs.</span></div>
+  <div class="note"><span>ℹ️</span><span class="m">No gameplay screenshots yet — these are honest engine <b>assets</b>, not a running game. The tiles still need their final import into an OpenRA tileset (an in-editor step); real screenshots land here once it builds &amp; runs.</span></div>
 </div></section>
 
 <section id="built"><div class="wrap">
@@ -276,7 +280,7 @@ make
       <p>Air supply, vacuum damage, pressurised domes, the O₂ meter — all wired onto RA units.</p></div></div>
     <div class="phase"><div class="pnum">PHASE 3</div><div class="pbody">
       <h3>Lunar visuals &amp; terrain <span class="tagly next">In progress</span></h3>
-      <p>Procedural regolith/crater tilesets, ice as the resource, and cold-vacuum palettes. Generators are built; tile sprites need authoring.</p></div></div>
+      <p>A seamless-tiling terrain generator (regolith, basalt, ice, crater floor &amp; cliffs) in a unified lunar palette is <b>done</b> — see the gallery above. Remaining: import the sprites into an OpenRA tileset, author crater-rim transition tiles, and wire ice as the harvestable resource.</p></div></div>
     <div class="phase"><div class="pnum">PHASE 4</div><div class="pbody">
       <h3>Compile, package &amp; release <span class="tagly todo">Planned</span></h3>
       <p>Build on a .NET machine, verify the checklist, then package desktop installers for Windows / Linux / macOS.</p></div></div>
