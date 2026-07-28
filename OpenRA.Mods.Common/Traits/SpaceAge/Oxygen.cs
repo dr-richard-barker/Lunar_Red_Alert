@@ -10,6 +10,7 @@
 #endregion
 
 using System.Collections.Generic;
+using OpenRA.Support;
 using OpenRA.Traits;
 
 namespace OpenRA.Mods.Common.Traits
@@ -43,7 +44,7 @@ namespace OpenRA.Mods.Common.Traits
 
 	public class Oxygen : PausableConditionalTrait<OxygenInfo>, ITick, ISync, IObservesVariables
 	{
-		[Sync]
+		[VerifySync]
 		public int Current;
 
 		int depletedToken = Actor.InvalidConditionToken;
