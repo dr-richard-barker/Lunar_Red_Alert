@@ -1,5 +1,7 @@
 # Lunar Red Alert — Space-Age total conversion
 
+**🌐 Project site: https://dr-richard-barker.github.io/Lunar_Red_Alert/** (intro, mechanics, build guide)
+
 A "Space-Age" total conversion of this OpenRA fork: units manage **oxygen** instead of
 fuel, take **vacuum damage** when exposed and out of air, **bound in low gravity**, and
 survive only inside the **pressurised bubbles** projected by base structures.
