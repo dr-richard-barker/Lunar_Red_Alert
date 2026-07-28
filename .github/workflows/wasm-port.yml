@@ -37,10 +37,11 @@ jobs:
 
       - name: Summarize output payload
         if: success()
+        # Directory.Build.props redirects publish output to the repo-root bin/publish/.
         run: |
-          echo "== published wwwroot payload =="
-          find OpenRA.WasmProbe/bin -path '*wwwroot*' -name '*.wasm' -o -path '*wwwroot*' -name '*.js' | head -20
-          du -sh OpenRA.WasmProbe/bin/Release/*/publish/wwwroot 2>/dev/null || true
+          echo "== published payload (bin/publish) =="
+          find bin/publish -type f | head -40
+          du -sh bin/publish/wwwroot 2>/dev/null || du -sh bin/publish 2>/dev/null || true
 
       - name: Upload probe logs & payload
         if: always()
@@ -49,6 +50,6 @@ jobs:
           name: wasm-probe-output
           path: |
             wasm-publish.log
-            OpenRA.WasmProbe/bin/Release/*/publish/wwwroot
+            bin/publish
           if-no-files-found: warn
           retention-days: 7

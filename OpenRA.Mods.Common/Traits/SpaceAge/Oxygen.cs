@@ -42,7 +42,7 @@ namespace OpenRA.Mods.Common.Traits
 		public override object Create(ActorInitializer init) { return new Oxygen(this); }
 	}
 
-	public class Oxygen : PausableConditionalTrait<OxygenInfo>, ITick, ISync, IObservesVariables
+	public class Oxygen : PausableConditionalTrait<OxygenInfo>, ITick, ISync
 	{
 		[VerifySync]
 		public int Current;
@@ -57,9 +57,13 @@ namespace OpenRA.Mods.Common.Traits
 		}
 
 		// Event-driven: the callback fires only when a referenced condition changes,
-		// so we never poll the whole condition set every tick.
-		IEnumerable<VariableObserver> IObservesVariables.GetVariableObservers()
+		// so we never poll the whole condition set every tick. Chain the base
+		// observers so RequiresCondition/PauseOnCondition keep working.
+		public override IEnumerable<VariableObserver> GetVariableObservers()
 		{
+			foreach (var observer in base.GetVariableObservers())
+				yield return observer;
+
 			if (Info.PressurisedCondition != null)
 				yield return new VariableObserver(PressureChanged, Info.PressurisedCondition.Variables);
 		}

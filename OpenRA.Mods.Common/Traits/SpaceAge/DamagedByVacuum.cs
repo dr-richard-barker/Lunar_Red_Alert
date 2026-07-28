@@ -42,7 +42,7 @@ namespace OpenRA.Mods.Common.Traits
 		public override object Create(ActorInitializer init) { return new DamagedByVacuum(this); }
 	}
 
-	public class DamagedByVacuum : ConditionalTrait<DamagedByVacuumInfo>, ITick, IObservesVariables
+	public class DamagedByVacuum : ConditionalTrait<DamagedByVacuumInfo>, ITick
 	{
 		int ticks;
 		bool safe;
@@ -57,8 +57,12 @@ namespace OpenRA.Mods.Common.Traits
 			oxygen = self.TraitOrDefault<Oxygen>();
 		}
 
-		IEnumerable<VariableObserver> IObservesVariables.GetVariableObservers()
+		// Chain the base observers so RequiresCondition keeps working.
+		public override IEnumerable<VariableObserver> GetVariableObservers()
 		{
+			foreach (var observer in base.GetVariableObservers())
+				yield return observer;
+
 			if (Info.SafeCondition != null)
 				yield return new VariableObserver(SafeChanged, Info.SafeCondition.Variables);
 		}
