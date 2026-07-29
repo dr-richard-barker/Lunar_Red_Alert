@@ -24,6 +24,9 @@ namespace OpenRA.WasmProbe
 	// Game.ModData global). Runs after MemfsDemo (EngineDir already overridden).
 	internal static class ModDataDemo
 	{
+		// Reused by MenuDemo (Game.Mods + InitializeMod need the full registry).
+		internal static InstalledMods Installed;
+
 		public static void Run()
 		{
 			// Boot order, as Game.Initialize does it: settings BEFORE ModData —
@@ -36,6 +39,7 @@ namespace OpenRA.WasmProbe
 
 			var modsRoot = Platform.ResolvePath("^EngineDir|mods");
 			var installed = new InstalledMods([modsRoot], []);
+			Installed = installed;
 			Console.WriteLine($"[probe] step: InstalledMods discovered: {string.Join(", ", installed.Keys.OrderBy(k => k))}");
 			if (!installed.ContainsKey("spaceage") || !installed.ContainsKey("ra"))
 				throw new InvalidOperationException("InstalledMods did not discover both ra and spaceage");

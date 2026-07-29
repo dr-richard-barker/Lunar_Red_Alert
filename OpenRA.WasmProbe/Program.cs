@@ -121,6 +121,10 @@ namespace OpenRA.WasmProbe
 				PlatformSeamDemo.Run();
 				RendererDemo.Run();
 				LoadScreenDemo.Run();
+
+				// 11. Phase W3i-c (browser only): the FULL menu via
+				// Game.InitializeMod — content-installer UI on missing .mix.
+				MenuDemo.Run();
 			}
 
 			Console.WriteLine("[probe] SUCCESS: OpenRA.Game core executes under the .NET wasm runtime");
