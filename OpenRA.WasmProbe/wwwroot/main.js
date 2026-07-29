@@ -190,6 +190,70 @@ const webgl = {
 	drawElementsBytes: (count, byteOffset) =>
 		gl.drawElements(gl.TRIANGLES, count, gl.UNSIGNED_INT, byteOffset),
 
+	// --- Phase W4b: Web Audio (int handles; suspended until user gesture) ---
+	audioInit: () => {
+		if (audio.ctx)
+			return 1;
+		try {
+			audio.ctx = new AudioContext();
+			audio.master = audio.ctx.createGain();
+			audio.master.connect(audio.ctx.destination);
+			// Resume on first user gesture (browser autoplay policy).
+			const resume = () => { audio.ctx.resume(); };
+			window.addEventListener('pointerdown', resume, { once: true });
+			window.addEventListener('keydown', resume, { once: true });
+			return 1;
+		} catch {
+			return 0;
+		}
+	},
+	audioState: () => audio.ctx ? audio.ctx.state : 'unavailable',
+	audioMasterVolume: v => { if (audio.master) audio.master.gain.value = v; },
+
+	audioCreateBuffer: (channels, sampleBits, sampleRate, pcm) => {
+		const bytes = new Uint8Array(pcm);
+		const bytesPer = sampleBits / 8;
+		const frames = Math.max(1, (bytes.length / bytesPer / channels) | 0);
+		const buffer = audio.ctx.createBuffer(channels, frames, sampleRate);
+		for (let ch = 0; ch < channels; ch++) {
+			const out = buffer.getChannelData(ch);
+			if (sampleBits === 16) {
+				const s16 = new Int16Array(bytes.buffer, bytes.byteOffset, (bytes.length / 2) | 0);
+				for (let i = 0; i < frames; i++)
+					out[i] = (s16[i * channels + ch] || 0) / 32768;
+			} else {
+				for (let i = 0; i < frames; i++)
+					out[i] = ((bytes[i * channels + ch] || 128) - 128) / 128;
+			}
+		}
+		return keep(buffer);
+	},
+
+	audioPlay: (bufferHandle, loop, volume, pan) => {
+		const src = audio.ctx.createBufferSource();
+		src.buffer = handles.get(bufferHandle);
+		src.loop = loop;
+		const gain = audio.ctx.createGain();
+		gain.gain.value = volume;
+		const panner = audio.ctx.createStereoPanner();
+		panner.pan.value = pan;
+		src.connect(gain).connect(panner).connect(audio.master);
+		const entry = { src, gain, panner, ended: false, startedAt: audio.ctx.currentTime };
+		src.onended = () => { entry.ended = true; };
+		src.start();
+		return keep(entry);
+	},
+
+	audioSetVolume: (h, v) => { const e = handles.get(h); if (e) e.gain.gain.value = v; },
+	audioSetPan: (h, p) => { const e = handles.get(h); if (e) e.panner.pan.value = p; },
+	audioPause: (h, paused) => { const e = handles.get(h); if (e) e.gain.gain.value = paused ? 0 : 1; },
+	audioStop: (h) => { const e = handles.get(h); if (e && !e.ended) { try { e.src.stop(); } catch { } } },
+	audioComplete: h => { const e = handles.get(h); return e ? e.ended : true; },
+	audioSeekSeconds: h => {
+		const e = handles.get(h);
+		return e && !e.ended ? audio.ctx.currentTime - e.startedAt : 0;
+	},
+
 	// --- Phase W3d: Canvas2D glyph rasterization (1 byte/px alpha, FreeType
 	// conventions: Offset = (bearingX, -ascent)) ---
 	measureGlyph: (ch, px) => {
@@ -241,6 +305,9 @@ const webgl = {
 		window.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'a' }));
 	},
 };
+
+// Web Audio state (Phase W4b).
+const audio = { ctx: null, master: null };
 
 // Glyph scratch canvas (Phase W3d).
 const glyphCanvas = document.createElement('canvas');

@@ -16,6 +16,8 @@ try {
 		fetchText: async url => readFile(url, 'utf8'),
 		// W3i-b: binary as base64, matching the browser host.
 		fetchBase64: async url => (await readFile(url)).toString('base64'),
+		// W4b: no audio under Node — the platform falls back to SilentSoundEngine.
+		audioInit: () => 0,
 	});
 	await dotnet.run();
 	console.log('[noderun] wasm runtime exited cleanly');

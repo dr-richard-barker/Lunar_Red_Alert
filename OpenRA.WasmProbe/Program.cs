@@ -120,6 +120,10 @@ namespace OpenRA.WasmProbe
 			{
 				PlatformSeamDemo.Run();
 				RendererDemo.Run();
+
+				// 10b. Phase W4b (browser only): Web Audio behind ISoundEngine.
+				SoundDemo.Run();
+
 				LoadScreenDemo.Run();
 
 				// 11. Phase W3i-c (browser only): the FULL menu via

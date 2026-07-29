@@ -28,6 +28,11 @@ namespace OpenRA.Platforms.Browser
 
 		public ISoundEngine CreateSound(string device)
 		{
+			// W4b: real Web Audio when the host provides a context (browser);
+			// silent fallback otherwise (Node, or audio-less environments).
+			if (WebAudio.Init() != 0)
+				return new WebAudioSoundEngine();
+
 			return new SilentSoundEngine();
 		}
 
