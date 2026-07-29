@@ -367,12 +367,39 @@ try {
 	// Phase W3b: the browser owns the frame — requestAnimationFrame calls INTO
 	// managed code each frame until FrameLoop.OnFrame returns false.
 	const exports = await getAssemblyExports(getConfig().mainAssemblyName);
+
+	// Phase W4c: after the probe frame counter, hand the browser's frame to
+	// the LIVE game loop — Game.PerformBrowserFrame per rAF, indefinitely
+	// (the gate stops after its target frames; a real deployment never stops).
+	const startGameLoop = () => {
+		if (!exports.OpenRA.WasmProbe.GameLoop.IsReady()) {
+			log('game loop not ready (menu boot incomplete) — skipping live loop');
+			return;
+		}
+
+		log('starting LIVE game loop (Game.PerformBrowserFrame per rAF)…');
+		const onGameFrame = ts => {
+			try {
+				if (exports.OpenRA.WasmProbe.GameLoop.OnFrame(ts))
+					requestAnimationFrame(onGameFrame);
+				else
+					log('live loop gate complete — see console for [probe] W4c line');
+			} catch (err) {
+				console.error('[probe] FAILED in live game loop:', err);
+				log('FAILED: ' + err);
+			}
+		};
+		requestAnimationFrame(onGameFrame);
+	};
+
 	const onFrame = ts => {
 		try {
 			if (exports.OpenRA.WasmProbe.FrameLoop.OnFrame(ts))
 				requestAnimationFrame(onFrame);
-			else
+			else {
 				log('frame loop complete — see console for [probe] W3b line');
+				startGameLoop();
+			}
 		} catch (err) {
 			console.error('[probe] FAILED in frame loop:', err);
 			log('FAILED: ' + err);

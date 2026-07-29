@@ -10,7 +10,6 @@
 #endregion
 
 using System;
-using OpenRA.Platforms.Browser;
 
 namespace OpenRA.WasmProbe
 {
@@ -26,7 +25,7 @@ namespace OpenRA.WasmProbe
 		public static void Run()
 		{
 			var engine = RendererDemo.CreatedPlatform.CreateSound(null);
-			Console.WriteLine($"[probe] step: sound engine = {engine.GetType().Name} (context: {WebAudio.State()})");
+			Console.WriteLine($"[probe] step: sound engine = {engine.GetType().Name}");
 
 			if (engine.Dummy)
 				throw new InvalidOperationException("Expected the Web Audio engine in the browser host");

@@ -129,6 +129,7 @@ jobs:
           grep -q "W3i-c SUCCESS" wasm-browser.log
           grep -q "W4a SUCCESS" wasm-browser.log
           grep -q "W4b SUCCESS" wasm-browser.log
+          grep -q "W4c SUCCESS" wasm-browser.log
 
       - name: Upload probe logs & payload
         if: always()

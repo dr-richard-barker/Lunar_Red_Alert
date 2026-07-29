@@ -85,6 +85,10 @@ namespace OpenRA.WasmProbe
 				Console.WriteLine($"[probe] W4a SUCCESS: content installed — the real game menu booted (mod 'spaceage', {rootWidgets} widgets, shellmap world included)");
 			else
 				Console.WriteLine($"[probe] W4a note: boot diverted to '{bootedMod}' — content missing or check failed");
+
+			// Hand off to the live rAF loop (W4c): main.js polls IsReady after
+			// the probe's Main returns and drives Game.PerformBrowserFrame.
+			GameLoop.Ready = true;
 		}
 	}
 }

@@ -776,6 +776,41 @@ namespace OpenRA
 			PerfHistory.Items["terrain_lighting"].Tick(isActive);
 		}
 
+		// Browser/WebAssembly support: the browser owns the frame loop via
+		// requestAnimationFrame, so the blocking Loop() cannot run there. This
+		// performs a single pacing iteration of the same loop: logic catches
+		// up to wall-clock at the active world's timestep, then one render
+		// (rAF itself provides vsync pacing). Returns the active world's tick
+		// count, or -1 when no world is loaded, so hosts can observe the sim.
+		static long browserNextLogic = -1;
+
+		public static int PerformBrowserFrame()
+		{
+			if (browserNextLogic < 0)
+				browserNextLogic = RunTime;
+
+			const int MaxLogicTicksBehind = 250;
+
+			var logicInterval = Ui.Timestep;
+			var logicWorld = worldRenderer?.World;
+			if (logicWorld != null && (!logicWorld.IsReplay || logicWorld.ReplayTimestep != 0))
+				logicInterval = logicWorld == OrderManager.World ? OrderManager.SuggestedTimestep : logicWorld.Timestep;
+
+			var now = RunTime;
+			if (now - browserNextLogic > MaxLogicTicksBehind)
+				browserNextLogic = now;
+
+			while (RunTime >= browserNextLogic)
+			{
+				browserNextLogic += Math.Max(1, logicInterval);
+				LogicTick();
+			}
+
+			RenderTick();
+
+			return worldRenderer?.World?.WorldTick ?? -1;
+		}
+
 		static void Loop()
 		{
 			// The game loop mainly does two things: logic updates and
