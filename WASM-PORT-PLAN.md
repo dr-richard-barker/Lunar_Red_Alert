@@ -68,7 +68,22 @@ verdict → iterate.
 - **W5 — Ship.** Host the bundle (Pages if size/licensing allow, else a static CDN
   linked from Pages), loading UX, save settings to localStorage.
 
-## Status log
+## Status log (see also the newest entries appended at the end)
+
+- **2026-07-29 (W4/W5 sprint summary):** W4a staged OpenRA's own quickinstall
+  freeware content in CI (SHA1-pinned, official mirrors) + shellmap maps —
+  the full real boot. W4b: WebAudioSoundEngine (PCM->AudioBuffer, pan/
+  attenuation, gesture-gated resume; structurally CI-verified). W4c: engine
+  edit #4 Game.PerformBrowserFrame (one pacing iteration of Loop; desktop
+  untouched) driven by rAF — the live game. W4d: engine edit #5
+  Game.ActiveWorld + gate that queues a real Move activity on a shellmap
+  unit and verifies displacement (pathfinding/locomotion obey in-browser).
+  W5a: PlayMode (?mode=play boots straight to the game), deploy job
+  (needs: probe) assembles docs/ + engine at /play-wasm with EA content
+  STRIPPED (page lands on the content-installer menu — repo assets only,
+  no licensing exposure) and publishes via actions/deploy-pages; Pages
+  switched to workflow build_type. W5b (content strategy for the public
+  page) is a licensing decision deferred to the repo owner.
 
 - **2026-07-28:** Audit done. W0 harness + probe committed. Site/roadmap will only
   claim what CI has proven.
