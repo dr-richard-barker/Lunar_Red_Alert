@@ -99,3 +99,23 @@ verdict → iterate.
      exempted for OpenRA.WasmProbe/wwwroot).
   Next (W3): VFS-over-HTTP for mod rules, rAF-driven loop, Canvas2D fonts —
   toward booting to the main menu in-browser.
+- **2026-07-29: W3a+W3b PROVEN.** Real ra+spaceage rules fetched over the host
+  (browser fetch / Node fs) and merged by the engine's own MiniYaml.Merge
+  in-wasm — ^Soldier gains Oxygen (Capacity=6000, 88 traits). 60 managed frames
+  driven by requestAnimationFrame via [JSExport] (fix: runMain() keeps the
+  runtime alive after Main; dotnet.run() exits it).
+- **2026-07-29: W3c PROVEN.** First slice of OpenRA.Platforms.Browser: real
+  IGraphicsContext over WebGL2 (generic vertex buffers via MemoryMarshal,
+  index buffers, textures, framebuffers, engine-style {VERSION}->300 es shader
+  compilation, uniforms/texture units), IPlatform/IPlatformWindow (Embedded
+  profile), SilentSoundEngine. Gate drew a quad through the engine's OWN
+  contracts (IPlatform -> IGraphicsContext -> DrawPrimitives) pixel-verified
+  in Chromium. Unreached members throw loudly — no silent stubs.
+- **2026-07-29: W3d shipped (verdict pending).** Canvas2DFont: real glyph
+  rasterization behind IFont (Canvas2D TextMetrics + alpha extraction,
+  FreeType conventions: 1 byte/px, Offset=(bearingX,-ascent)). Input pump:
+  DOM mouse/key listeners -> JS queue -> PumpInput decodes into engine
+  MouseInput/KeyInput (SDL-style keycodes pinned from Keycode.cs). Gate
+  synthesizes real DOM events and asserts them through IInputHandler.
+  Remaining for W3-full: in-memory VFS packages + Game.Initialize boot
+  sequence against HTTP-staged content (the big one), then W4 playable.

@@ -33,7 +33,9 @@ namespace OpenRA.Platforms.Browser
 
 		public IFont CreateFont(byte[] data)
 		{
-			return new PlaceholderFont();
+			// The byte[] is the bundled ttf; Canvas2D uses the browser's own
+			// sans-serif face for now (FontFace-loading the ttf is a later step).
+			return new Canvas2DFont();
 		}
 	}
 
@@ -70,7 +72,45 @@ namespace OpenRA.Platforms.Browser
 
 		public void PumpInput(IInputHandler inputHandler)
 		{
-			// W3d: translate browser mouse/keyboard events into engine input.
+			// Phase W3d: drain the JS-side event queue (8 doubles per record;
+			// layout documented in wwwroot/main.js) into engine input events.
+			var flat = GL.PumpEvents();
+			for (var i = 0; i + 7 < flat.Length; i += 8)
+			{
+				var family = (int)flat[i];
+				if (family == 1)
+				{
+					var mouseEvent = (int)flat[i + 1] switch
+					{
+						0 => MouseInputEvent.Down,
+						1 => MouseInputEvent.Move,
+						2 => MouseInputEvent.Up,
+						_ => MouseInputEvent.Scroll,
+					};
+
+					inputHandler.OnMouseInput(new MouseInput(
+						mouseEvent,
+						(MouseButton)(int)flat[i + 2],
+						new int2((int)flat[i + 3], (int)flat[i + 4]),
+						new int2((int)flat[i + 5], (int)flat[i + 6]),
+						(Modifiers)(int)flat[i + 7],
+						1));
+				}
+				else if (family == 2)
+				{
+					var modifiers = (Modifiers)(int)flat[i + 3];
+					inputHandler.ModifierKeys(modifiers);
+					inputHandler.OnKeyInput(new KeyInput
+					{
+						Event = (int)flat[i + 1] == 0 ? KeyInputEvent.Down : KeyInputEvent.Up,
+						Key = (Keycode)(int)flat[i + 2],
+						Modifiers = modifiers,
+						MultiTapCount = 1,
+						UnicodeChar = (char)(int)flat[i + 4],
+						IsRepeat = (int)flat[i + 5] != 0,
+					});
+				}
+			}
 		}
 
 		public string GetClipboardText() { return string.Empty; }
@@ -144,21 +184,4 @@ namespace OpenRA.Platforms.Browser
 		public void SetPosition(WPos pos) { }
 	}
 
-	// Placeholder font: 1x1 transparent glyphs so text layout survives until
-	// Canvas2D rasterization is implemented (W3d).
-	sealed class PlaceholderFont : IFont
-	{
-		public FontGlyph CreateGlyph(char c, int size, float deviceScale)
-		{
-			return new FontGlyph
-			{
-				Offset = new int2(0, 0),
-				Size = new Size(1, 1),
-				Advance = size / 2f,
-				Data = new byte[1],
-			};
-		}
-
-		public void Dispose() { }
-	}
 }

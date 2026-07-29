@@ -30,6 +30,10 @@ namespace OpenRA.WasmProbe
 		[JSImport("fetchText", "webgl.js")]
 		internal static partial Task<string> FetchText(string url);
 
+		// Phase W3d gate helper: dispatches real DOM mouse/key events.
+		[JSImport("synthesizeTestInput", "webgl.js")]
+		internal static partial void SynthesizeTestInput();
+
 		[JSImport("init", "webgl.js")]
 		internal static partial int Init(int width, int height);
 

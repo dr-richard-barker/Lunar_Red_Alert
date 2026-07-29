@@ -176,7 +176,93 @@ const webgl = {
 	drawArraysMode: (mode, first, count) => gl.drawArrays(mode, first, count),
 	drawElementsBytes: (count, byteOffset) =>
 		gl.drawElements(gl.TRIANGLES, count, gl.UNSIGNED_INT, byteOffset),
+
+	// --- Phase W3d: Canvas2D glyph rasterization (1 byte/px alpha, FreeType
+	// conventions: Offset = (bearingX, -ascent)) ---
+	measureGlyph: (ch, px) => {
+		glyphCtx.font = `${px}px sans-serif`;
+		const m = glyphCtx.measureText(ch);
+		const left = Math.ceil(m.actualBoundingBoxLeft);
+		const ascent = Math.ceil(m.actualBoundingBoxAscent);
+		const w = Math.max(1, left + Math.ceil(m.actualBoundingBoxRight));
+		const h = Math.max(1, ascent + Math.ceil(m.actualBoundingBoxDescent));
+		return [w, h, -left, -ascent, Math.round(m.width * 100)];
+	},
+
+	rasterizeGlyph: (ch, px) => {
+		glyphCtx.font = `${px}px sans-serif`;
+		const m = glyphCtx.measureText(ch);
+		const left = Math.ceil(m.actualBoundingBoxLeft);
+		const ascent = Math.ceil(m.actualBoundingBoxAscent);
+		const w = Math.max(1, left + Math.ceil(m.actualBoundingBoxRight));
+		const h = Math.max(1, ascent + Math.ceil(m.actualBoundingBoxDescent));
+		glyphCtx.clearRect(0, 0, glyphCanvas.width, glyphCanvas.height);
+		glyphCtx.fillStyle = '#fff';
+		glyphCtx.fillText(ch, left, ascent);
+		const rgba = glyphCtx.getImageData(0, 0, w, h).data;
+		const alpha = new Uint8Array(w * h);
+		for (let i = 0; i < alpha.length; i++)
+			alpha[i] = rgba[i * 4 + 3];
+		return alpha;
+	},
+
+	// --- Phase W3d: input pump. Records are 8 doubles:
+	// mouse: [1, kind(0 down/1 move/2 up/3 scroll), button, x, y, dx, dy, mods]
+	// key:   [2, kind(0 down/1 up), keycode, mods, charCode, repeat, 0, 0] ---
+	pumpEvents: () => {
+		const flat = new Array(inputQueue.length * 8);
+		for (let i = 0; i < inputQueue.length; i++)
+			for (let j = 0; j < 8; j++)
+				flat[i * 8 + j] = inputQueue[i][j];
+		inputQueue.length = 0;
+		return flat;
+	},
+
+	// Gate helper: dispatch real DOM events so the listener->queue->pump chain
+	// is exercised end to end.
+	synthesizeTestInput: () => {
+		const r = canvas.getBoundingClientRect();
+		const opts = { bubbles: true, clientX: r.left + 30, clientY: r.top + 40, button: 0 };
+		canvas.dispatchEvent(new MouseEvent('mousedown', opts));
+		canvas.dispatchEvent(new MouseEvent('mouseup', opts));
+		window.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'a' }));
+	},
 };
+
+// Glyph scratch canvas (Phase W3d).
+const glyphCanvas = document.createElement('canvas');
+glyphCanvas.width = 256;
+glyphCanvas.height = 256;
+const glyphCtx = glyphCanvas.getContext('2d', { willReadFrequently: true });
+
+// Input capture (Phase W3d). Engine Modifiers: Shift=1, Alt=2, Ctrl=4, Meta=8.
+// Keycodes follow the engine's SDL-style enum: lowercase ascii for printable
+// keys; arrows are scancode | (1<<30) (pinned from OpenRA.Game Keycode.cs).
+const inputQueue = [];
+const mods = e => (e.shiftKey ? 1 : 0) | (e.altKey ? 2 : 0) | (e.ctrlKey ? 4 : 0) | (e.metaKey ? 8 : 0);
+const keycodeOf = e => {
+	if (e.key.length === 1) {
+		const c = e.key.toLowerCase().charCodeAt(0);
+		if (c >= 32 && c < 127) return c;
+	}
+	switch (e.key) {
+		case 'Enter': return 13;
+		case 'Escape': return 27;
+		case 'ArrowRight': return 79 | (1 << 30);
+		case 'ArrowLeft': return 80 | (1 << 30);
+		case 'ArrowDown': return 81 | (1 << 30);
+		case 'ArrowUp': return 82 | (1 << 30);
+		default: return 0;
+	}
+};
+const buttonFlag = b => (b === 0 ? 1 : b === 2 ? 2 : b === 1 ? 4 : 0);
+canvas.addEventListener('mousedown', e => inputQueue.push([1, 0, buttonFlag(e.button), e.offsetX, e.offsetY, 0, 0, mods(e)]));
+canvas.addEventListener('mousemove', e => inputQueue.push([1, 1, 0, e.offsetX, e.offsetY, e.movementX, e.movementY, mods(e)]));
+canvas.addEventListener('mouseup', e => inputQueue.push([1, 2, buttonFlag(e.button), e.offsetX, e.offsetY, 0, 0, mods(e)]));
+canvas.addEventListener('wheel', e => inputQueue.push([1, 3, 0, e.offsetX, e.offsetY, 0, Math.sign(-e.deltaY), mods(e)]));
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+window.addEventListener('keydown', e => inputQueue.push([2, 0, keycodeOf(e), mods(e), e.key.length === 1 ? e.key.charCodeAt(0) : 0, e.repeat ? 1 : 0, 0, 0]));
+window.addEventListener('keyup', e => inputQueue.push([2, 1, keycodeOf(e), mods(e), 0, 0, 0, 0]));
 
 try {
 	const { setModuleImports, getAssemblyExports, getConfig, runMain } = await dotnet.create();

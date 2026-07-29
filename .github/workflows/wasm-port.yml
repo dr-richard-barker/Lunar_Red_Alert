@@ -91,6 +91,7 @@ jobs:
           grep -q "W3a SUCCESS" wasm-browser.log
           grep -q "W3b SUCCESS" wasm-browser.log
           grep -q "W3c SUCCESS" wasm-browser.log
+          grep -q "W3d SUCCESS" wasm-browser.log
 
       - name: Upload probe logs & payload
         if: always()

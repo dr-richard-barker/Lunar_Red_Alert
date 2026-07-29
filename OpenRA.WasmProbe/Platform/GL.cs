@@ -137,5 +137,15 @@ namespace OpenRA.Platforms.Browser
 
 		[JSImport("getError", "webgl.js")]
 		internal static partial int GetError();
+
+		// --- Phase W3d: fonts + input ---
+		[JSImport("measureGlyph", "webgl.js")]
+		internal static partial int[] MeasureGlyph(string ch, int pixelSize);
+
+		[JSImport("rasterizeGlyph", "webgl.js")]
+		internal static partial byte[] RasterizeGlyph(string ch, int pixelSize);
+
+		[JSImport("pumpEvents", "webgl.js")]
+		internal static partial double[] PumpEvents();
 	}
 }

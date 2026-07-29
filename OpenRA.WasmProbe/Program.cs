@@ -63,6 +63,7 @@ namespace OpenRA.WasmProbe
 			if (WebGL.HasDocument())
 			{
 				QuadDemo.Run();
+				InputFontDemo.Run();
 				PlatformDemo.Run();
 			}
 			else
