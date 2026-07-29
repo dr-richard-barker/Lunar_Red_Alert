@@ -78,6 +78,13 @@ namespace OpenRA.WasmProbe
 
 			var widgetNames = string.Join(", ", Ui.Root.Children.Select(w => w.Id ?? w.GetType().Name).Take(5));
 			Console.WriteLine($"[probe] W3i-c SUCCESS: full menu attempt booted mod '{bootedMod}' with {rootWidgets} root widgets ({widgetNames}) and rendered a UI frame in-browser");
+
+			// W4a: with the freeware content staged, the boot must NOT divert
+			// to the content installer — the real game menu boots directly.
+			if (bootedMod == "spaceage")
+				Console.WriteLine($"[probe] W4a SUCCESS: content installed — the real game menu booted (mod 'spaceage', {rootWidgets} widgets, shellmap world included)");
+			else
+				Console.WriteLine($"[probe] W4a note: boot diverted to '{bootedMod}' — content missing or check failed");
 		}
 	}
 }

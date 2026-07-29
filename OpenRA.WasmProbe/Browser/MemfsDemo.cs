@@ -36,8 +36,12 @@ namespace OpenRA.WasmProbe
 			foreach (var line in (await WebGL.FetchText("probe-data/dir-list.txt")).Split('\n'))
 			{
 				var dir = line.Trim();
-				if (dir.Length > 0)
-					Directory.CreateDirectory(Path.Combine(Root, dir));
+				if (dir.Length == 0)
+					continue;
+
+				Directory.CreateDirectory(dir.StartsWith("supportdir/", StringComparison.Ordinal)
+					? Path.Combine("/home/web_user/.openra/", dir["supportdir/".Length..])
+					: Path.Combine(Root, dir));
 			}
 
 			// Stage every probe-data file into MEMFS under /openra/.
@@ -48,10 +52,17 @@ namespace OpenRA.WasmProbe
 				if (path.Length == 0 || path.EndsWith("-list.txt", StringComparison.Ordinal))
 					continue;
 
-				var target = Path.Combine(Root, path);
+				// W4a: content lands under the user support dir (where the ra
+				// manifest's ^SupportDir|Content/ra/v2 mounts expect it).
+				// Hardcoded Emscripten home (proven by W3f recon) because
+				// touching Platform.SupportDir here would lock EngineDir
+				// before the override below.
+				var target = path.StartsWith("supportdir/", StringComparison.Ordinal)
+					? Path.Combine("/home/web_user/.openra/", path["supportdir/".Length..])
+					: Path.Combine(Root, path);
 				Directory.CreateDirectory(Path.GetDirectoryName(target));
 
-				// Binary-safe staging (fonts/PNGs would corrupt through text).
+				// Binary-safe staging (fonts/PNGs/.mix would corrupt through text).
 				File.WriteAllBytes(target, await WebGL.FetchBinary($"probe-data/{path}"));
 				staged++;
 			}

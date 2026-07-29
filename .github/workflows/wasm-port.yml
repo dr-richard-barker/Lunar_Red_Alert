@@ -60,10 +60,20 @@ jobs:
           # including empty dirs (e.g. uibits) that the manifest Folder-mounts.
           # W3i-b adds binaries: fonts (.ttf) and chrome/logo art (.png).
           rsync -a --include='*/' --include='*.yaml' --include='*.ftl' --include='*.lua' \
-            --include='*.ttf' --include='*.png' --exclude='*' \
+            --include='*.ttf' --include='*.png' --include='*.oramap' --exclude='*' \
             mods/ra mods/ra-content mods/common mods/spaceage "$WWWROOT/probe-data/mods/"
           # W3i: engine shaders — the Renderer compiles these from EngineDir/glsl.
           cp glsl/*.vert glsl/*.frag "$WWWROOT/probe-data/glsl/"
+          # W4a: RA freeware content via OpenRA's own quickinstall channel
+          # (SHA1-pinned zip from the official mirror list — the same download
+          # every desktop OpenRA install performs). Staged to the SupportDir
+          # content path the ra manifest expects.
+          MIRROR=$(curl -fsSL https://www.openra.net/packages/ra-quickinstall-mirrors.txt | grep -m1 '^http')
+          echo "content mirror: $MIRROR"
+          curl -fsSL "$MIRROR" -o /tmp/ra-quickinstall.zip
+          echo "44241f68e69db9511db82cf83c174737ccda300b  /tmp/ra-quickinstall.zip" | sha1sum -c
+          mkdir -p "$WWWROOT/probe-data/supportdir/Content/ra/v2"
+          unzip -q -o /tmp/ra-quickinstall.zip -d "$WWWROOT/probe-data/supportdir/Content/ra/v2/"
           # File + dir manifests so the probe can restage into MEMFS.
           (cd "$WWWROOT/probe-data" && find . -type f | sed 's|^\./||' > file-list.txt)
           (cd "$WWWROOT/probe-data" && find . -type d | sed 's|^\./||' | grep -v '^$' > dir-list.txt)
@@ -117,6 +127,7 @@ jobs:
           grep -q "W3i SUCCESS" wasm-browser.log
           grep -q "W3i-b SUCCESS" wasm-browser.log
           grep -q "W3i-c SUCCESS" wasm-browser.log
+          grep -q "W4a SUCCESS" wasm-browser.log
 
       - name: Upload probe logs & payload
         if: always()
@@ -126,7 +137,7 @@ jobs:
           path: |
             wasm-publish.log
             wasm-browser.log
+            wasm-run.log
             wasm-screenshot.png
-            bin/publish
           if-no-files-found: warn
           retention-days: 7
