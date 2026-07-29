@@ -43,6 +43,24 @@ namespace OpenRA.WasmProbe
 			Game.Renderer = new Renderer(platform, Game.Settings.Graphics, manifest.RendererConstants.VertexBatchSize);
 			Game.Sound = new Sound(platform, Game.Settings.Sound);
 
+			// Diagnostic (cheap, cannot hang): confirm the staged freeware
+			// content is where the ra manifest's content check expects it.
+			var contentDir = Path.Combine(Platform.SupportDir, "Content", "ra", "v2");
+			Console.WriteLine($"[play] diag: content dir exists = {Directory.Exists(contentDir)} ({contentDir})");
+			if (Directory.Exists(contentDir))
+			{
+				var files = Directory.GetFiles(contentDir);
+				Console.WriteLine($"[play] diag: {files.Length} files in Content/ra/v2");
+				foreach (var f in files)
+					Console.WriteLine($"[play] diag: file = {Path.GetFileName(f)}");
+			}
+
+			foreach (var f in new[] { "allies.mix", "conquer.mix", "temperat.mix" })
+			{
+				var p = Path.Combine(contentDir, f);
+				Console.WriteLine($"[play] diag: File.Exists({f}) = {File.Exists(p)}");
+			}
+
 			Console.WriteLine("[play] booting Lunar Red Alert…");
 			Game.InitializeMod(manifest, Arguments.Empty);
 			Console.WriteLine($"[play] boot complete — active mod '{Game.ModData?.Manifest.Id}'");
