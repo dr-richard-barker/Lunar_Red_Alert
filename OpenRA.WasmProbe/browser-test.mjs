@@ -26,7 +26,11 @@ while (Date.now() < deadline && !ok && !failed) {
 		await new Promise(r => setTimeout(r, 500));
 }
 
-await page.screenshot({ path: 'wasm-screenshot.png' });
+try {
+	await page.screenshot({ path: 'wasm-screenshot.png', timeout: 15000 });
+} catch {
+	console.error('[driver] screenshot unavailable (page busy)');
+}
 await browser.close();
 
 if (ok) {

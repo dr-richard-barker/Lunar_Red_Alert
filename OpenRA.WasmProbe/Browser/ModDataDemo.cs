@@ -93,22 +93,9 @@ namespace OpenRA.WasmProbe
 				throw;
 			}
 
-			// Stretch (non-gating): how far does the full default ruleset get?
-			try
-			{
-				var rules = modData.DefaultRules;
-				Console.WriteLine($"[probe] stretch: DefaultRules loaded {rules.Actors.Count} actors");
-			}
-			catch (Exception e)
-			{
-				Console.WriteLine($"[probe] stretch: DefaultRules not yet loadable ({e.GetType().Name}: {FirstLine(e.Message)}) — expected until art/content stages exist");
-			}
-		}
-
-		static string FirstLine(string s)
-		{
-			var i = s.IndexOf('\n');
-			return i < 0 ? s : s[..i];
+			// (A former non-gating DefaultRules "stretch" probe lived here; with
+			// game content staged it ground the single wasm thread for minutes.
+			// The real full boot is exercised by MenuDemo's Game.InitializeMod.)
 		}
 	}
 }
