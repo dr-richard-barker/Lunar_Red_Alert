@@ -125,16 +125,18 @@ namespace OpenRA
 			}
 
 			// PERF: Load the mod YAML once outside the loop, and reuse it when resolving each maps custom YAML.
+			Console.WriteLine("[diag] LoadMaps: about to call GetRulesYaml()");
 			var modDataRules = modData.GetRulesYaml();
+			Console.WriteLine("[diag] LoadMaps: GetRulesYaml() done, entering per-map loop");
 			var diagMapCount = 0;
 			var diagStart = DateTime.UtcNow;
 			foreach (var kv in MapLocations)
 				foreach (var map in kv.Key.Contents)
 				{
+					Console.WriteLine($"[diag] LoadMaps: starting map '{map}' (#{diagMapCount})");
 					LoadMapInternal(map, kv.Key, kv.Value, null, gridType, modDataRules);
 					diagMapCount++;
-					if (diagMapCount % 10 == 0)
-						Console.WriteLine($"[diag] LoadMaps progress: {diagMapCount} maps, {(DateTime.UtcNow - diagStart).TotalSeconds:F1}s elapsed");
+					Console.WriteLine($"[diag] LoadMaps: finished map #{diagMapCount}, {(DateTime.UtcNow - diagStart).TotalSeconds:F1}s elapsed");
 				}
 
 			Console.WriteLine($"[diag] LoadMaps done: {diagMapCount} maps total, {(DateTime.UtcNow - diagStart).TotalSeconds:F1}s elapsed");
