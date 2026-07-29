@@ -784,6 +784,11 @@ namespace OpenRA
 		// count, or -1 when no world is loaded, so hosts can observe the sim.
 		static long browserNextLogic = -1;
 
+		// Browser/WebAssembly support: embedding hosts need to observe (and,
+		// for testing, drive) the active world; the desktop UI reaches it via
+		// internal statics.
+		public static World ActiveWorld => worldRenderer?.World;
+
 		public static int PerformBrowserFrame()
 		{
 			if (browserNextLogic < 0)
