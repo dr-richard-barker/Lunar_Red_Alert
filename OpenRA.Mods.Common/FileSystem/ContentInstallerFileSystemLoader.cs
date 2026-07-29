@@ -9,6 +9,7 @@
  */
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 
@@ -80,8 +81,12 @@ namespace OpenRA.Mods.Common.FileSystem
 					{
 						fileSystem.Mount(kv.Key, kv.Value);
 					}
-					catch
+					catch (Exception e)
 					{
+						// TEMP DEBUG (Lunar Red Alert wasm boot-hang investigation):
+						// identify exactly which ContentPackages entry fails to
+						// mount in-browser. Remove once root-caused.
+						Console.WriteLine($"[engine-diag] ContentPackages mount FAILED for '{kv.Key}' (alias '{kv.Value}'): {e.GetType().Name}: {e.Message}");
 						isContentAvailable = false;
 					}
 				}
