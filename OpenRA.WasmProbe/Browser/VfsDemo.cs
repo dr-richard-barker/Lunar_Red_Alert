@@ -62,26 +62,66 @@ namespace OpenRA.WasmProbe
 
 			// ObjectCreator over the manifest's assembly list (Mods.Common +
 			// Mods.Cnc resolve via the resident-assembly fallback in-wasm).
-			var objectCreator = new ObjectCreator(manifest, null);
-			var oxygenType = objectCreator.FindType("OxygenInfo");
-			if (oxygenType == null)
-				throw new InvalidOperationException("ObjectCreator cannot resolve OxygenInfo from resident assemblies");
+			// Step-labelled with full exception dumps: wasm trims exception
+			// resource strings, so we must surface our own diagnostics.
+			ObjectCreator objectCreator;
+			try
+			{
+				objectCreator = new ObjectCreator(manifest, null);
+				Console.WriteLine("[probe] step: ObjectCreator constructed");
+				var oxygenType = objectCreator.FindType("OxygenInfo");
+				Console.WriteLine($"[probe] step: FindType(OxygenInfo) -> {oxygenType?.FullName ?? "NULL"}");
+				if (oxygenType == null)
+					throw new InvalidOperationException("ObjectCreator cannot resolve OxygenInfo from resident assemblies");
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine($"[probe] STEP-FAIL ObjectCreator: {e}");
+				throw;
+			}
 
 			// Merge EVERY rules file the manifest lists, through the VFS —
 			// the same load the desktop game performs (Inherits included).
-			var sources = manifest.Rules.Select(path =>
+			System.Collections.Generic.List<MiniYamlNode> merged;
+			try
 			{
-				using var stream = fileSystem.Open(path);
-				return (System.Collections.Generic.IEnumerable<MiniYamlNode>)MiniYaml.FromStream(stream, path).ToList();
-			}).ToList();
+				var sources = new System.Collections.Generic.List<System.Collections.Generic.IEnumerable<MiniYamlNode>>();
+				foreach (var path in manifest.Rules)
+				{
+					using var stream = fileSystem.Open(path);
+					if (stream == null)
+						throw new InvalidOperationException($"VFS returned null stream for {path}");
 
-			var merged = MiniYaml.Merge(sources);
+					sources.Add(MiniYaml.FromStream(stream, path).ToList());
+				}
+
+				Console.WriteLine($"[probe] step: {sources.Count} rule files loaded via VFS");
+				merged = MiniYaml.Merge(sources);
+				Console.WriteLine($"[probe] step: merged {merged.Count} top-level nodes");
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine($"[probe] STEP-FAIL rules load/merge: {e}");
+				throw;
+			}
+
 			var e1Node = merged.First(n => n.Key == "E1");
 
 			// Materialize the actor: every trait yaml node becomes a live
 			// TraitInfo instance via the engine's FieldLoader.
-			var actor = new ActorInfo(objectCreator, "e1", e1Node.Value);
-			var traits = actor.TraitInfos<TraitInfo>().ToList();
+			System.Collections.Generic.List<TraitInfo> traits;
+			ActorInfo actor;
+			try
+			{
+				actor = new ActorInfo(objectCreator, "e1", e1Node.Value);
+				traits = actor.TraitInfos<TraitInfo>().ToList();
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine($"[probe] STEP-FAIL ActorInfo('e1'): {e}");
+				Console.WriteLine($"[probe] E1 trait keys were: {string.Join(", ", e1Node.Value.Nodes.Select(n => n.Key))}");
+				throw;
+			}
 
 			var oxygen = actor.TraitInfoOrDefault<OpenRA.Mods.Common.Traits.OxygenInfo>();
 			if (oxygen == null)
