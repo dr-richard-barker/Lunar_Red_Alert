@@ -8,6 +8,11 @@ on:
     paths:
       - 'OpenRA.WasmProbe/**'
       - '.github/workflows/wasm-port.yml'
+      # The port compiles the engine + mods into the bundle, so their changes
+      # must re-run the wasm gates too.
+      - 'OpenRA.Game/**'
+      - 'OpenRA.Mods.Common/**'
+      - 'OpenRA.Mods.Cnc/**'
 
 permissions:
   contents: read
