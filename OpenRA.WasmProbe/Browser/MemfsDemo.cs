@@ -50,7 +50,9 @@ namespace OpenRA.WasmProbe
 
 				var target = Path.Combine(Root, path);
 				Directory.CreateDirectory(Path.GetDirectoryName(target));
-				File.WriteAllText(target, await WebGL.FetchText($"probe-data/{path}"));
+
+				// Binary-safe staging (fonts/PNGs would corrupt through text).
+				File.WriteAllBytes(target, await WebGL.FetchBinary($"probe-data/{path}"));
 				staged++;
 			}
 

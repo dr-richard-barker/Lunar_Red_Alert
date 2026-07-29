@@ -114,10 +114,13 @@ namespace OpenRA.WasmProbe
 			// must select the browser backend by assembly name.
 			// 9. Phase W3i-a (browser only): the engine's real Renderer over
 			// BrowserPlatform — glsl shaders compiled, frame cycle completed.
+			// 10. Phase W3i-b (browser only): the game's real load screen via
+			// the engine sprite pipeline — runs last for the CI screenshot.
 			if (WebGL.HasDocument())
 			{
 				PlatformSeamDemo.Run();
 				RendererDemo.Run();
+				LoadScreenDemo.Run();
 			}
 
 			Console.WriteLine("[probe] SUCCESS: OpenRA.Game core executes under the .NET wasm runtime");

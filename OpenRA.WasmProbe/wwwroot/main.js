@@ -24,6 +24,19 @@ const webgl = {
 		return r.text();
 	},
 
+	// Phase W3i-b: binary fetch as base64 (fonts, PNGs, later .mix content).
+	fetchBase64: async url => {
+		const r = await fetch(url);
+		if (!r.ok)
+			throw new Error(`fetch ${url} -> HTTP ${r.status}`);
+		const buf = new Uint8Array(await r.arrayBuffer());
+		let s = '';
+		const chunk = 0x8000;
+		for (let i = 0; i < buf.length; i += chunk)
+			s += String.fromCharCode.apply(null, buf.subarray(i, i + chunk));
+		return btoa(s);
+	},
+
 	init: (w, h) => {
 		canvas.width = w;
 		canvas.height = h;

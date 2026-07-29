@@ -23,6 +23,9 @@ namespace OpenRA.WasmProbe
 	// (Game.Settings + Game.ModData) to have run.
 	internal static class RendererDemo
 	{
+		// Reused by LoadScreenDemo (Sound construction) — same platform instance.
+		internal static IPlatform CreatedPlatform;
+
 		sealed class NullInputHandler : IInputHandler
 		{
 			public void ModifierKeys(Modifiers mods) { }
@@ -34,6 +37,7 @@ namespace OpenRA.WasmProbe
 		public static void Run()
 		{
 			var platform = Game.CreatePlatform("Browser");
+			CreatedPlatform = platform;
 			Renderer renderer;
 			try
 			{

@@ -14,6 +14,8 @@ try {
 		// W3a under Node: same contract as the browser's fetch(), served from disk
 		// (cwd is the published wwwroot, where CI stages probe-data/).
 		fetchText: async url => readFile(url, 'utf8'),
+		// W3i-b: binary as base64, matching the browser host.
+		fetchBase64: async url => (await readFile(url)).toString('base64'),
 	});
 	await dotnet.run();
 	console.log('[noderun] wasm runtime exited cleanly');

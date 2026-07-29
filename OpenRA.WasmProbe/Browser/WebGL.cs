@@ -9,6 +9,7 @@
  */
 #endregion
 
+using System;
 using System.Runtime.InteropServices.JavaScript;
 using System.Threading.Tasks;
 
@@ -33,6 +34,15 @@ namespace OpenRA.WasmProbe
 		// Phase W3d gate helper: dispatches real DOM mouse/key events.
 		[JSImport("synthesizeTestInput", "webgl.js")]
 		internal static partial void SynthesizeTestInput();
+
+		// Phase W3i-b: binary fetch via base64 (fonts, PNGs, later .mix).
+		[JSImport("fetchBase64", "webgl.js")]
+		internal static partial Task<string> FetchBase64(string url);
+
+		internal static async Task<byte[]> FetchBinary(string url)
+		{
+			return Convert.FromBase64String(await FetchBase64(url));
+		}
 
 		[JSImport("init", "webgl.js")]
 		internal static partial int Init(int width, int height);
