@@ -107,6 +107,33 @@ namespace OpenRA.WasmProbe
 				Console.WriteLine($"[play] diag3: stack: {ex.StackTrace}");
 			}
 
+			// Diagnostic #4: test EVERY required (non-optional) ContentPackage
+			// entry from mod.yaml individually -- diag3 only proved allies.mix
+			// works; one of the other 8 is the actual failure.
+			try
+			{
+				var diagObjectCreator2 = new ObjectCreator(manifest, installed);
+				var loaders2 = diagObjectCreator2.GetLoaders<OpenRA.FileSystem.IPackageLoader>(manifest.PackageFormats, "package");
+				var tempFs3 = new OpenRA.FileSystem.FileSystem("diag3", null, loaders2);
+				tempFs3.Mount(engineResolvedContentPath, "content");
+				foreach (var file in new[] { "allies.mix", "conquer.mix", "interior.mix", "lores.mix", "local.mix", "russian.mix", "snow.mix", "sounds.mix", "temperat.mix" })
+				{
+					try
+					{
+						tempFs3.Mount($"content|{file}");
+						Console.WriteLine($"[play] diag4: content|{file} -> OK");
+					}
+					catch (Exception fileEx)
+					{
+						Console.WriteLine($"[play] diag4: content|{file} -> FAILED: {fileEx.GetType().Name}: {fileEx.Message}");
+					}
+				}
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"[play] diag4: setup THREW: {ex.GetType().FullName}: {ex.Message}");
+			}
+
 			Console.WriteLine("[play] booting Lunar Red Alert…");
 			Game.InitializeMod(manifest, Arguments.Empty);
 			Console.WriteLine($"[play] boot complete — active mod '{Game.ModData?.Manifest.Id}'");
