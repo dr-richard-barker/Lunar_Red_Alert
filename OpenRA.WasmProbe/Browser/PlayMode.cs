@@ -134,6 +134,34 @@ namespace OpenRA.WasmProbe
 				Console.WriteLine($"[play] diag4: setup THREW: {ex.GetType().FullName}: {ex.Message}");
 			}
 
+			// Diagnostic #5 (definitive): replicate ModData's EXACT
+			// FileSystemLoader construction sequence verbatim (same calls, same
+			// order: GetLoaders<IPackageLoader> -> new FS(...) ->
+			// GetLoader<IFileSystemLoader> -> FieldLoader.Load -> Mount), then
+			// read the loader's private isContentAvailable field via
+			// reflection. diag2-4 each independently succeeded, so the
+			// remaining explanation is a subtle difference between my manual
+			// reimplementation and the real loader's own bookkeeping --this
+			// stops guessing and asks the real object directly.
+			try
+			{
+				var diagOc5 = new ObjectCreator(manifest, installed);
+				var diagPackageLoaders5 = diagOc5.GetLoaders<OpenRA.FileSystem.IPackageLoader>(manifest.PackageFormats, "package");
+				var diagModFiles5 = new OpenRA.FileSystem.FileSystem(manifest.Id, installed, diagPackageLoaders5);
+				var diagLoader5 = diagOc5.GetLoader<OpenRA.FileSystem.IFileSystemLoader>(manifest.FileSystem.Value, "filesystem");
+				FieldLoader.Load(diagLoader5, manifest.FileSystem);
+				diagLoader5.Mount(manifest, diagModFiles5, diagOc5);
+
+				var isContentAvailableField = diagLoader5.GetType().GetField("isContentAvailable", BindingFlags.NonPublic | BindingFlags.Instance);
+				var value = isContentAvailableField?.GetValue(diagLoader5);
+				Console.WriteLine($"[play] diag5: REAL loader ({diagLoader5.GetType().Name}) isContentAvailable = {value?.ToString() ?? "(field not found)"}");
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"[play] diag5: THREW: {ex.GetType().FullName}: {ex.Message}");
+				Console.WriteLine($"[play] diag5: stack: {ex.StackTrace}");
+			}
+
 			Console.WriteLine("[play] booting Lunar Red Alert…");
 			Game.InitializeMod(manifest, Arguments.Empty);
 			Console.WriteLine($"[play] boot complete — active mod '{Game.ModData?.Manifest.Id}'");
