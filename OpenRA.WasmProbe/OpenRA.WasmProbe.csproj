@@ -8,11 +8,14 @@
          closure of OpenRA.Game compile/link against the browser runtime. -->
     <PublishTrimmed>false</PublishTrimmed>
     <RunAOTCompilation>false</RunAOTCompilation>
-    <!-- Required for the [JSImport] source generator to emit its (unsafe)
-         marshalling stubs; without it every binding fails with CS8795. -->
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\OpenRA.Game\OpenRA.Game.csproj" />
   </ItemGroup>
+  <!-- Directory.Build.props removes ALL analyzers on Release builds to speed up
+       compiles — but source generators (including the [JSImport] generator) run
+       inside the analyzer host, so that leaves every [JSImport] partial method
+       without an implementation (CS8795). Neutralize that target for this
+       project only: a same-named target defined later wins. -->
+  <Target Name="DisableAnalyzers" />
 </Project>
