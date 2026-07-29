@@ -124,3 +124,25 @@ verdict → iterate.
   Platform senses complete: draw ✅ text ✅ input ✅ (sound = silent stub).
   Remaining for W3-full: in-memory VFS packages + Game.Initialize boot
   sequence against HTTP-staged content (the big one), then W4 playable.
+- **2026-07-29: W3e PROVEN.** The engine's real VFS + rules pipeline in-wasm:
+  MemoryPackage (IReadOnlyPackage) staged from host fetch -> engine
+  FileSystem.Mount with ra|/spaceage| pipe resolution -> real Manifest ->
+  ObjectCreator -> all 20 manifest rule files loaded via the VFS ->
+  MiniYaml.Merge produced 375 top-level nodes with Inherits resolved (E1
+  carries 98 traits incl. our overlays) -> live TraitInfos materialized and
+  field-verified (Oxygen 5000/3, DamagedByVacuum 350, 2x GravitySpeedModifier).
+  TWO ENGINE EDITS landed (both desktop-green in CI): ObjectCreator.LoadAssembly
+  now prefers resident assemblies, then falls back to Assembly.Load(simpleName)
+  when the loose file is absent (bundled wasm assemblies resolve by name; note
+  assemblies also load LAZILY — an unreferenced assembly isn't resident).
+  BOOT-ORDER FINDING: full-actor materialization needs the STATIC Game.ModData
+  (e.g. HitShapeInfo.LoadShape -> Game.CreateObject<IHitShape>), so it's
+  deferred to W3g once ModData exists. Workflow now also triggers on
+  OpenRA.Game/Mods.Common/Mods.Cnc paths (an engine-only fix previously
+  skipped the wasm gates entirely).
+  Road ahead: W3f = stage mod tree into Emscripten MEMFS via File.WriteAllBytes
+  so the engine's standard folder mounting runs unmodified; W3g = construct
+  ModData + set Game.ModData (unlocks full-actor assertion); W3h = platform
+  DLL resolution seam in Game.Initialize (same resident/Assembly.Load
+  treatment) so BrowserPlatform is selectable; W3i = menu attempt (the
+  content-installer screen renders from repo-only assets — no EA .mix needed).
