@@ -89,6 +89,93 @@ const webgl = {
 	},
 
 	getError: () => gl.getError(),
+
+	// --- Phase W3c: full platform-layer surface (OpenRA.Platforms.Browser) ---
+	getCanvasSize: () => [canvas.width, canvas.height],
+	viewport: (x, y, w, h) => gl.viewport(x, y, w, h),
+	clearAll: () => gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT),
+	clearDepth: () => gl.clear(gl.DEPTH_BUFFER_BIT),
+	depthEnable: () => { gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LEQUAL); },
+	depthDisable: () => gl.disable(gl.DEPTH_TEST),
+	scissorEnable: (x, y, w, h) => { gl.enable(gl.SCISSOR_TEST); gl.scissor(x, y, w, h); },
+	scissorDisable: () => gl.disable(gl.SCISSOR_TEST),
+
+	// BlendMode enum order: None, Alpha, Additive, Subtractive, Multiply,
+	// Multiplicative, DoubleMultiplicative, LowAdditive, Screen, Translucent.
+	blendMode: mode => {
+		if (mode === 0) { gl.disable(gl.BLEND); return; }
+		gl.enable(gl.BLEND);
+		gl.blendEquation(mode === 3 ? gl.FUNC_REVERSE_SUBTRACT : gl.FUNC_ADD);
+		switch (mode) {
+			case 1: gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA); break;
+			case 2: case 3: gl.blendFunc(gl.ONE, gl.ONE); break;
+			case 4: gl.blendFunc(gl.DST_COLOR, gl.ZERO); break;
+			case 5: gl.blendFunc(gl.DST_COLOR, gl.ONE_MINUS_SRC_ALPHA); break;
+			case 6: gl.blendFunc(gl.DST_COLOR, gl.SRC_COLOR); break;
+			case 7: gl.blendFunc(gl.SRC_ALPHA, gl.ONE); break;
+			case 8: gl.blendFunc(gl.ONE_MINUS_DST_COLOR, gl.ONE); break;
+			case 9: gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); break;
+			default: gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA); break;
+		}
+	},
+
+	bufferDataSize: (size, dynamic) =>
+		gl.bufferData(gl.ARRAY_BUFFER, size, dynamic ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW),
+	bufferDataBytes: (bytes, dynamic) =>
+		gl.bufferData(gl.ARRAY_BUFFER, new Uint8Array(bytes), dynamic ? gl.DYNAMIC_DRAW : gl.STATIC_DRAW),
+	bufferSubDataBytes: (byteOffset, bytes) =>
+		gl.bufferSubData(gl.ARRAY_BUFFER, byteOffset, new Uint8Array(bytes)),
+	bindElementBuffer: b => gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, handles.get(b)),
+	elementBufferData: indices =>
+		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(indices), gl.STATIC_DRAW),
+
+	attribPointer: (p, name, components, glType, stride, offset) => {
+		const loc = gl.getAttribLocation(handles.get(p), name);
+		if (loc < 0) return;
+		gl.enableVertexAttribArray(loc);
+		gl.vertexAttribPointer(loc, components, glType, false, stride, offset);
+	},
+	attribIPointer: (p, name, components, glType, stride, offset) => {
+		const loc = gl.getAttribLocation(handles.get(p), name);
+		if (loc < 0) return;
+		gl.enableVertexAttribArray(loc);
+		gl.vertexAttribIPointer(loc, components, glType, stride, offset);
+	},
+
+	getUniform: (p, name) => {
+		const loc = gl.getUniformLocation(handles.get(p), name);
+		return loc ? keep(loc) : 0;
+	},
+	uniform1i: (loc, v) => { if (loc) gl.uniform1i(handles.get(loc), v); },
+	uniform1f: (loc, v) => { if (loc) gl.uniform1f(handles.get(loc), v); },
+	uniform2f: (loc, x, y) => { if (loc) gl.uniform2f(handles.get(loc), x, y); },
+	uniform3f: (loc, x, y, z) => { if (loc) gl.uniform3f(handles.get(loc), x, y, z); },
+	uniform1fv: (loc, v) => { if (loc) gl.uniform1fv(handles.get(loc), new Float32Array(v)); },
+	uniformMatrix4fv: (loc, v) => { if (loc) gl.uniformMatrix4fv(handles.get(loc), false, new Float32Array(v)); },
+	activeTexture: unit => gl.activeTexture(gl.TEXTURE0 + unit),
+	texFilter: linear => {
+		const f = linear ? gl.LINEAR : gl.NEAREST;
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, f);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, f);
+	},
+
+	createFramebufferTex: (w, h) => {
+		const tex = gl.createTexture();
+		gl.bindTexture(gl.TEXTURE_2D, tex);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+		const fb = gl.createFramebuffer();
+		gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+		return [keep(fb), keep(tex)];
+	},
+	bindFramebuffer: fb => gl.bindFramebuffer(gl.FRAMEBUFFER, fb ? handles.get(fb) : null),
+
+	drawArraysMode: (mode, first, count) => gl.drawArrays(mode, first, count),
+	drawElementsBytes: (count, byteOffset) =>
+		gl.drawElements(gl.TRIANGLES, count, gl.UNSIGNED_INT, byteOffset),
 };
 
 try {

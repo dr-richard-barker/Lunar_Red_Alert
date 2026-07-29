@@ -58,10 +58,15 @@ namespace OpenRA.WasmProbe
 
 			// 3. Phase W2 (browser host only): WebGL2 clear + textured quad,
 			// pixel-verified. Under Node the stub module reports no DOM.
+			// Phase W3c: the same frame again, but through OpenRA's own
+			// IPlatform/IGraphicsContext contracts (Platform/ directory).
 			if (WebGL.HasDocument())
+			{
 				QuadDemo.Run();
+				PlatformDemo.Run();
+			}
 			else
-				Console.WriteLine("[probe] no DOM host - skipping W2 WebGL check (expected under Node)");
+				Console.WriteLine("[probe] no DOM host - skipping WebGL checks (expected under Node)");
 
 			// 4. Phase W3a: fetch REAL mod files (staged under probe-data/ by CI)
 			// and push them through the real engine loaders — the same
