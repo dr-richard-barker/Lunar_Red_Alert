@@ -29,12 +29,22 @@ namespace OpenRA.WasmProbe
 
 		public static async Task Run()
 		{
+			// Recreate the full directory skeleton first: the manifest
+			// Folder-mounts some dirs that hold no text assets (e.g. uibits),
+			// and a mount of a missing dir fails.
+			foreach (var line in (await WebGL.FetchText("probe-data/dir-list.txt")).Split('\n'))
+			{
+				var dir = line.Trim();
+				if (dir.Length > 0)
+					Directory.CreateDirectory(Path.Combine(Root, "mods", dir));
+			}
+
 			// Stage every probe-data file into MEMFS under /openra/mods/.
 			var staged = 0;
 			foreach (var line in (await WebGL.FetchText("probe-data/file-list.txt")).Split('\n'))
 			{
 				var path = line.Trim();
-				if (path.Length == 0)
+				if (path.Length == 0 || path.EndsWith("-list.txt", StringComparison.Ordinal))
 					continue;
 
 				var target = Path.Combine(Root, "mods", path);

@@ -106,6 +106,10 @@ namespace OpenRA.WasmProbe
 			// wasm in-memory filesystem. Host-agnostic.
 			await MemfsDemo.Run();
 
+			// 7. Phase W3g: live ModData over the MEMFS tree + the static
+			// Game.ModData, unlocking full-actor materialization.
+			ModDataDemo.Run();
+
 			Console.WriteLine("[probe] SUCCESS: OpenRA.Game core executes under the .NET wasm runtime");
 		}
 	}
