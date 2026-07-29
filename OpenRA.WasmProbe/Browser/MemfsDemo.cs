@@ -11,67 +11,69 @@
 
 using System;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace OpenRA.WasmProbe
 {
-	// Phase W3f milestone: make the browser look like a disk. The .NET wasm
-	// runtime ships Emscripten's in-memory filesystem (MEMFS), so instead of
-	// porting the engine's mounting machinery, we stage the fetched mod tree
-	// with plain System.IO and let the STANDARD path run unmodified:
+	// Phase W3f: make the browser look like a disk. The .NET wasm runtime
+	// ships Emscripten's in-memory filesystem (MEMFS), so instead of porting
+	// the engine's mounting machinery, we stage the game tree with plain
+	// System.IO and let the STANDARD path run unmodified:
 	//   Platform.OverrideEngineDir -> "^EngineDir|mods/..." string mounts ->
 	//   FileSystem.OpenPackage -> the engine's real Folder package.
-	// This is the exact chain ModData's FileSystemLoader uses (W3g).
+	//
+	// The tree arrives as ONE zip (CI builds probe-data.zip). Fetching ~730
+	// files individually cost hundreds of serial interop round trips and hung
+	// the page long enough to starve rAF and screenshots.
 	internal static class MemfsDemo
 	{
 		public const string Root = "/openra/";
+		public const string SupportRoot = "/home/web_user/.openra/";
 
 		public static async Task Run()
 		{
-			// Recreate the full directory skeleton first: the manifest
-			// Folder-mounts some dirs that hold no text assets (e.g. uibits),
-			// and a mount of a missing dir fails. probe-data mirrors the
-			// engine root (mods/ + glsl/), staged verbatim under /openra/.
-			foreach (var line in (await WebGL.FetchText("probe-data/dir-list.txt")).Split('\n'))
-			{
-				var dir = line.Trim();
-				if (dir.Length == 0)
-					continue;
+			var archive = await WebGL.FetchBinary("probe-data.zip");
+			Console.WriteLine($"[probe] step: fetched probe-data.zip ({archive.Length / 1024 / 1024} MB)");
 
-				Directory.CreateDirectory(dir.StartsWith("supportdir/", StringComparison.Ordinal)
-					? Path.Combine("/home/web_user/.openra/", dir["supportdir/".Length..])
-					: Path.Combine(Root, dir));
-			}
-
-			// Stage every probe-data file into MEMFS under /openra/.
-			// Game content (supportdir/, ~35 MB of .mix) is only needed by the
-			// browser gates/play mode — the DOM-less Node host skips it, which
-			// cuts minutes of base64 marshalling from every CI run.
-			var stageContent = WebGL.HasDocument();
 			var staged = 0;
-			foreach (var line in (await WebGL.FetchText("probe-data/file-list.txt")).Split('\n'))
+			var skippedContent = 0;
+
+			// Game content (supportdir/) is only needed by the browser gates
+			// and play mode; a DOM-less host (Node) skips it.
+			var stageContent = WebGL.HasDocument();
+
+			using (var zip = new ZipArchive(new MemoryStream(archive), ZipArchiveMode.Read))
 			{
-				var path = line.Trim();
-				if (path.Length == 0 || path.EndsWith("-list.txt", StringComparison.Ordinal))
-					continue;
+				foreach (var entry in zip.Entries)
+				{
+					var name = entry.FullName.Replace('\\', '/').TrimStart('.', '/');
+					if (name.Length == 0 || name.EndsWith('/'))
+						continue;
 
-				if (!stageContent && path.StartsWith("supportdir/", StringComparison.Ordinal))
-					continue;
+					if (!stageContent && name.StartsWith("supportdir/", StringComparison.Ordinal))
+					{
+						skippedContent++;
+						continue;
+					}
 
-				// W4a: content lands under the user support dir (where the ra
-				// manifest's ^SupportDir|Content/ra/v2 mounts expect it).
-				// Hardcoded Emscripten home (proven by W3f recon) because
-				// touching Platform.SupportDir here would lock EngineDir
-				// before the override below.
-				var target = path.StartsWith("supportdir/", StringComparison.Ordinal)
-					? Path.Combine("/home/web_user/.openra/", path["supportdir/".Length..])
-					: Path.Combine(Root, path);
-				Directory.CreateDirectory(Path.GetDirectoryName(target));
+					// Content lands in the user support dir (where the ra
+					// manifest's ^SupportDir|Content mounts expect it); the
+					// rest under the engine dir. SupportRoot is hardcoded from
+					// the W3f recon because touching Platform.SupportDir here
+					// would lock EngineDir before the override below.
+					var target = name.StartsWith("supportdir/", StringComparison.Ordinal)
+						? Path.Combine(SupportRoot, name["supportdir/".Length..])
+						: Path.Combine(Root, name);
 
-				// Binary-safe staging (fonts/PNGs/.mix would corrupt through text).
-				File.WriteAllBytes(target, await WebGL.FetchBinary($"probe-data/{path}"));
-				staged++;
+					Directory.CreateDirectory(Path.GetDirectoryName(target));
+					using (var source = entry.Open())
+					using (var file = File.Create(target))
+						source.CopyTo(file);
+
+					staged++;
+				}
 			}
 
 			// Round-trip sanity: MEMFS must give back what we wrote.
@@ -79,23 +81,14 @@ namespace OpenRA.WasmProbe
 			if (!File.ReadAllText(probePath).Contains("Oxygen"))
 				throw new InvalidOperationException("MEMFS round-trip failed for spaceage-defaults.yaml");
 
-			Console.WriteLine($"[probe] step: {staged} files staged into MEMFS under {Root}mods/");
+			Console.WriteLine($"[probe] step: {staged} files staged into MEMFS ({skippedContent} content files skipped)");
 
 			// ORDER MATTERS: OverrideEngineDir must run before ANY EngineDir
-			// access — and InitializeSupportDir reads EngineDir for its
-			// portable-install check, so even printing SupportDir first would
-			// lock the engine dir (it did: that was this gate's first failure).
+			// access — InitializeSupportDir reads EngineDir for its
+			// portable-install check and would lock it.
 			Platform.OverrideEngineDir(Root);
 			Console.WriteLine($"[probe] step: EngineDir overridden -> '{Platform.EngineDir}'");
-			Console.WriteLine($"[probe] step: Platform.BinDir = '{Platform.BinDir}'");
-			try
-			{
-				Console.WriteLine($"[probe] step: Platform.SupportDir = '{Platform.SupportDir}'");
-			}
-			catch (Exception e)
-			{
-				Console.WriteLine($"[probe] step: Platform.SupportDir threw {e.GetType().Name} (W3g will need a home for settings/logs)");
-			}
+			Console.WriteLine($"[probe] step: Platform.SupportDir = '{Platform.SupportDir}'");
 
 			// Now the ENGINE's standard mount chain, exactly as a manifest uses
 			// it: string names with ^EngineDir prefixes -> Folder packages.
@@ -105,8 +98,7 @@ namespace OpenRA.WasmProbe
 
 			using var stream = fileSystem.Open("spaceage|rules/spaceage-defaults.yaml");
 			var nodes = MiniYaml.FromStream(stream, "spaceage-defaults.yaml").ToList();
-			var soldier = nodes.FirstOrDefault(n => n.Key == "^Soldier");
-			if (soldier == null)
+			if (nodes.All(n => n.Key != "^Soldier"))
 				throw new InvalidOperationException("Folder-mounted spaceage-defaults.yaml did not parse ^Soldier");
 
 			using var raStream = fileSystem.Open("ra|rules/defaults.yaml");

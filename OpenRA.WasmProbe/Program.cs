@@ -107,12 +107,14 @@ namespace OpenRA.WasmProbe
 			// 5. Phase W3e: the full VFS + rules-materialization pipeline —
 			// MemoryPackages -> engine FileSystem -> Manifest -> ObjectCreator
 			// -> ActorInfo with live TraitInfo instances. Host-agnostic.
-			await VfsDemo.Run();
-
-			// 6. Phase W3f: MEMFS staging — the engine's STANDARD folder
-			// mounting (^EngineDir string mounts -> Folder packages) over the
-			// wasm in-memory filesystem. Host-agnostic.
+			// 6. Phase W3f FIRST: stage the game tree into MEMFS from one zip
+			// (the engine's STANDARD folder mounting then runs unmodified).
 			await MemfsDemo.Run();
+
+			// 5. Phase W3e: VFS + rules materialization, reading the staged
+			// tree — MemoryPackages -> engine FileSystem -> Manifest ->
+			// ObjectCreator -> ActorInfo with live TraitInfo instances.
+			await VfsDemo.Run();
 
 			// 7. Phase W3g: live ModData over the MEMFS tree + the static
 			// Game.ModData, unlocking full-actor materialization.

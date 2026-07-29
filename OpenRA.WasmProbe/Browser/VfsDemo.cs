@@ -25,33 +25,32 @@ namespace OpenRA.WasmProbe
 	// asserted down to our Oxygen trait's field values.
 	internal static class VfsDemo
 	{
-		public static async Task Run()
+		public static Task Run()
 		{
-			// Stage both mods' rule trees into memory packages via the host.
+			// Files come from the MEMFS tree MemfsDemo already staged (one zip
+			// fetch); this gate only needs rules + manifests.
 			var spaceagePackage = new MemoryPackage("spaceage");
 			var raPackage = new MemoryPackage("ra");
 			var staged = 0;
-			foreach (var line in (await WebGL.FetchText("probe-data/file-list.txt")).Split('\n'))
+			foreach (var (modId, package) in new[] { ("spaceage", spaceagePackage), ("ra", raPackage) })
 			{
-				var path = line.Trim();
-				if (path.Length == 0)
+				var modRoot = System.IO.Path.Combine(MemfsDemo.Root, "mods", modId);
+				var manifestPath = System.IO.Path.Combine(modRoot, "mod.yaml");
+				if (System.IO.File.Exists(manifestPath))
+				{
+					package.AddText("mod.yaml", System.IO.File.ReadAllText(manifestPath));
+					staged++;
+				}
+
+				var rulesRoot = System.IO.Path.Combine(modRoot, "rules");
+				if (!System.IO.Directory.Exists(rulesRoot))
 					continue;
 
-				// This gate only mounts rules (+ the manifest), so fetch just
-				// those: staging the whole tree here cost ~600 extra interop
-				// round trips per run for files it never opens.
-				if (!path.Contains("/rules/", StringComparison.Ordinal) && !path.EndsWith("/mod.yaml", StringComparison.Ordinal))
-					continue;
-
-				var text = await WebGL.FetchText($"probe-data/{path}");
-				if (path.StartsWith("mods/spaceage/", StringComparison.Ordinal))
-					spaceagePackage.AddText(path["mods/spaceage/".Length..], text);
-				else if (path.StartsWith("mods/ra/", StringComparison.Ordinal))
-					raPackage.AddText(path["mods/ra/".Length..], text);
-				else
-					continue;
-
-				staged++;
+				foreach (var file in System.IO.Directory.GetFiles(rulesRoot, "*.yaml"))
+				{
+					package.AddText($"rules/{System.IO.Path.GetFileName(file)}", System.IO.File.ReadAllText(file));
+					staged++;
+				}
 			}
 
 			Console.WriteLine($"[probe] staged {staged} files into memory packages");
@@ -162,6 +161,7 @@ namespace OpenRA.WasmProbe
 				throw new InvalidOperationException($"Expected 2 GravitySpeedModifiers (LOWG + SUFFOCATING), got {gravity.Count}");
 
 			Console.WriteLine($"[probe] W3e SUCCESS: {traits.Count} live TraitInfos materialized from VFS-loaded rules — Oxygen(Capacity=5000, Drain=3), DamagedByVacuum(350), {gravity.Count}x GravitySpeedModifier");
+			return Task.CompletedTask;
 		}
 	}
 }

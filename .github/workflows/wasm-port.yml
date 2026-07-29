@@ -80,10 +80,10 @@ jobs:
           echo "44241f68e69db9511db82cf83c174737ccda300b  /tmp/ra-quickinstall.zip" | sha1sum -c
           mkdir -p "$WWWROOT/probe-data/supportdir/Content/ra/v2"
           unzip -q -o /tmp/ra-quickinstall.zip -d "$WWWROOT/probe-data/supportdir/Content/ra/v2/"
-          # File + dir manifests so the probe can restage into MEMFS.
-          (cd "$WWWROOT/probe-data" && find . -type f | sed 's|^\./||' > file-list.txt)
-          (cd "$WWWROOT/probe-data" && find . -type d | sed 's|^\./||' | grep -v '^$' > dir-list.txt)
-          wc -l "$WWWROOT/probe-data/file-list.txt" "$WWWROOT/probe-data/dir-list.txt"; du -sh "$WWWROOT/probe-data"
+          # ONE archive instead of ~730 individual fetches: the probe pulls
+          # this single blob and extracts it into MEMFS (ZipArchive).
+          (cd "$WWWROOT/probe-data" && zip -q -r -0 ../probe-data.zip .)
+          ls -lh "$WWWROOT/probe-data.zip"; du -sh "$WWWROOT/probe-data"
 
       # NOTE: the Node execution gate was removed once the Chromium gate
       # covered the same host-agnostic demos (W1/W3a/W3e/W3f/W3g) plus the
@@ -148,8 +148,6 @@ jobs:
         # ships beside it.
         run: |
           WWWROOT=$(dirname "$(find bin/publish -name dotnet.js -path '*_framework*' | head -1)")/..
-          (cd "$WWWROOT/probe-data" && find . -type f ! -name '*-list.txt' | sed 's|^\./||' > file-list.txt)
-          (cd "$WWWROOT/probe-data" && find . -type d | sed 's|^\./||' | grep -v '^$' > dir-list.txt)
           {
             echo "CONTENT NOTICE"
             echo "The game data files under probe-data/supportdir/ are the"
