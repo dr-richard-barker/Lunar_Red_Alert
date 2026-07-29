@@ -145,16 +145,31 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
-      - name: Prepare deployable bundle (W5 — content stripped)
+      - name: Prepare deployable bundle (W5b — freeware content included)
         if: success()
-        # The public site ships NO game content: the deployed page boots to
-        # the engine's own content-installer menu (repo assets only). Strip
-        # the CI-fetched EA freeware files and regenerate the staging lists.
+        # Repo-owner decision (2026-07-29): serve the RA freeware content from
+        # the site so the game plays directly. The content is EA's 2008
+        # freeware release, fetched at build time from OpenRA's official
+        # mirror list (SHA1-pinned) — it is NEVER committed to this repo and
+        # can be removed by reverting this step. A provenance/takedown notice
+        # ships beside it.
         run: |
           WWWROOT=$(dirname "$(find bin/publish -name dotnet.js -path '*_framework*' | head -1)")/..
-          rm -rf "$WWWROOT/probe-data/supportdir"
           (cd "$WWWROOT/probe-data" && find . -type f ! -name '*-list.txt' | sed 's|^\./||' > file-list.txt)
           (cd "$WWWROOT/probe-data" && find . -type d | sed 's|^\./||' | grep -v '^$' > dir-list.txt)
+          {
+            echo "CONTENT NOTICE"
+            echo "The game data files under probe-data/supportdir/ are the"
+            echo "Command & Conquer: Red Alert assets that Electronic Arts"
+            echo "released as freeware in 2008. They are obtained at deploy"
+            echo "time from the OpenRA project's official content mirrors"
+            echo "(https://www.openra.net/packages/ra-quickinstall-mirrors.txt,"
+            echo "SHA1 44241f68e69db9511db82cf83c174737ccda300b) and are served"
+            echo "here solely so the browser build is playable. They are not"
+            echo "part of this repository. Rights holders: to request removal,"
+            echo "open an issue at"
+            echo "https://github.com/dr-richard-barker/Lunar_Red_Alert/issues"
+          } > "$WWWROOT/CONTENT-NOTICE.txt"
           du -sh "$WWWROOT"
 
       - name: Upload deployable bundle
