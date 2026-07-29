@@ -136,19 +136,18 @@ namespace OpenRA.WasmProbe
 
 				LoadScreenDemo.Run();
 
-				// 11. Phase W3i-c/W4a-d (browser only): the FULL boot via
-				// Game.InitializeMod, then the live loop + a unit command.
-				// NON-GATING: every constituent piece is proven above, but the
-				// full content boot needs minutes under CI's software GL, so a
-				// timeout here must not veto the deploy.
-				try
-				{
-					MenuDemo.Run();
-				}
-				catch (Exception e)
-				{
-					Console.WriteLine($"[probe] W4-full-boot incomplete (non-gating): {e.GetType().Name}: {e.Message}");
-				}
+				// NOTE: MenuDemo (the FULL Game.InitializeMod boot, including
+				// the content-installer's real map/actor scan) is deliberately
+				// NOT invoked here. It runs synchronously on the single wasm
+				// thread for minutes under CI's software-GL Chromium — long
+				// enough that Chromium's CDP console-event delivery to the
+				// Playwright driver falls behind and the gate's poll loop
+				// times out even though every REQUIRED tag already printed.
+				// Every constituent piece MenuDemo would exercise (ModData,
+				// platform, renderer w/ real engine shaders, sound, real load
+				// screen) is already proven above. The full boot is exercised
+				// for real by the deployed page itself (PlayMode, ?mode=play),
+				// which has no CI timeout to race against.
 			}
 
 			Console.WriteLine("[probe] SUCCESS: OpenRA.Game core executes under the .NET wasm runtime");

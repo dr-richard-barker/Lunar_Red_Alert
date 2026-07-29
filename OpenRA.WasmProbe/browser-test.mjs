@@ -4,7 +4,7 @@
 import { chromium } from 'playwright';
 
 const url = process.argv[2] || 'http://127.0.0.1:8123/';
-const timeoutMs = 300000;
+const timeoutMs = 120000;
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 640, height: 480 } });
@@ -37,5 +37,6 @@ if (ok) {
 	console.log('[driver] W2 SUCCESS observed; screenshot saved');
 	process.exit(0);
 }
-console.error(failed ? '[driver] probe reported failure' : '[driver] timed out waiting for W2 SUCCESS');
+const missing = required.filter(tag => !lines.some(l => l.includes(tag)));
+console.error(failed ? '[driver] probe reported failure' : `[driver] timed out; missing tags: ${missing.join(', ')}`);
 process.exit(1);
