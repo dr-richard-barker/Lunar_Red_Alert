@@ -81,4 +81,21 @@ verdict → iterate.
   "Execute probe under Node" step) — closing W0's publish-vs-run gap. Also fixed
   by CI iteration this session: 4 trait compile errors, IDE0005, the
   GetVariableObservers override lint, spaceage YAML whitespace lint, and
-  fluent-key mod titles. Verdict of the first execution run: pending.
+  fluent-key mod titles.
+- **2026-07-28 (later): W1 PROVEN.** OpenRA.Game executed inside the .NET wasm
+  runtime under Node: WPos/WAngle fixed-point math and MiniYAML parsing all
+  verified by the CI gate. Same push turned main CI fully green for the first
+  time (both OSes) — including the thin `$ra: ra` mod mount.
+- **2026-07-29: W2 PROVEN.** WebGL2 driven from managed code in real Chromium
+  (Playwright in CI): GLSL ES 300 shaders compiled, textured full-screen quad
+  drawn, and C# read framebuffer pixels back asserting all four quadrant
+  colors. Screenshot artifact captured. Two build traps solved en route,
+  RECORD FOR EVERY FUTURE WASM PROJECT IN THIS REPO:
+  1. `[JSImport]` bindings need the interop source generator, which runs in the
+     analyzer host — and Directory.Build.props REMOVES all analyzers on Release
+     builds (`DisableAnalyzers` target). Fix: a project-local no-op
+     `<Target Name="DisableAnalyzers" />` (same-named target defined later wins).
+  2. The repo's global `*.html` gitignore also eats wwwroot pages (already
+     exempted for OpenRA.WasmProbe/wwwroot).
+  Next (W3): VFS-over-HTTP for mod rules, rAF-driven loop, Canvas2D fonts —
+  toward booting to the main menu in-browser.
