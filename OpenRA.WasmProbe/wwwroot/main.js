@@ -92,10 +92,13 @@ const webgl = {
 };
 
 try {
-	const { setModuleImports, getAssemblyExports, getConfig } = await dotnet.create();
+	const { setModuleImports, getAssemblyExports, getConfig, runMain } = await dotnet.create();
 	setModuleImports('webgl.js', webgl);
 	log('runtime created; running probe…');
-	await dotnet.run();
+
+	// runMain (NOT dotnet.run()): keeps the runtime alive after Main returns,
+	// so requestAnimationFrame can keep calling the [JSExport] frame hook.
+	await runMain(getConfig().mainAssemblyName, []);
 	log('probe main finished — starting rAF frame loop (W3b)…');
 
 	// Phase W3b: the browser owns the frame — requestAnimationFrame calls INTO
