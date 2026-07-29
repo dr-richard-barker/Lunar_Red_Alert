@@ -106,20 +106,36 @@ namespace OpenRA.WasmProbe
 			}
 
 			var e1Node = merged.First(n => n.Key == "E1");
+			Console.WriteLine($"[probe] step: merged E1 carries {e1Node.Value.Nodes.Length} traits (ra + spaceage overlays)");
 
-			// Materialize the actor: every trait yaml node becomes a live
-			// TraitInfo instance via the engine's FieldLoader.
+			// Materialize traits: each yaml node becomes a live TraitInfo via
+			// the engine's ObjectCreator + FieldLoader.
+			//
+			// BOOT-ORDER FINDING (not a wasm limitation): materializing the
+			// FULL actor also needs the *static* Game.ModData, because some
+			// TraitInfos build sub-objects through Game.CreateObject<T>
+			// (e.g. HitShapeInfo.LoadShape -> Game.CreateObject<IHitShape>).
+			// Game.ModData is only set once ModData is constructed, which
+			// needs the mount/loader stack (W3f/W3g). So W3e proves the
+			// pipeline on the SpaceAge traits — real merged yaml from the VFS,
+			// real reflection, real field parsing — and full-actor
+			// materialization becomes a W3g assertion once ModData exists.
+			var spaceAgeKeys = new[] { "Oxygen", "OxygenBar", "DamagedByVacuum", "ExternalCondition@PRESSURE" };
+			var spaceAgeNodes = e1Node.Value.Nodes
+				.Where(n => spaceAgeKeys.Contains(n.Key) || n.Key.StartsWith("GravitySpeedModifier", StringComparison.Ordinal))
+				.ToList();
+
 			System.Collections.Generic.List<TraitInfo> traits;
 			ActorInfo actor;
 			try
 			{
-				actor = new ActorInfo(objectCreator, "e1", e1Node.Value);
+				actor = new ActorInfo(objectCreator, "e1-spaceage", e1Node.Value.WithNodes(spaceAgeNodes));
 				traits = actor.TraitInfos<TraitInfo>().ToList();
 			}
 			catch (Exception e)
 			{
-				Console.WriteLine($"[probe] STEP-FAIL ActorInfo('e1'): {e}");
-				Console.WriteLine($"[probe] E1 trait keys were: {string.Join(", ", e1Node.Value.Nodes.Select(n => n.Key))}");
+				Console.WriteLine($"[probe] STEP-FAIL ActorInfo('e1-spaceage'): {e}");
+				Console.WriteLine($"[probe] nodes were: {string.Join(", ", spaceAgeNodes.Select(n => n.Key))}");
 				throw;
 			}
 
@@ -133,7 +149,11 @@ namespace OpenRA.WasmProbe
 			if (vacuum == null || vacuum.Damage != 350)
 				throw new InvalidOperationException("Materialized E1 has no DamagedByVacuumInfo(350)");
 
-			Console.WriteLine($"[probe] W3e SUCCESS: ActorInfo('e1') materialized {traits.Count} live TraitInfos via VFS incl. Oxygen(Capacity=5000, Drain=3) + DamagedByVacuum(350)");
+			var gravity = actor.TraitInfos<OpenRA.Mods.Common.Traits.GravitySpeedModifierInfo>().ToList();
+			if (gravity.Count != 2)
+				throw new InvalidOperationException($"Expected 2 GravitySpeedModifiers (LOWG + SUFFOCATING), got {gravity.Count}");
+
+			Console.WriteLine($"[probe] W3e SUCCESS: {traits.Count} live TraitInfos materialized from VFS-loaded rules — Oxygen(Capacity=5000, Drain=3), DamagedByVacuum(350), {gravity.Count}x GravitySpeedModifier");
 		}
 	}
 }
