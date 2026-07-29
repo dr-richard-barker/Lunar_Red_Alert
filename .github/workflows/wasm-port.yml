@@ -54,12 +54,14 @@ jobs:
         # under Node) and runs them through the real engine loaders in-wasm.
         run: |
           WWWROOT=$(dirname "$(find bin/publish -name dotnet.js -path '*_framework*' | head -1)")/..
-          mkdir -p "$WWWROOT/probe-data"
+          mkdir -p "$WWWROOT/probe-data/mods" "$WWWROOT/probe-data/glsl"
           # W3g: all text assets (rules/weapons/sequences/fluent/scripts/...)
           # from the three mounted trees, preserving directory structure —
           # including empty dirs (e.g. uibits) that the manifest Folder-mounts.
           rsync -a --include='*/' --include='*.yaml' --include='*.ftl' --include='*.lua' --exclude='*' \
-            mods/ra mods/common mods/spaceage "$WWWROOT/probe-data/"
+            mods/ra mods/common mods/spaceage "$WWWROOT/probe-data/mods/"
+          # W3i: engine shaders — the Renderer compiles these from EngineDir/glsl.
+          cp glsl/*.vert glsl/*.frag "$WWWROOT/probe-data/glsl/"
           # File + dir manifests so the probe can restage into MEMFS.
           (cd "$WWWROOT/probe-data" && find . -type f | sed 's|^\./||' > file-list.txt)
           (cd "$WWWROOT/probe-data" && find . -type d | sed 's|^\./||' | grep -v '^$' > dir-list.txt)
@@ -110,6 +112,7 @@ jobs:
           grep -q "W3f SUCCESS" wasm-browser.log
           grep -q "W3g SUCCESS" wasm-browser.log
           grep -q "W3h SUCCESS" wasm-browser.log
+          grep -q "W3i SUCCESS" wasm-browser.log
 
       - name: Upload probe logs & payload
         if: always()

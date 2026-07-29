@@ -74,7 +74,7 @@ namespace OpenRA.WasmProbe
 			// MiniYaml.Merge that builds rulesets on desktop. This proves the
 			// VFS-over-HTTP direction: bytes arrive via the host, the engine's
 			// data layer does the rest, all in-wasm.
-			var manifestText = await WebGL.FetchText("probe-data/spaceage/mod.yaml");
+			var manifestText = await WebGL.FetchText("probe-data/mods/spaceage/mod.yaml");
 			var manifest = MiniYaml.FromString(manifestText, "mod.yaml").ToList();
 			var metadata = manifest.First(n => n.Key == "Metadata");
 			var title = metadata.Value.Nodes.First(n => n.Key == "Title").Value.Value;
@@ -84,9 +84,9 @@ namespace OpenRA.WasmProbe
 				throw new InvalidOperationException("spaceage overlay missing from manifest Rules");
 
 			var raDefaults = MiniYaml.FromString(
-				await WebGL.FetchText("probe-data/ra/rules/defaults.yaml"), "defaults.yaml", discardCommentsAndWhitespace: true);
+				await WebGL.FetchText("probe-data/mods/ra/rules/defaults.yaml"), "defaults.yaml", discardCommentsAndWhitespace: true);
 			var overlay = MiniYaml.FromString(
-				await WebGL.FetchText("probe-data/spaceage/rules/spaceage-defaults.yaml"), "spaceage-defaults.yaml", discardCommentsAndWhitespace: true);
+				await WebGL.FetchText("probe-data/mods/spaceage/rules/spaceage-defaults.yaml"), "spaceage-defaults.yaml", discardCommentsAndWhitespace: true);
 			var merged = MiniYaml.Merge([raDefaults, overlay]);
 			var soldier = merged.First(n => n.Key == "^Soldier");
 			var mergedOxygen = soldier.Value.Nodes.First(n => n.Key == "Oxygen");
@@ -112,8 +112,13 @@ namespace OpenRA.WasmProbe
 
 			// 8. Phase W3h (browser only): the engine's own platform factory
 			// must select the browser backend by assembly name.
+			// 9. Phase W3i-a (browser only): the engine's real Renderer over
+			// BrowserPlatform — glsl shaders compiled, frame cycle completed.
 			if (WebGL.HasDocument())
+			{
 				PlatformSeamDemo.Run();
+				RendererDemo.Run();
+			}
 
 			Console.WriteLine("[probe] SUCCESS: OpenRA.Game core executes under the .NET wasm runtime");
 		}

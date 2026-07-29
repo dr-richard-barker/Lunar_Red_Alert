@@ -26,6 +26,14 @@ namespace OpenRA.WasmProbe
 	{
 		public static void Run()
 		{
+			// Boot order, as Game.Initialize does it: settings BEFORE ModData —
+			// HotkeyManager's ctor reads the static Game.Settings (the W3g run
+			// that skipped this NRE'd there). SupportDir is the writable
+			// Emscripten home proven by W3f; ensure it exists for settings.yaml.
+			System.IO.Directory.CreateDirectory(Platform.SupportDir);
+			Game.InitializeSettings(Arguments.Empty);
+			Console.WriteLine($"[probe] step: Game.Settings initialized (settings.yaml under {Platform.SupportDir})");
+
 			var modsRoot = Platform.ResolvePath("^EngineDir|mods");
 			var installed = new InstalledMods([modsRoot], []);
 			Console.WriteLine($"[probe] step: InstalledMods discovered: {string.Join(", ", installed.Keys.OrderBy(k => k))}");

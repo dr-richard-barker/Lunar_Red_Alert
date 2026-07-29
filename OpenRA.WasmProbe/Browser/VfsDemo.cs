@@ -38,10 +38,12 @@ namespace OpenRA.WasmProbe
 					continue;
 
 				var text = await WebGL.FetchText($"probe-data/{path}");
-				if (path.StartsWith("spaceage/", StringComparison.Ordinal))
-					spaceagePackage.AddText(path["spaceage/".Length..], text);
-				else if (path.StartsWith("ra/", StringComparison.Ordinal))
-					raPackage.AddText(path["ra/".Length..], text);
+				if (path.StartsWith("mods/spaceage/", StringComparison.Ordinal))
+					spaceagePackage.AddText(path["mods/spaceage/".Length..], text);
+				else if (path.StartsWith("mods/ra/", StringComparison.Ordinal))
+					raPackage.AddText(path["mods/ra/".Length..], text);
+				else
+					continue;
 
 				staged++;
 			}
