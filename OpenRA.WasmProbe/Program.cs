@@ -96,6 +96,11 @@ namespace OpenRA.WasmProbe
 
 			Console.WriteLine($"[probe] W3a SUCCESS: real ra+spaceage rules fetched and merged in-wasm; ^Soldier gains Oxygen (Capacity={mergedCapacity}, {soldier.Value.Nodes.Length} traits total)");
 
+			// 5. Phase W3e: the full VFS + rules-materialization pipeline —
+			// MemoryPackages -> engine FileSystem -> Manifest -> ObjectCreator
+			// -> ActorInfo with live TraitInfo instances. Host-agnostic.
+			await VfsDemo.Run();
+
 			Console.WriteLine("[probe] SUCCESS: OpenRA.Game core executes under the .NET wasm runtime");
 		}
 	}

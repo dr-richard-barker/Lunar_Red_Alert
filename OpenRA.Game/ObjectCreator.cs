@@ -45,6 +45,21 @@ namespace OpenRA
 
 		static void LoadAssembly(List<Assembly> assemblyList, string resolvedPath)
 		{
+			// Browser/WebAssembly support: assemblies are not exposed as loose
+			// files there, but statically-referenced ones are already loaded in
+			// the AppDomain. Prefer an already-loaded assembly matching the
+			// requested simple name before touching the filesystem. Desktop
+			// behaviour is unchanged (loose files are still loaded below when
+			// no matching assembly is resident).
+			var simpleName = Path.GetFileNameWithoutExtension(resolvedPath);
+			var resident = AppDomain.CurrentDomain.GetAssemblies()
+				.FirstOrDefault(a => string.Equals(a.GetName().Name, simpleName, StringComparison.OrdinalIgnoreCase));
+			if (resident != null)
+			{
+				assemblyList.Add(resident);
+				return;
+			}
+
 			// .NET doesn't provide any way of querying the metadata of an assembly without either:
 			//   (a) loading duplicate data into the application domain, breaking the world.
 			//   (b) crashing if the assembly has already been loaded.

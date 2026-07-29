@@ -16,7 +16,7 @@ page.on('pageerror', e => { lines.push('PAGEERROR: ' + e.message); console.error
 console.log('[driver] loading', url);
 await page.goto(url, { waitUntil: 'domcontentloaded' });
 
-const required = ['W2 SUCCESS', 'W3a SUCCESS', 'W3b SUCCESS', 'W3c SUCCESS', 'W3d SUCCESS'];
+const required = ['W2 SUCCESS', 'W3a SUCCESS', 'W3b SUCCESS', 'W3c SUCCESS', 'W3d SUCCESS', 'W3e SUCCESS'];
 const deadline = Date.now() + timeoutMs;
 let ok = false, failed = false;
 while (Date.now() < deadline && !ok && !failed) {

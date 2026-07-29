@@ -52,7 +52,9 @@ jobs:
           mkdir -p "$WWWROOT/probe-data/spaceage" "$WWWROOT/probe-data/ra"
           cp -r mods/spaceage/mod.yaml mods/spaceage/rules "$WWWROOT/probe-data/spaceage/"
           cp -r mods/ra/rules "$WWWROOT/probe-data/ra/"
-          du -sh "$WWWROOT/probe-data"
+          # W3e: manifest of staged files so the probe knows what to fetch.
+          (cd "$WWWROOT/probe-data" && find . -type f | sed 's|^\./||' > file-list.txt)
+          wc -l "$WWWROOT/probe-data/file-list.txt"; du -sh "$WWWROOT/probe-data"
 
       - name: Execute probe under Node (Phases W1 + W3a)
         if: success()
@@ -67,6 +69,7 @@ jobs:
           cd "$WWWROOT"
           node noderun.mjs 2>&1 | tee ../../wasm-run.log
           grep -q "W3a SUCCESS" ../../wasm-run.log
+          grep -q "W3e SUCCESS" ../../wasm-run.log
           grep -q "\[probe\] SUCCESS" ../../wasm-run.log
 
       - name: Install Playwright Chromium (Phase W2)
@@ -92,6 +95,7 @@ jobs:
           grep -q "W3b SUCCESS" wasm-browser.log
           grep -q "W3c SUCCESS" wasm-browser.log
           grep -q "W3d SUCCESS" wasm-browser.log
+          grep -q "W3e SUCCESS" wasm-browser.log
 
       - name: Upload probe logs & payload
         if: always()
