@@ -110,6 +110,11 @@ namespace OpenRA.WasmProbe
 			// Game.ModData, unlocking full-actor materialization.
 			ModDataDemo.Run();
 
+			// 8. Phase W3h (browser only): the engine's own platform factory
+			// must select the browser backend by assembly name.
+			if (WebGL.HasDocument())
+				PlatformSeamDemo.Run();
+
 			Console.WriteLine("[probe] SUCCESS: OpenRA.Game core executes under the .NET wasm runtime");
 		}
 	}

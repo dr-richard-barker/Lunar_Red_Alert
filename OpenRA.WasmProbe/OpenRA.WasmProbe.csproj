@@ -16,6 +16,9 @@
          by ObjectCreator via the resident-assembly fallback. -->
     <ProjectReference Include="..\OpenRA.Mods.Common\OpenRA.Mods.Common.csproj" />
     <ProjectReference Include="..\OpenRA.Mods.Cnc\OpenRA.Mods.Cnc.csproj" />
+    <!-- W3h: the browser platform is a real assembly so Game.CreatePlatform
+         can resolve it by name ("OpenRA.Platforms.Browser"). -->
+    <ProjectReference Include="..\OpenRA.Platforms.Browser\OpenRA.Platforms.Browser.csproj" />
   </ItemGroup>
   <!-- Directory.Build.props removes ALL analyzers on Release builds to speed up
        compiles — but source generators (including the [JSImport] generator) run

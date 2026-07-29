@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- TargetFramework comes from Directory.Build.props (net10.0). This
+         platform only exists in the browser, so pin the runtime identifier. -->
+    <RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
+    <RootNamespace>OpenRA.Platforms.Browser</RootNamespace>
+    <SelfContained>false</SelfContained>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\OpenRA.Game\OpenRA.Game.csproj" />
+  </ItemGroup>
+  <!-- Directory.Build.props strips analyzers on Release, which also kills the
+       [JSImport] source generator (CS8795). Neutralize for this project. -->
+  <Target Name="DisableAnalyzers" />
+</Project>

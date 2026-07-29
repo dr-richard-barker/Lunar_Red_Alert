@@ -462,8 +462,16 @@ namespace OpenRA
 		{
 			var rendererPath = Path.Combine(Platform.BinDir, "OpenRA.Platforms." + platformName + ".dll");
 
-			var loader = new AssemblyLoader(rendererPath);
-			var platformType = loader.LoadDefaultAssembly().GetTypes().SingleOrDefault(t => typeof(IPlatform).IsAssignableFrom(t));
+			// Browser/WebAssembly support: platform assemblies are not loose
+			// files there, but bundled ones resolve by simple name. Desktop
+			// never reaches this branch (the loose file exists).
+			System.Reflection.Assembly platformAssembly;
+			if (!File.Exists(rendererPath))
+				platformAssembly = System.Reflection.Assembly.Load("OpenRA.Platforms." + platformName);
+			else
+				platformAssembly = new AssemblyLoader(rendererPath).LoadDefaultAssembly();
+
+			var platformType = platformAssembly.GetTypes().SingleOrDefault(t => typeof(IPlatform).IsAssignableFrom(t));
 
 			if (platformType == null)
 				throw new InvalidOperationException("Platform dll must include exactly one IPlatform implementation.");

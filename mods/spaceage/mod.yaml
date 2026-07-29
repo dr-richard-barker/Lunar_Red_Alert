@@ -319,5 +319,6 @@ GameSpeeds:
 			Timestep: 20
 			OrderLatency: 6
 
-DiscordService:
-	ApplicationId: 699222659766026240
+# DiscordService removed: desktop-only rich-presence integration whose module
+# constructor cannot run in the browser (and Lunar Red Alert has its own
+# identity anyway — a Discord app id can be added back if ever wanted).
