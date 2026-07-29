@@ -41,10 +41,19 @@ namespace OpenRA
 		static readonly Timer Timer;
 		static readonly Thread Thread;
 
+		// Browser/WebAssembly support: the wasm runtime is single-threaded, so
+		// the background writer thread and its flush timer cannot start there.
+		// Log entries are instead drained synchronously as they are queued
+		// (see Write), which is fine at logging volumes.
+		static readonly bool ThreadingSupported = !OperatingSystem.IsBrowser();
+
 		static Log()
 		{
 			Channel = System.Threading.Channels.Channel.CreateUnbounded<ChannelData>();
 			ChannelWriter = Channel.Writer;
+
+			if (!ThreadingSupported)
+				return;
 
 			Thread = new Thread(DoWork)
 			{
@@ -54,6 +63,14 @@ namespace OpenRA
 			Thread.Start(CancellationToken.Token);
 
 			Timer = new Timer(FlushToDisk, CancellationToken.Token, FlushInterval, Timeout.InfiniteTimeSpan);
+		}
+
+		/// <summary>Drains queued entries on the calling thread (browser/wasm).</summary>
+		static void DrainSynchronously()
+		{
+			var reader = Channel.Reader;
+			while (reader.TryRead(out var item))
+				WriteValue(item);
 		}
 
 		static void FlushToDisk(object state)
@@ -160,16 +177,30 @@ namespace OpenRA
 		public static void Write(string channelName, string value)
 		{
 			ChannelWriter.TryWrite(new ChannelData(channelName, value));
+
+			if (!ThreadingSupported)
+				DrainSynchronously();
 		}
 
 		public static void Write(string channelName, Exception e)
 		{
 			ChannelWriter.TryWrite(new ChannelData(channelName, $"{e.Message}{Environment.NewLine}{e.StackTrace}"));
+
+			if (!ThreadingSupported)
+				DrainSynchronously();
 		}
 
 		public static void Dispose()
 		{
 			CancellationToken.Cancel();
+
+			if (!ThreadingSupported)
+			{
+				DrainSynchronously();
+				FlushToDisk();
+				return;
+			}
+
 			Timer.Dispose();
 			Thread.Join();
 		}

@@ -363,6 +363,14 @@ namespace OpenRA
 			if (launchPreviewLoaderThread)
 				Game.RunAfterTick(() =>
 				{
+					// Browser/WebAssembly support: the wasm runtime is
+					// single-threaded, so generate the queued previews inline.
+					if (OperatingSystem.IsBrowser())
+					{
+						LoadAsyncInternal();
+						return;
+					}
+
 					// Wait for any existing thread to exit before starting a new one.
 					previewLoaderThread?.Join();
 
