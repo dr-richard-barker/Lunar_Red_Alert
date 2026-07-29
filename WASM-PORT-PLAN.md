@@ -111,11 +111,16 @@ verdict → iterate.
   profile), SilentSoundEngine. Gate drew a quad through the engine's OWN
   contracts (IPlatform -> IGraphicsContext -> DrawPrimitives) pixel-verified
   in Chromium. Unreached members throw loudly — no silent stubs.
-- **2026-07-29: W3d shipped (verdict pending).** Canvas2DFont: real glyph
-  rasterization behind IFont (Canvas2D TextMetrics + alpha extraction,
-  FreeType conventions: 1 byte/px, Offset=(bearingX,-ascent)). Input pump:
-  DOM mouse/key listeners -> JS queue -> PumpInput decodes into engine
-  MouseInput/KeyInput (SDL-style keycodes pinned from Keycode.cs). Gate
-  synthesizes real DOM events and asserts them through IInputHandler.
+- **2026-07-29: W3d PROVEN.** Canvas2DFont: real glyph rasterization behind
+  IFont (Canvas2D TextMetrics + alpha extraction, FreeType conventions:
+  1 byte/px, Offset=(bearingX,-ascent)) — 'A' @24px came out 16x17, advance
+  16.0, offset (0,-17). Input pump: DOM mouse/key listeners -> JS queue ->
+  PumpInput -> engine MouseInput/KeyInput (SDL-style keycodes pinned from
+  Keycode.cs); real dispatched DOM events asserted pixel-exact at (30,40)
+  with Keycode.A + 'a'. rAF cadence measured at avg dt 16.7 ms (60 fps).
+  Debug note: a 1px canvas CSS border skewed offsetX vs client-rect mapping —
+  input listeners now map clientX/Y through getBoundingClientRect with
+  width/height scaling (also future-proofs CSS-scaled canvases).
+  Platform senses complete: draw ✅ text ✅ input ✅ (sound = silent stub).
   Remaining for W3-full: in-memory VFS packages + Game.Initialize boot
   sequence against HTTP-staged content (the big one), then W4 playable.
