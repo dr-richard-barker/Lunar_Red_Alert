@@ -37,6 +37,12 @@ namespace OpenRA.WasmProbe
 				if (path.Length == 0)
 					continue;
 
+				// This gate only mounts rules (+ the manifest), so fetch just
+				// those: staging the whole tree here cost ~600 extra interop
+				// round trips per run for files it never opens.
+				if (!path.Contains("/rules/", StringComparison.Ordinal) && !path.EndsWith("/mod.yaml", StringComparison.Ordinal))
+					continue;
+
 				var text = await WebGL.FetchText($"probe-data/{path}");
 				if (path.StartsWith("mods/spaceage/", StringComparison.Ordinal))
 					spaceagePackage.AddText(path["mods/spaceage/".Length..], text);

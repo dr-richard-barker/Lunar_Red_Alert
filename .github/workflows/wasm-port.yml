@@ -26,6 +26,7 @@ jobs:
   probe:
     name: browser-wasm probe (OpenRA.Game)
     runs-on: ubuntu-24.04
+    timeout-minutes: 25
     steps:
       - name: Clone Repository
         uses: actions/checkout@v7
@@ -84,23 +85,10 @@ jobs:
           (cd "$WWWROOT/probe-data" && find . -type d | sed 's|^\./||' | grep -v '^$' > dir-list.txt)
           wc -l "$WWWROOT/probe-data/file-list.txt" "$WWWROOT/probe-data/dir-list.txt"; du -sh "$WWWROOT/probe-data"
 
-      - name: Execute probe under Node (Phases W1 + W3a)
-        if: success()
-        # The wasm bundle must EXECUTE, not just publish. The probe prints
-        # "[probe] SUCCESS" from managed code running in-wasm; W3a additionally
-        # requires the real ra+spaceage rules to fetch and merge in-wasm.
-        run: |
-          set -o pipefail
-          WWWROOT=$(dirname "$(find bin/publish -name dotnet.js -path '*_framework*' | head -1)")/..
-          echo "wwwroot: $WWWROOT"; node --version
-          cp OpenRA.WasmProbe/noderun.mjs "$WWWROOT/"
-          cd "$WWWROOT"
-          node noderun.mjs 2>&1 | tee ../../wasm-run.log
-          grep -q "W3a SUCCESS" ../../wasm-run.log
-          grep -q "W3e SUCCESS" ../../wasm-run.log
-          grep -q "W3f SUCCESS" ../../wasm-run.log
-          grep -q "W3g SUCCESS" ../../wasm-run.log
-          grep -q "\[probe\] SUCCESS" ../../wasm-run.log
+      # NOTE: the Node execution gate was removed once the Chromium gate
+      # covered the same host-agnostic demos (W1/W3a/W3e/W3f/W3g) plus the
+      # DOM ones. Node's serial JSImport marshalling over ~600 staged files
+      # had become the run's bottleneck.
 
       - name: Install Playwright Chromium (Phase W2)
         if: success()
