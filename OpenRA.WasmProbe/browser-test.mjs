@@ -16,10 +16,11 @@ page.on('pageerror', e => { lines.push('PAGEERROR: ' + e.message); console.error
 console.log('[driver] loading', url);
 await page.goto(url, { waitUntil: 'domcontentloaded' });
 
+const required = ['W2 SUCCESS', 'W3a SUCCESS', 'W3b SUCCESS'];
 const deadline = Date.now() + timeoutMs;
 let ok = false, failed = false;
 while (Date.now() < deadline && !ok && !failed) {
-	ok = lines.some(l => l.includes('W2 SUCCESS'));
+	ok = required.every(tag => lines.some(l => l.includes(tag)));
 	failed = lines.some(l => l.includes('[probe] FAILED') || l.includes('PAGEERROR'));
 	if (!ok && !failed)
 		await new Promise(r => setTimeout(r, 500));

@@ -43,10 +43,22 @@ jobs:
           find bin/publish -type f | head -40
           du -sh bin/publish/wwwroot 2>/dev/null || du -sh bin/publish 2>/dev/null || true
 
-      - name: Execute probe under Node (Phase W1)
+      - name: Stage real mod files as probe data (Phase W3a)
         if: success()
-        # The real W1 milestone: the wasm bundle must EXECUTE, not just publish.
-        # The probe prints "[probe] SUCCESS" from managed code running in-wasm.
+        # The probe fetches these over the host (fetch() in the browser, disk
+        # under Node) and runs them through the real engine loaders in-wasm.
+        run: |
+          WWWROOT=$(dirname "$(find bin/publish -name dotnet.js -path '*_framework*' | head -1)")/..
+          mkdir -p "$WWWROOT/probe-data/spaceage" "$WWWROOT/probe-data/ra"
+          cp -r mods/spaceage/mod.yaml mods/spaceage/rules "$WWWROOT/probe-data/spaceage/"
+          cp -r mods/ra/rules "$WWWROOT/probe-data/ra/"
+          du -sh "$WWWROOT/probe-data"
+
+      - name: Execute probe under Node (Phases W1 + W3a)
+        if: success()
+        # The wasm bundle must EXECUTE, not just publish. The probe prints
+        # "[probe] SUCCESS" from managed code running in-wasm; W3a additionally
+        # requires the real ra+spaceage rules to fetch and merge in-wasm.
         run: |
           set -o pipefail
           WWWROOT=$(dirname "$(find bin/publish -name dotnet.js -path '*_framework*' | head -1)")/..
@@ -54,6 +66,7 @@ jobs:
           cp OpenRA.WasmProbe/noderun.mjs "$WWWROOT/"
           cd "$WWWROOT"
           node noderun.mjs 2>&1 | tee ../../wasm-run.log
+          grep -q "W3a SUCCESS" ../../wasm-run.log
           grep -q "\[probe\] SUCCESS" ../../wasm-run.log
 
       - name: Install Playwright Chromium (Phase W2)
@@ -63,10 +76,11 @@ jobs:
           npm install --no-audit --no-fund playwright > /dev/null
           npx playwright install --with-deps chromium
 
-      - name: Execute probe in Chromium (Phase W2)
+      - name: Execute probe in Chromium (Phases W2 + W3)
         if: success()
-        # The W2 milestone: WebGL2 clear + textured quad driven from managed
-        # code, with framebuffer pixels read back and asserted in C#.
+        # W2: WebGL2 textured quad, pixel-verified from C#. W3a: real mod rules
+        # fetched over HTTP and merged in-wasm. W3b: 60 managed frames driven by
+        # requestAnimationFrame (game-loop inversion primitive).
         run: |
           set -o pipefail
           WWWROOT=$(dirname "$(find bin/publish -name dotnet.js -path '*_framework*' | head -1)")/..
@@ -74,6 +88,8 @@ jobs:
           sleep 2
           node OpenRA.WasmProbe/browser-test.mjs http://127.0.0.1:8123/ 2>&1 | tee wasm-browser.log
           grep -q "W2 SUCCESS" wasm-browser.log
+          grep -q "W3a SUCCESS" wasm-browser.log
+          grep -q "W3b SUCCESS" wasm-browser.log
 
       - name: Upload probe logs & payload
         if: always()

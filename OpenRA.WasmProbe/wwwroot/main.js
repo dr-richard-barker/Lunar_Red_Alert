@@ -16,6 +16,14 @@ const keep = obj => { handles.set(nextHandle, obj); return nextHandle++; };
 const webgl = {
 	hasDocument: () => true,
 
+	// Phase W3a: text fetch for the VFS-over-HTTP direction.
+	fetchText: async url => {
+		const r = await fetch(url);
+		if (!r.ok)
+			throw new Error(`fetch ${url} -> HTTP ${r.status}`);
+		return r.text();
+	},
+
 	init: (w, h) => {
 		canvas.width = w;
 		canvas.height = h;
@@ -84,11 +92,27 @@ const webgl = {
 };
 
 try {
-	const { setModuleImports } = await dotnet.create();
+	const { setModuleImports, getAssemblyExports, getConfig } = await dotnet.create();
 	setModuleImports('webgl.js', webgl);
 	log('runtime created; running probe…');
 	await dotnet.run();
-	log('probe finished — see console for [probe] lines');
+	log('probe main finished — starting rAF frame loop (W3b)…');
+
+	// Phase W3b: the browser owns the frame — requestAnimationFrame calls INTO
+	// managed code each frame until FrameLoop.OnFrame returns false.
+	const exports = await getAssemblyExports(getConfig().mainAssemblyName);
+	const onFrame = ts => {
+		try {
+			if (exports.OpenRA.WasmProbe.FrameLoop.OnFrame(ts))
+				requestAnimationFrame(onFrame);
+			else
+				log('frame loop complete — see console for [probe] W3b line');
+		} catch (err) {
+			console.error('[probe] FAILED in frame loop:', err);
+			log('FAILED: ' + err);
+		}
+	};
+	requestAnimationFrame(onFrame);
 } catch (err) {
 	console.error('[probe] FAILED:', err);
 	log('FAILED: ' + err);

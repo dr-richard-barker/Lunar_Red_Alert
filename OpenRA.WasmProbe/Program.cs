@@ -11,6 +11,7 @@
 
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace OpenRA.WasmProbe
 {
@@ -33,7 +34,7 @@ namespace OpenRA.WasmProbe
 			"\t\tCondition: pressurised\n" +
 			"\t\tRange: 8c0\n";
 
-		public static void Main()
+		public static async Task Main()
 		{
 			// 1. Fixed-point world math (the sim's foundation).
 			var a = new WPos(1024, 2048, 0);
@@ -61,6 +62,33 @@ namespace OpenRA.WasmProbe
 				QuadDemo.Run();
 			else
 				Console.WriteLine("[probe] no DOM host - skipping W2 WebGL check (expected under Node)");
+
+			// 4. Phase W3a: fetch REAL mod files (staged under probe-data/ by CI)
+			// and push them through the real engine loaders — the same
+			// MiniYaml.Merge that builds rulesets on desktop. This proves the
+			// VFS-over-HTTP direction: bytes arrive via the host, the engine's
+			// data layer does the rest, all in-wasm.
+			var manifestText = await WebGL.FetchText("probe-data/spaceage/mod.yaml");
+			var manifest = MiniYaml.FromString(manifestText, "mod.yaml").ToList();
+			var metadata = manifest.First(n => n.Key == "Metadata");
+			var title = metadata.Value.Nodes.First(n => n.Key == "Title").Value.Value;
+			var rulesList = manifest.First(n => n.Key == "Rules").Value.Nodes.Select(n => n.Key).ToList();
+			Console.WriteLine($"[probe] manifest loaded over host fetch: Title={title}, {rulesList.Count} rule files");
+			if (!rulesList.Contains("spaceage|rules/spaceage-defaults.yaml"))
+				throw new InvalidOperationException("spaceage overlay missing from manifest Rules");
+
+			var raDefaults = MiniYaml.FromString(
+				await WebGL.FetchText("probe-data/ra/rules/defaults.yaml"), "defaults.yaml", discardCommentsAndWhitespace: true);
+			var overlay = MiniYaml.FromString(
+				await WebGL.FetchText("probe-data/spaceage/rules/spaceage-defaults.yaml"), "spaceage-defaults.yaml", discardCommentsAndWhitespace: true);
+			var merged = MiniYaml.Merge([raDefaults, overlay]);
+			var soldier = merged.First(n => n.Key == "^Soldier");
+			var mergedOxygen = soldier.Value.Nodes.First(n => n.Key == "Oxygen");
+			var mergedCapacity = mergedOxygen.Value.Nodes.First(n => n.Key == "Capacity").Value.Value;
+			if (mergedCapacity != "6000")
+				throw new InvalidOperationException($"merge mismatch: ^Soldier Oxygen Capacity = {mergedCapacity}");
+
+			Console.WriteLine($"[probe] W3a SUCCESS: real ra+spaceage rules fetched and merged in-wasm; ^Soldier gains Oxygen (Capacity={mergedCapacity}, {soldier.Value.Nodes.Count} traits total)");
 
 			Console.WriteLine("[probe] SUCCESS: OpenRA.Game core executes under the .NET wasm runtime");
 		}

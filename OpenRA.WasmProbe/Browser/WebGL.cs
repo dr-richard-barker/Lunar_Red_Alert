@@ -10,6 +10,7 @@
 #endregion
 
 using System.Runtime.InteropServices.JavaScript;
+using System.Threading.Tasks;
 
 namespace OpenRA.WasmProbe
 {
@@ -22,6 +23,12 @@ namespace OpenRA.WasmProbe
 	{
 		[JSImport("hasDocument", "webgl.js")]
 		internal static partial bool HasDocument();
+
+		// Phase W3: async text fetch. Browser host implements this over fetch();
+		// the Node host reads from disk. This is the seed of the VFS-over-HTTP
+		// layer that will stage mod packages before engine init.
+		[JSImport("fetchText", "webgl.js")]
+		internal static partial Task<string> FetchText(string url);
 
 		[JSImport("init", "webgl.js")]
 		internal static partial int Init(int width, int height);
