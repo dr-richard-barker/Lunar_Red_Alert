@@ -40,8 +40,16 @@ FileSystem: ContentInstallerFileSystem
 		~content|scores.mix
 		~content|general.mix
 		# Below are mod-provided (system) packages that need to be loaded after the content packages so they can override content assets.
-		ra|bits
-		ra|bits/desert
+		# Marked optional for the browser deploy: these are RA's own bundled
+		# sprite-override packages (.shp/.tem/.sno/.int/.aud/.des), a binary
+		# format class CI's WASM staging filter doesn't include, so the raw
+		# directories don't exist in MEMFS at all. Root-caused via direct
+		# engine instrumentation: Mount("ra|bits") threw FileNotFoundException,
+		# "ra|bits/desert" threw DirectoryNotFoundException -- both silently
+		# forced isContentAvailable=false and diverted every boot into the
+		# content-installer regardless of the actual freeware content check.
+		~ra|bits
+		~ra|bits/desert
 	ContentInstallerMod: ra-content
 
 MapFolders:
