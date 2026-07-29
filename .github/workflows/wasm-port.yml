@@ -17,6 +17,11 @@ on:
 permissions:
   contents: read
 
+# One run per ref: a new push supersedes (cleanly cancels) the previous run.
+concurrency:
+  group: wasm-port-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   probe:
     name: browser-wasm probe (OpenRA.Game)

@@ -45,11 +45,18 @@ namespace OpenRA.WasmProbe
 			}
 
 			// Stage every probe-data file into MEMFS under /openra/.
+			// Game content (supportdir/, ~35 MB of .mix) is only needed by the
+			// browser gates/play mode — the DOM-less Node host skips it, which
+			// cuts minutes of base64 marshalling from every CI run.
+			var stageContent = WebGL.HasDocument();
 			var staged = 0;
 			foreach (var line in (await WebGL.FetchText("probe-data/file-list.txt")).Split('\n'))
 			{
 				var path = line.Trim();
 				if (path.Length == 0 || path.EndsWith("-list.txt", StringComparison.Ordinal))
+					continue;
+
+				if (!stageContent && path.StartsWith("supportdir/", StringComparison.Ordinal))
 					continue;
 
 				// W4a: content lands under the user support dir (where the ra
