@@ -75,6 +75,7 @@ jobs:
           node noderun.mjs 2>&1 | tee ../../wasm-run.log
           grep -q "W3a SUCCESS" ../../wasm-run.log
           grep -q "W3e SUCCESS" ../../wasm-run.log
+          grep -q "W3f SUCCESS" ../../wasm-run.log
           grep -q "\[probe\] SUCCESS" ../../wasm-run.log
 
       - name: Install Playwright Chromium (Phase W2)
@@ -101,6 +102,7 @@ jobs:
           grep -q "W3c SUCCESS" wasm-browser.log
           grep -q "W3d SUCCESS" wasm-browser.log
           grep -q "W3e SUCCESS" wasm-browser.log
+          grep -q "W3f SUCCESS" wasm-browser.log
 
       - name: Upload probe logs & payload
         if: always()

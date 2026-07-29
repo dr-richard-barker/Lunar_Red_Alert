@@ -101,6 +101,11 @@ namespace OpenRA.WasmProbe
 			// -> ActorInfo with live TraitInfo instances. Host-agnostic.
 			await VfsDemo.Run();
 
+			// 6. Phase W3f: MEMFS staging — the engine's STANDARD folder
+			// mounting (^EngineDir string mounts -> Folder packages) over the
+			// wasm in-memory filesystem. Host-agnostic.
+			await MemfsDemo.Run();
+
 			Console.WriteLine("[probe] SUCCESS: OpenRA.Game core executes under the .NET wasm runtime");
 		}
 	}

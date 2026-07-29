@@ -1,0 +1,85 @@
+#region Copyright & License Information
+/*
+ * Copyright (c) The OpenRA Developers and Contributors
+ * This file is part of OpenRA, which is free software. It is made
+ * available to you under the terms of the GNU General Public License
+ * as published by the Free Software Foundation, either version 3 of
+ * the License, or (at your option) any later version. For more
+ * information, see COPYING.
+ */
+#endregion
+
+using System;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace OpenRA.WasmProbe
+{
+	// Phase W3f milestone: make the browser look like a disk. The .NET wasm
+	// runtime ships Emscripten's in-memory filesystem (MEMFS), so instead of
+	// porting the engine's mounting machinery, we stage the fetched mod tree
+	// with plain System.IO and let the STANDARD path run unmodified:
+	//   Platform.OverrideEngineDir -> "^EngineDir|mods/..." string mounts ->
+	//   FileSystem.OpenPackage -> the engine's real Folder package.
+	// This is the exact chain ModData's FileSystemLoader uses (W3g).
+	internal static class MemfsDemo
+	{
+		public const string Root = "/openra/";
+
+		public static async Task Run()
+		{
+			// Stage every probe-data file into MEMFS under /openra/mods/.
+			var staged = 0;
+			foreach (var line in (await WebGL.FetchText("probe-data/file-list.txt")).Split('\n'))
+			{
+				var path = line.Trim();
+				if (path.Length == 0)
+					continue;
+
+				var target = Path.Combine(Root, "mods", path);
+				Directory.CreateDirectory(Path.GetDirectoryName(target));
+				File.WriteAllText(target, await WebGL.FetchText($"probe-data/{path}"));
+				staged++;
+			}
+
+			// Round-trip sanity: MEMFS must give back what we wrote.
+			var probePath = Path.Combine(Root, "mods/spaceage/rules/spaceage-defaults.yaml");
+			if (!File.ReadAllText(probePath).Contains("Oxygen"))
+				throw new InvalidOperationException("MEMFS round-trip failed for spaceage-defaults.yaml");
+
+			Console.WriteLine($"[probe] step: {staged} files staged into MEMFS under {Root}mods/");
+			Console.WriteLine($"[probe] step: Platform.BinDir = '{Platform.BinDir}'");
+			try
+			{
+				Console.WriteLine($"[probe] step: Platform.SupportDir = '{Platform.SupportDir}'");
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine($"[probe] step: Platform.SupportDir threw {e.GetType().Name} (W3g will need a home for settings/logs)");
+			}
+
+			// The supported hook: point ^EngineDir at our staged tree.
+			Platform.OverrideEngineDir(Root);
+			Console.WriteLine($"[probe] step: EngineDir overridden -> '{Platform.EngineDir}'");
+
+			// Now the ENGINE's standard mount chain, exactly as a manifest uses
+			// it: string names with ^EngineDir prefixes -> Folder packages.
+			var fileSystem = new OpenRA.FileSystem.FileSystem("spaceage", null, []);
+			fileSystem.Mount("^EngineDir|mods/ra", "ra");
+			fileSystem.Mount("^EngineDir|mods/spaceage", "spaceage");
+
+			using var stream = fileSystem.Open("spaceage|rules/spaceage-defaults.yaml");
+			var nodes = MiniYaml.FromStream(stream, "spaceage-defaults.yaml").ToList();
+			var soldier = nodes.FirstOrDefault(n => n.Key == "^Soldier");
+			if (soldier == null)
+				throw new InvalidOperationException("Folder-mounted spaceage-defaults.yaml did not parse ^Soldier");
+
+			using var raStream = fileSystem.Open("ra|rules/defaults.yaml");
+			if (raStream == null || raStream.Length == 0)
+				throw new InvalidOperationException("Folder-mounted ra|rules/defaults.yaml failed to open");
+
+			Console.WriteLine("[probe] W3f SUCCESS: MEMFS-staged mod tree mounted via the engine's standard ^EngineDir string mounts (real Folder packages) and parsed");
+		}
+	}
+}
