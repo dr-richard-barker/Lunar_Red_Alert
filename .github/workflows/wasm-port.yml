@@ -67,7 +67,7 @@ jobs:
           # W3i-b adds binaries: fonts (.ttf) and chrome/logo art (.png).
           rsync -a --include='*/' --include='*.yaml' --include='*.ftl' --include='*.lua' \
             --include='*.ttf' --include='*.png' --include='*.oramap' --exclude='*' \
-            mods/ra mods/ra-content mods/common mods/spaceage "$WWWROOT/probe-data/mods/"
+            mods/ra mods/ra-content mods/common mods/common-content mods/spaceage "$WWWROOT/probe-data/mods/"
           # W3i: engine shaders — the Renderer compiles these from EngineDir/glsl.
           cp glsl/*.vert glsl/*.frag "$WWWROOT/probe-data/glsl/"
           # W4a: RA freeware content via OpenRA's own quickinstall channel
