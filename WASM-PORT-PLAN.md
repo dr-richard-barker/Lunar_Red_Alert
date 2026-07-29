@@ -146,3 +146,13 @@ verdict → iterate.
   DLL resolution seam in Game.Initialize (same resident/Assembly.Load
   treatment) so BrowserPlatform is selectable; W3i = menu attempt (the
   content-installer screen renders from repo-only assets — no EA .mix needed).
+- **2026-07-29: W3f PROVEN.** The disk illusion works: mod tree staged into
+  Emscripten MEMFS with plain System.IO, then the engine's STANDARD mount
+  chain ran unmodified — Platform.OverrideEngineDir("/openra/") ->
+  "^EngineDir|mods/ra"/"^EngineDir|mods/spaceage" string mounts ->
+  FileSystem.OpenPackage -> real Folder packages -> pipe-open + parse.
+  Zero new engine edits or interop. Recon banked: BinDir='/'; SupportDir
+  resolves to /home/web_user/.openra/ (writable Emscripten home — settings/
+  logs need NO shim). BOOT-ORDER RULE (cost one CI round): OverrideEngineDir
+  must precede ANY SupportDir access — InitializeSupportDir reads
+  EngineDir/Support for its portable-install check and locks the engine dir.
