@@ -82,6 +82,31 @@ namespace OpenRA.WasmProbe
 				Console.WriteLine($"[play] diag2: OpenPackage THREW: {ex.GetType().Name}: {ex.Message}");
 			}
 
+			// Diagnostic #3: replicate the REAL failing call -- mounting
+			// "content|allies.mix" as its own sub-package (this is what
+			// actually parses the .mix archive format; diag2 only proved the
+			// FOLDER opens and lists the file, not that the .mix parses).
+			// Game.ModData isn't set yet at this point (that's the whole
+			// point -- we're testing BEFORE the real boot), so build our own
+			// ObjectCreator from the manifest already in scope, exactly like
+			// ModData's own constructor does internally.
+			try
+			{
+				var diagObjectCreator = new ObjectCreator(manifest, installed);
+				var loaders = diagObjectCreator.GetLoaders<OpenRA.FileSystem.IPackageLoader>(manifest.PackageFormats, "package");
+				Console.WriteLine($"[play] diag3: resolved {loaders.Length} package loader(s) for formats [{string.Join(",", manifest.PackageFormats)}]");
+				var tempFs2 = new OpenRA.FileSystem.FileSystem("diag2", null, loaders);
+				tempFs2.Mount(engineResolvedContentPath, "content");
+				Console.WriteLine("[play] diag3: mounted content alias OK");
+				tempFs2.Mount("content|allies.mix");
+				Console.WriteLine("[play] diag3: Mount(content|allies.mix) SUCCEEDED");
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"[play] diag3: Mount(content|allies.mix) THREW: {ex.GetType().FullName}: {ex.Message}");
+				Console.WriteLine($"[play] diag3: stack: {ex.StackTrace}");
+			}
+
 			Console.WriteLine("[play] booting Lunar Red Alert…");
 			Game.InitializeMod(manifest, Arguments.Empty);
 			Console.WriteLine($"[play] boot complete — active mod '{Game.ModData?.Manifest.Id}'");
