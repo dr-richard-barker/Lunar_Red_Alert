@@ -33,6 +33,14 @@ namespace OpenRA
 			this.package = package;
 			this.classification = classification;
 
+			// Browser/WebAssembly support: FileSystemWatcher has no OS-level
+			// notification source to hook into there (MEMFS is a static,
+			// per-session snapshot with no external changes to watch for), and
+			// the constructor throws PlatformNotSupportedException. Live map
+			// hot-reload is a desktop dev convenience only; skip it in-browser.
+			if (OperatingSystem.IsBrowser())
+				return;
+
 			watcher = new FileSystemWatcher(package.Name);
 			watcher.Changed += (_, e) => AddMapAction(MapAction.Update, e.FullPath);
 			watcher.Created += (_, e) => AddMapAction(MapAction.Add, e.FullPath);
@@ -45,7 +53,7 @@ namespace OpenRA
 
 		public void Dispose()
 		{
-			watcher.Dispose();
+			watcher?.Dispose();
 		}
 
 		void AddMapAction(MapAction mapAction, string fullpath, string oldFullPath = null)
