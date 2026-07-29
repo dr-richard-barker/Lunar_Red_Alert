@@ -36,6 +36,14 @@ namespace OpenRA.WasmProbe
 
 		public static async Task Main()
 		{
+			// Phase W5: the deployed page boots straight into the game; the
+			// CI harness (and Node) runs the full probe gate ladder below.
+			if (WebGL.GetBootMode() == "play")
+			{
+				await PlayMode.Run();
+				return;
+			}
+
 			// 1. Fixed-point world math (the sim's foundation).
 			var a = new WPos(1024, 2048, 0);
 			var b = new WPos(4096, 0, 512);

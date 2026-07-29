@@ -18,6 +18,7 @@ try {
 		fetchBase64: async url => (await readFile(url)).toString('base64'),
 		// W4b: no audio under Node — the platform falls back to SilentSoundEngine.
 		audioInit: () => 0,
+		getBootMode: () => 'probe',
 	});
 	await dotnet.run();
 	console.log('[noderun] wasm runtime exited cleanly');

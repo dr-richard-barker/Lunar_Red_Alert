@@ -13,8 +13,11 @@ const handles = new Map();
 let nextHandle = 1;
 const keep = obj => { handles.set(nextHandle, obj); return nextHandle++; };
 
+const bootMode = new URLSearchParams(location.search).get('mode') === 'play' ? 'play' : 'probe';
+
 const webgl = {
 	hasDocument: () => true,
+	getBootMode: () => bootMode,
 
 	// Phase W3a: text fetch for the VFS-over-HTTP direction.
 	fetchText: async url => {
@@ -392,20 +395,24 @@ try {
 		requestAnimationFrame(onGameFrame);
 	};
 
-	const onFrame = ts => {
-		try {
-			if (exports.OpenRA.WasmProbe.FrameLoop.OnFrame(ts))
-				requestAnimationFrame(onFrame);
-			else {
-				log('frame loop complete — see console for [probe] W3b line');
-				startGameLoop();
+	if (bootMode === 'play') {
+		startGameLoop();
+	} else {
+		const onFrame = ts => {
+			try {
+				if (exports.OpenRA.WasmProbe.FrameLoop.OnFrame(ts))
+					requestAnimationFrame(onFrame);
+				else {
+					log('frame loop complete — see console for [probe] W3b line');
+					startGameLoop();
+				}
+			} catch (err) {
+				console.error('[probe] FAILED in frame loop:', err);
+				log('FAILED: ' + err);
 			}
-		} catch (err) {
-			console.error('[probe] FAILED in frame loop:', err);
-			log('FAILED: ' + err);
-		}
-	};
-	requestAnimationFrame(onFrame);
+		};
+		requestAnimationFrame(onFrame);
+	}
 } catch (err) {
 	console.error('[probe] FAILED:', err);
 	log('FAILED: ' + err);

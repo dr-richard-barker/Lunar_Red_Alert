@@ -144,3 +144,62 @@ jobs:
             wasm-screenshot.png
           if-no-files-found: warn
           retention-days: 7
+
+      - name: Prepare deployable bundle (W5 — content stripped)
+        if: success()
+        # The public site ships NO game content: the deployed page boots to
+        # the engine's own content-installer menu (repo assets only). Strip
+        # the CI-fetched EA freeware files and regenerate the staging lists.
+        run: |
+          WWWROOT=$(dirname "$(find bin/publish -name dotnet.js -path '*_framework*' | head -1)")/..
+          rm -rf "$WWWROOT/probe-data/supportdir"
+          (cd "$WWWROOT/probe-data" && find . -type f ! -name '*-list.txt' | sed 's|^\./||' > file-list.txt)
+          (cd "$WWWROOT/probe-data" && find . -type d | sed 's|^\./||' | grep -v '^$' > dir-list.txt)
+          du -sh "$WWWROOT"
+
+      - name: Upload deployable bundle
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasm-game-bundle
+          path: bin/publish/wwwroot
+          retention-days: 3
+
+  deploy:
+    name: Deploy site + engine to Pages
+    needs: probe
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Clone Repository
+        uses: actions/checkout@v7
+
+      - name: Download game bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: wasm-game-bundle
+          path: site-game
+
+      - name: Assemble site (docs + engine at /play-wasm)
+        run: |
+          mkdir -p site
+          cp -r docs/* site/
+          mkdir -p site/play-wasm
+          cp -r site-game/* site/play-wasm/
+          du -sh site site/play-wasm
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

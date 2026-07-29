@@ -30,6 +30,9 @@ namespace OpenRA.WasmProbe
 		const int CommandFrames = 150;
 
 		internal static bool Ready;
+
+		// W5 play mode: no gates, no stop — the engine owns the frame for good.
+		internal static bool PlayForever;
 		static int frames;
 		static int firstWorldTick = int.MinValue;
 		static int lastWorldTick = int.MinValue;
@@ -57,6 +60,10 @@ namespace OpenRA.WasmProbe
 				Console.WriteLine($"[probe] STEP-FAIL live game frame {frames}: {e}");
 				throw;
 			}
+
+			// Play mode: no gates — keep the engine on the browser's frame.
+			if (PlayForever)
+				return true;
 
 			if (firstWorldTick == int.MinValue)
 				firstWorldTick = tick;

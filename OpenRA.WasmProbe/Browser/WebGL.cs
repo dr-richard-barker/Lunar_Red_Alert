@@ -39,6 +39,10 @@ namespace OpenRA.WasmProbe
 		[JSImport("fetchBase64", "webgl.js")]
 		internal static partial Task<string> FetchBase64(string url);
 
+		// Phase W5: "probe" (CI gate ladder) or "play" (deployed page boot).
+		[JSImport("getBootMode", "webgl.js")]
+		internal static partial string GetBootMode();
+
 		internal static async Task<byte[]> FetchBinary(string url)
 		{
 			return Convert.FromBase64String(await FetchBase64(url));
