@@ -72,8 +72,14 @@ jobs:
           # from the three mounted trees, preserving directory structure —
           # including empty dirs (e.g. uibits) that the manifest Folder-mounts.
           # W3i-b adds binaries: fonts (.ttf) and chrome/logo art (.png).
+          # Later fix: loose-folder maps (not zipped .oramap) need their own
+          # map.bin (tile data, REQUIRED -- its absence threw a
+          # FileNotFoundException per map during MapCache scanning, expensive
+          # enough across ~74 maps on a single interpreted wasm thread to look
+          # like a hang) plus a few per-map custom overrides (.shp/.pal/.aud).
           rsync -a --include='*/' --include='*.yaml' --include='*.ftl' --include='*.lua' \
-            --include='*.ttf' --include='*.png' --include='*.oramap' --exclude='*' \
+            --include='*.ttf' --include='*.png' --include='*.oramap' \
+            --include='*.bin' --include='*.shp' --include='*.pal' --include='*.aud' --exclude='*' \
             mods/ra mods/ra-content mods/common mods/common-content mods/spaceage "$WWWROOT/probe-data/mods/"
           # W3i: engine shaders — the Renderer compiles these from EngineDir/glsl.
           cp glsl/*.vert glsl/*.frag "$WWWROOT/probe-data/glsl/"
