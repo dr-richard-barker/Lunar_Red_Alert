@@ -61,6 +61,27 @@ namespace OpenRA.WasmProbe
 				Console.WriteLine($"[play] diag: File.Exists({f}) = {File.Exists(p)}");
 			}
 
+			// Diagnostic #2 (cheap, cannot hang): replicate the ENGINE's exact
+			// resolution + mount attempt for the "content" system package alias
+			// (~^SupportDir|Content/ra/v2/: content). File.Exists on our own
+			// hand-built path proved the files are physically present, but that
+			// is a DIFFERENT code path from whether FileSystem.Mount/OpenPackage
+			// actually succeeds -- test that directly, using the engine's own
+			// Platform.ResolvePath.
+			var engineResolvedContentPath = Platform.ResolvePath("^SupportDir|Content/ra/v2/");
+			Console.WriteLine($"[play] diag2: engine-resolved content path = '{engineResolvedContentPath}'");
+			Console.WriteLine($"[play] diag2: Directory.Exists(engine path) = {Directory.Exists(engineResolvedContentPath)}");
+			try
+			{
+				var tempFs = new OpenRA.FileSystem.FileSystem("diag", null, []);
+				var contentPkg = tempFs.OpenPackage(engineResolvedContentPath);
+				Console.WriteLine($"[play] diag2: OpenPackage succeeded, contains allies.mix = {contentPkg?.Contains("allies.mix")}");
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"[play] diag2: OpenPackage THREW: {ex.GetType().Name}: {ex.Message}");
+			}
+
 			Console.WriteLine("[play] booting Lunar Red Alert…");
 			Game.InitializeMod(manifest, Arguments.Empty);
 			Console.WriteLine($"[play] boot complete — active mod '{Game.ModData?.Manifest.Id}'");
