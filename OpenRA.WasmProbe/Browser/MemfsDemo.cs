@@ -49,6 +49,13 @@ namespace OpenRA.WasmProbe
 				throw new InvalidOperationException("MEMFS round-trip failed for spaceage-defaults.yaml");
 
 			Console.WriteLine($"[probe] step: {staged} files staged into MEMFS under {Root}mods/");
+
+			// ORDER MATTERS: OverrideEngineDir must run before ANY EngineDir
+			// access — and InitializeSupportDir reads EngineDir for its
+			// portable-install check, so even printing SupportDir first would
+			// lock the engine dir (it did: that was this gate's first failure).
+			Platform.OverrideEngineDir(Root);
+			Console.WriteLine($"[probe] step: EngineDir overridden -> '{Platform.EngineDir}'");
 			Console.WriteLine($"[probe] step: Platform.BinDir = '{Platform.BinDir}'");
 			try
 			{
@@ -58,10 +65,6 @@ namespace OpenRA.WasmProbe
 			{
 				Console.WriteLine($"[probe] step: Platform.SupportDir threw {e.GetType().Name} (W3g will need a home for settings/logs)");
 			}
-
-			// The supported hook: point ^EngineDir at our staged tree.
-			Platform.OverrideEngineDir(Root);
-			Console.WriteLine($"[probe] step: EngineDir overridden -> '{Platform.EngineDir}'");
 
 			// Now the ENGINE's standard mount chain, exactly as a manifest uses
 			// it: string names with ^EngineDir prefixes -> Folder packages.
