@@ -256,10 +256,20 @@ const keycodeOf = e => {
 	}
 };
 const buttonFlag = b => (b === 0 ? 1 : b === 2 ? 2 : b === 1 ? 4 : 0);
-canvas.addEventListener('mousedown', e => inputQueue.push([1, 0, buttonFlag(e.button), e.offsetX, e.offsetY, 0, 0, mods(e)]));
-canvas.addEventListener('mousemove', e => inputQueue.push([1, 1, 0, e.offsetX, e.offsetY, e.movementX, e.movementY, mods(e)]));
-canvas.addEventListener('mouseup', e => inputQueue.push([1, 2, buttonFlag(e.button), e.offsetX, e.offsetY, 0, 0, mods(e)]));
-canvas.addEventListener('wheel', e => inputQueue.push([1, 3, 0, e.offsetX, e.offsetY, 0, Math.sign(-e.deltaY), mods(e)]));
+
+// Map client coordinates to canvas pixel space, robust to CSS scaling and
+// borders (offsetX is padding-box relative and skews if the canvas has one).
+const canvasXY = e => {
+	const r = canvas.getBoundingClientRect();
+	return [
+		Math.round((e.clientX - r.left) * (canvas.width / r.width)),
+		Math.round((e.clientY - r.top) * (canvas.height / r.height)),
+	];
+};
+canvas.addEventListener('mousedown', e => { const [x, y] = canvasXY(e); inputQueue.push([1, 0, buttonFlag(e.button), x, y, 0, 0, mods(e)]); });
+canvas.addEventListener('mousemove', e => { const [x, y] = canvasXY(e); inputQueue.push([1, 1, 0, x, y, e.movementX, e.movementY, mods(e)]); });
+canvas.addEventListener('mouseup', e => { const [x, y] = canvasXY(e); inputQueue.push([1, 2, buttonFlag(e.button), x, y, 0, 0, mods(e)]); });
+canvas.addEventListener('wheel', e => { const [x, y] = canvasXY(e); inputQueue.push([1, 3, 0, x, y, 0, Math.sign(-e.deltaY), mods(e)]); });
 canvas.addEventListener('contextmenu', e => e.preventDefault());
 window.addEventListener('keydown', e => inputQueue.push([2, 0, keycodeOf(e), mods(e), e.key.length === 1 ? e.key.charCodeAt(0) : 0, e.repeat ? 1 : 0, 0, 0]));
 window.addEventListener('keyup', e => inputQueue.push([2, 1, keycodeOf(e), mods(e), 0, 0, 0, 0]));

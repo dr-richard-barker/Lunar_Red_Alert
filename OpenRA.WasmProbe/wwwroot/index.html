@@ -6,7 +6,9 @@
 <style>
   body { margin: 0; background: #0a0e14; color: #cdd6e2; font: 14px/1.5 monospace; }
   #log { padding: 10px 14px; white-space: pre-wrap; }
-  canvas { display: block; margin: 14px; border: 1px solid #233042; image-rendering: pixelated; }
+  /* No border/padding on the canvas: input coordinates are padding-box
+     relative, and any border skews the engine's pixel coordinates. */
+  canvas { display: block; margin: 14px; image-rendering: pixelated; }
 </style>
 </head>
 <body>
