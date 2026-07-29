@@ -148,7 +148,7 @@ namespace OpenRA.WasmProbe
 				var diagOc5 = new ObjectCreator(manifest, installed);
 				var diagPackageLoaders5 = diagOc5.GetLoaders<OpenRA.FileSystem.IPackageLoader>(manifest.PackageFormats, "package");
 				var diagModFiles5 = new OpenRA.FileSystem.FileSystem(manifest.Id, installed, diagPackageLoaders5);
-				var diagLoader5 = diagOc5.GetLoader<OpenRA.FileSystem.IFileSystemLoader>(manifest.FileSystem.Value, "filesystem");
+				var diagLoader5 = diagOc5.GetLoader<IFileSystemLoader>(manifest.FileSystem.Value, "filesystem");
 				FieldLoader.Load(diagLoader5, manifest.FileSystem);
 				diagLoader5.Mount(manifest, diagModFiles5, diagOc5);
 
