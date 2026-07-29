@@ -88,7 +88,7 @@ namespace OpenRA.WasmProbe
 			if (mergedCapacity != "6000")
 				throw new InvalidOperationException($"merge mismatch: ^Soldier Oxygen Capacity = {mergedCapacity}");
 
-			Console.WriteLine($"[probe] W3a SUCCESS: real ra+spaceage rules fetched and merged in-wasm; ^Soldier gains Oxygen (Capacity={mergedCapacity}, {soldier.Value.Nodes.Count} traits total)");
+			Console.WriteLine($"[probe] W3a SUCCESS: real ra+spaceage rules fetched and merged in-wasm; ^Soldier gains Oxygen (Capacity={mergedCapacity}, {soldier.Value.Nodes.Length} traits total)");
 
 			Console.WriteLine("[probe] SUCCESS: OpenRA.Game core executes under the .NET wasm runtime");
 		}
