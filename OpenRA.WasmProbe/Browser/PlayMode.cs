@@ -32,6 +32,7 @@ namespace OpenRA.WasmProbe
 
 			Directory.CreateDirectory(Platform.SupportDir);
 			Game.InitializeSettings(Arguments.Empty);
+			BrowserBoot.ApplyDefaults();
 
 			var installed = new InstalledMods([Platform.ResolvePath("^EngineDir|mods")], []);
 			typeof(Game).GetProperty(nameof(Game.Mods), BindingFlags.Public | BindingFlags.Static)

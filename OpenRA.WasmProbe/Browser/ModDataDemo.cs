@@ -35,6 +35,7 @@ namespace OpenRA.WasmProbe
 			// Emscripten home proven by W3f; ensure it exists for settings.yaml.
 			System.IO.Directory.CreateDirectory(Platform.SupportDir);
 			Game.InitializeSettings(Arguments.Empty);
+			BrowserBoot.ApplyDefaults();
 			Console.WriteLine($"[probe] step: Game.Settings initialized (settings.yaml under {Platform.SupportDir})");
 
 			var modsRoot = Platform.ResolvePath("^EngineDir|mods");
