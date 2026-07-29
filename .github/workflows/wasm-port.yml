@@ -13,6 +13,13 @@ on:
       - 'OpenRA.Game/**'
       - 'OpenRA.Mods.Common/**'
       - 'OpenRA.Mods.Cnc/**'
+      - 'OpenRA.Platforms.Browser/**'
+      # mod.yaml/rules changes affect what gets staged and how the boot's
+      # content check resolves (a mod-only fix once silently skipped this
+      # entire pipeline because none of the above paths matched it).
+      - 'mods/spaceage/**'
+      - 'mods/ra-content/**'
+      - 'mods/common-content/**'
 
 permissions:
   contents: read
