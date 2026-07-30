@@ -128,8 +128,6 @@ namespace OpenRA
 				ModelSequenceDefinitions = LoadRuleSection(yaml, "ModelSequences");
 				FluentMessageDefinitions = LoadRuleSection(yaml, "FluentMessages");
 
-				Console.WriteLine($"[diag] SetCustomRules: sections loaded, RuleDefinitions={(RuleDefinitions != null)}, FluentMessageDefinitions={(FluentMessageDefinitions != null)}");
-
 				try
 				{
 					if (FluentMessageDefinitions != null)
@@ -149,9 +147,7 @@ namespace OpenRA
 							text = builder.ToString();
 						}
 
-						Console.WriteLine("[diag] SetCustomRules: about to construct FluentBundle");
 						FluentBundle = new FluentBundle(modData.Manifest.FluentCulture, files, fileSystem, text);
-						Console.WriteLine("[diag] SetCustomRules: FluentBundle constructed");
 					}
 					else
 						FluentBundle = null;
@@ -160,7 +156,6 @@ namespace OpenRA
 					// This assumes/enforces that these actor types can only inherit abstract definitions (starting with ^)
 					if (RuleDefinitions != null)
 					{
-						Console.WriteLine("[diag] SetCustomRules: RuleDefinitions present, about to GetRulesYaml/gather sources");
 						modDataRules ??= modData.GetRulesYaml();
 						var files = Enumerable.Empty<string>();
 						if (RuleDefinitions.Value != null)
@@ -176,36 +171,26 @@ namespace OpenRA
 						if (RuleDefinitions.Nodes.Length > 0)
 							sources = sources.Append(RuleDefinitions.Nodes.Where(IsLoadableRuleDefinition).ToList());
 
-						Console.WriteLine("[diag] SetCustomRules: about to MiniYaml.Merge(sources)");
 						var yamlNodes = MiniYaml.Merge(sources);
-						Console.WriteLine($"[diag] SetCustomRules: merged {yamlNodes.Count} nodes, about to construct world ActorInfo");
 						WorldActorInfo = new ActorInfo(
 							modData.ObjectCreator,
 							"world",
 							yamlNodes.First(n => string.Equals(n.Key, "world", StringComparison.InvariantCultureIgnoreCase)).Value);
-						Console.WriteLine("[diag] SetCustomRules: world ActorInfo done, about to construct player ActorInfo");
 						PlayerActorInfo = new ActorInfo(
 							modData.ObjectCreator,
 							"player",
 							yamlNodes.First(n => string.Equals(n.Key, "player", StringComparison.InvariantCultureIgnoreCase)).Value);
-						Console.WriteLine("[diag] SetCustomRules: player ActorInfo done");
 						return;
 					}
 				}
 				catch (Exception e)
 				{
-					Console.WriteLine($"[diag] SetCustomRules: caught exception: {e}");
 					Log.Write("debug", $"Failed to load rules for `{Title}` with error:");
 					Log.Write("debug", e);
 				}
 
-				Console.WriteLine("[diag] SetCustomRules: falling back to modData.DefaultRules, about to access it");
-				var defaultRules = modData.DefaultRules;
-				Console.WriteLine("[diag] SetCustomRules: got DefaultRules, about to index World actor");
-				WorldActorInfo = defaultRules.Actors[SystemActors.World];
-				Console.WriteLine("[diag] SetCustomRules: got World actor, about to index Player actor");
-				PlayerActorInfo = defaultRules.Actors[SystemActors.Player];
-				Console.WriteLine("[diag] SetCustomRules: fallback done");
+				WorldActorInfo = modData.DefaultRules.Actors[SystemActors.World];
+				PlayerActorInfo = modData.DefaultRules.Actors[SystemActors.Player];
 			}
 
 			public InnerData Clone()
@@ -464,21 +449,13 @@ namespace OpenRA
 				newData.Status = MapStatus.Unavailable;
 			}
 
-			Console.WriteLine("[diag] UpdateFromMap: about to call SetCustomRules");
 			newData.SetCustomRules(modData, this, yaml, modDataRules);
-			Console.WriteLine("[diag] UpdateFromMap: SetCustomRules done");
 
 			if (cache.LoadPreviewImages && p.Contains("map.png"))
-			{
-				Console.WriteLine("[diag] UpdateFromMap: map.png present, about to decode Png");
 				using (var dataStream = p.GetStream("map.png"))
 					newData.Preview = new Png(dataStream);
-				Console.WriteLine("[diag] UpdateFromMap: Png decode done");
-			}
 
-			Console.WriteLine("[diag] UpdateFromMap: about to get ModifiedDate");
 			newData.ModifiedDate = p.Name != null ? File.GetLastWriteTime(p.Name) : DateTime.Now;
-			Console.WriteLine("[diag] UpdateFromMap: ModifiedDate done");
 
 			// Assign the new data atomically
 			// Local maps have higher precedence than remote/generated maps,

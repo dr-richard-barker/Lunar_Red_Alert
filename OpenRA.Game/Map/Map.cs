@@ -264,16 +264,12 @@ namespace OpenRA
 
 		static string ComputeUID(IReadOnlyPackage package, int format)
 		{
-			Console.WriteLine($"[diag] ComputeUID: start for '{package.Name}'");
-
 			// UID is calculated by taking an SHA1 of the yaml and binary data
 			var requiredFiles = new[] { "map.yaml", "map.bin" };
 			var contents = package.Contents.ToList();
 			foreach (var required in requiredFiles)
 				if (!contents.Contains(required))
 					throw new FileNotFoundException($"Required file {required} not present in this map");
-
-			Console.WriteLine("[diag] ComputeUID: required files present, about to gather streams");
 
 			var streams = new List<Stream>();
 			try
@@ -285,8 +281,6 @@ namespace OpenRA
 						(format >= 12 && filename == "map.png"))
 						streams.Add(package.GetStream(filename));
 
-				Console.WriteLine($"[diag] ComputeUID: gathered {streams.Count} streams, about to SHA1 hash");
-
 				// Take the SHA1
 				if (streams.Count == 0)
 					return CryptoUtil.SHA1Hash([]);
@@ -295,10 +289,7 @@ namespace OpenRA
 				for (var i = 1; i < streams.Count; i++)
 					merged = new MergedStream(merged, streams[i]);
 
-				Console.WriteLine("[diag] ComputeUID: about to call CryptoUtil.SHA1Hash(merged)");
-				var result = CryptoUtil.SHA1Hash(merged);
-				Console.WriteLine($"[diag] ComputeUID: SHA1Hash done, result={result}");
-				return result;
+				return CryptoUtil.SHA1Hash(merged);
 			}
 			finally
 			{

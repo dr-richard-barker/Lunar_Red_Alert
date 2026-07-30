@@ -32,9 +32,7 @@ namespace OpenRA.FileSystem
 			public ReadOnlyZipFile(Stream s, string filename)
 			{
 				Name = filename;
-				Console.WriteLine($"[diag] ZipFile: opening '{filename}', stream length={s.Length}, CanSeek={s.CanSeek}, Position={s.Position}");
 				pkg = new ZipFile(s);
-				Console.WriteLine($"[diag] ZipFile: opened '{filename}' OK");
 			}
 
 			public Stream GetStream(string filename)
@@ -102,39 +100,24 @@ namespace OpenRA.FileSystem
 
 			public ReadWriteZipFile(string filename = null, bool create = false)
 			{
-				Console.WriteLine($"[diag] ReadWriteZipFile: ctor start, filename='{filename}', create={create}");
-
 				// SharpZipLib breaks when asked to update archives loaded from outside streams or files
 				// We can work around this by creating a clean in-memory-only file, cutting all outside references
 				if (!string.IsNullOrEmpty(filename) && !create)
 				{
-					Console.WriteLine("[diag] ReadWriteZipFile: about to File.ReadAllBytes");
-					var bytes = File.ReadAllBytes(filename);
-					Console.WriteLine($"[diag] ReadWriteZipFile: read {bytes.Length} bytes, about to copy to pkgStream");
-					using (var copy = new MemoryStream(bytes))
+					using (var copy = new MemoryStream(File.ReadAllBytes(filename)))
 					{
 						pkgStream.Capacity = (int)copy.Length;
 						copy.CopyTo(pkgStream);
 					}
-
-					Console.WriteLine("[diag] ReadWriteZipFile: copy to pkgStream done");
 				}
 
 				pkgStream.Position = 0;
-				Console.WriteLine("[diag] ReadWriteZipFile: about to construct ZipFile(pkgStream)");
 				pkg = new ZipFile(pkgStream);
-				Console.WriteLine("[diag] ReadWriteZipFile: ZipFile(pkgStream) constructed, about to clear ExtraData");
 				Name = filename;
 
 				// Remove subfields that can break ZIP updating.
-				var extraDataCount = 0;
 				foreach (ZipEntry entry in pkg)
-				{
 					entry.ExtraData = null;
-					extraDataCount++;
-				}
-
-				Console.WriteLine($"[diag] ReadWriteZipFile: ctor done, cleared ExtraData on {extraDataCount} entries");
 			}
 
 			public ReadWriteZipFile(byte[] data)
@@ -243,10 +226,8 @@ namespace OpenRA.FileSystem
 
 		public bool TryParsePackage(Stream s, string filename, FileSystem context, out IReadOnlyPackage package)
 		{
-			Console.WriteLine($"[diag] TryParsePackage: about to read signature for '{filename}'");
 			var readSignature = s.ReadUInt32();
 			s.Position -= 4;
-			Console.WriteLine($"[diag] TryParsePackage: signature read for '{filename}' = 0x{readSignature:x8}");
 
 			if (readSignature != ZipSignature)
 			{
@@ -260,17 +241,13 @@ namespace OpenRA.FileSystem
 
 		public static bool TryParseReadWritePackage(string filename, out IReadWritePackage package)
 		{
-			Console.WriteLine($"[diag] TryParseReadWritePackage: about to File.OpenRead('{filename}')");
 			using (var s = File.OpenRead(filename))
 			{
-				Console.WriteLine("[diag] TryParseReadWritePackage: OpenRead OK, about to ReadUInt32");
 				if (s.ReadUInt32() != ZipSignature)
 				{
 					package = null;
 					return false;
 				}
-
-				Console.WriteLine("[diag] TryParseReadWritePackage: signature matched, ZIP confirmed");
 			}
 
 			package = new ReadWriteZipFile(filename);

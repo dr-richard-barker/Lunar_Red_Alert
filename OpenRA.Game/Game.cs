@@ -507,25 +507,18 @@ namespace OpenRA
 
 			Sound.StopVideo();
 
-			Console.WriteLine("[diag] InitializeMod: about to construct ModData");
 			ModData = new ModData(manifest, Mods, true);
-			Console.WriteLine("[diag] InitializeMod: ModData constructed");
 
 			LocalPlayerProfile = new LocalPlayerProfile(Path.Combine(Platform.SupportDir, Settings.Game.AuthProfile), ModData.GetOrCreate<PlayerDatabase>());
-			Console.WriteLine("[diag] InitializeMod: LocalPlayerProfile done, about to call LoadScreen.BeforeLoad");
 
 			if (!ModData.LoadScreen.BeforeLoad(ModData))
 				return;
 
-			Console.WriteLine("[diag] InitializeMod: BeforeLoad done, about to call InitializeLoaders");
 			ModData.InitializeLoaders(ModData.DefaultFileSystem);
-			Console.WriteLine("[diag] InitializeMod: InitializeLoaders done, about to call InitializeFonts");
 			Renderer.InitializeFonts(ModData);
-			Console.WriteLine("[diag] InitializeMod: InitializeFonts done, about to call MapCache.LoadMaps");
 
 			using (new PerfTimer("LoadMaps"))
 				ModData.MapCache.LoadMaps(ModData);
-			Console.WriteLine("[diag] InitializeMod: MapCache.LoadMaps done");
 
 			Cursor?.Dispose();
 			Cursor = new CursorManager(ModData);
