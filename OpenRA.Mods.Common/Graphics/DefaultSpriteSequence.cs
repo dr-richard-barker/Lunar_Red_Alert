@@ -483,7 +483,10 @@ namespace OpenRA.Mods.Common.Graphics
 				var blank = cache.SheetBuilders[SheetType.BGRA].Add(new byte[4], SpriteFrameType.Bgra32, new Size(1, 1));
 				length = 1;
 				sprites = [blank];
-				bounds = Rectangle.Empty;
+
+				// Rectangle.Empty (0x0) isn't a valid actor bounds -- SpatiallyPartitioned
+				// rejects it outright. Use the blank sprite's own (non-empty, 1x1) bounds.
+				bounds = OffsetSpriteBounds(blank);
 			}
 		}
 
