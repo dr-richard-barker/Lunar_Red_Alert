@@ -146,7 +146,12 @@ namespace OpenRA
 				ruleset = new Ruleset(actors, weapons, voices, notifications, music, null, modelSequences);
 			}
 
-			if (modData.IsOnMainThread)
+			// Browser/WebAssembly support: there is no real background thread to run
+			// the loader Task on, so spinning here waiting for it would deadlock the
+			// single UI thread forever (the only thread able to progress the Task is
+			// the one blocked waiting for it). Just load inline instead -- there is no
+			// loadscreen animation to preserve without a real second thread anyway.
+			if (modData.IsOnMainThread && !OperatingSystem.IsBrowser())
 			{
 				modData.HandleLoadingProgress();
 
@@ -208,7 +213,10 @@ namespace OpenRA
 				ruleset = new Ruleset(actors, weapons, voices, notifications, music, terrainInfo, modelSequences);
 			}
 
-			if (modData.IsOnMainThread)
+			// Browser/WebAssembly support: see the matching comment in LoadDefaults --
+			// no real background thread exists to run the loader Task on, so waiting
+			// for it here would deadlock the single UI thread forever.
+			if (modData.IsOnMainThread && !OperatingSystem.IsBrowser())
 			{
 				modData.HandleLoadingProgress();
 
