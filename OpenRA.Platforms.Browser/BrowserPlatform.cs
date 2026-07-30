@@ -11,6 +11,7 @@
 
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using OpenRA.Primitives;
 
 namespace OpenRA.Platforms.Browser
@@ -46,10 +47,13 @@ namespace OpenRA.Platforms.Browser
 		// The real viewport size (window.innerWidth/innerHeight), for callers
 		// that want to size the window/canvas to the actual browser tab
 		// instead of a fixed default -- read before CreateWindow, since the
-		// window size it's given is fixed for the life of the window.
-		public static Size GetWindowSize()
+		// window size it's given is fixed for the life of the window (there
+		// is no live resize path, matching desktop OpenRA). Async because the
+		// JS side waits for the size to stop changing before reporting it --
+		// see the comment on getWindowSize in main.js for why that matters.
+		public static async Task<Size> GetWindowSize()
 		{
-			var wh = GL.GetWindowSize();
+			var wh = await GL.GetWindowSize();
 			return new Size(wh[0], wh[1]);
 		}
 	}

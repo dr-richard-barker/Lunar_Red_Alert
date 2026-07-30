@@ -39,7 +39,7 @@ namespace OpenRA.WasmProbe
 			// fixed 1024x768 default -- a small canvas inside a much bigger
 			// window left real screen space unused and made the page look
 			// low-resolution.
-			var windowSize = BrowserPlatform.GetWindowSize();
+			var windowSize = await BrowserPlatform.GetWindowSize();
 			Game.Settings.Graphics.WindowedSize = new int2(windowSize.Width, windowSize.Height);
 
 			var installed = new InstalledMods([Platform.ResolvePath("^EngineDir|mods")], []);

@@ -132,7 +132,40 @@ const webgl = {
 	// The engine's WINDOW_WIDTH/HEIGHT (and everything the chrome YAML lays
 	// out against) comes straight from this at boot -- used to size the
 	// canvas to the real available viewport instead of a fixed 1024x768.
-	getWindowSize: () => [window.innerWidth, window.innerHeight],
+	//
+	// window.innerWidth/innerHeight is NOT reliably final the instant this
+	// module starts running: some browsers (mobile Safari/Chrome collapsing
+	// their URL bar shortly after load, changing innerHeight; a host page
+	// still settling its own layout) report a transient, too-small size
+	// first. The engine only ever reads this once at boot and has no live
+	// resize path (desktop OpenRA doesn't either), so a stale early read
+	// means EVERY button for the rest of the session is laid out for a
+	// window that no longer matches what's on screen -- clicks land exactly
+	// where they should for the wrong, smaller canvas, so nothing the user
+	// sees ever responds. Poll until two consecutive checks agree (or a
+	// generous cap elapses) before committing to a size.
+	getWindowSize: () => new Promise(resolve => {
+		let last = [window.innerWidth, window.innerHeight];
+		let stableChecks = 0;
+		const deadline = Date.now() + 1500;
+		const poll = () => {
+			const now = [window.innerWidth, window.innerHeight];
+			if (now[0] === last[0] && now[1] === last[1]) {
+				stableChecks++;
+				if (stableChecks >= 2 || Date.now() >= deadline) {
+					resolve(now);
+					return;
+				}
+			} else {
+				stableChecks = 0;
+				last = now;
+			}
+
+			setTimeout(poll, 100);
+		};
+
+		poll();
+	}),
 	viewport: (x, y, w, h) => gl.viewport(x, y, w, h),
 	clearAll: () => gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT),
 	clearDepth: () => gl.clear(gl.DEPTH_BUFFER_BIT),

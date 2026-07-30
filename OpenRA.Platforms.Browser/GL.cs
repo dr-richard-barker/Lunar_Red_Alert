@@ -10,6 +10,7 @@
 #endregion
 
 using System.Runtime.InteropServices.JavaScript;
+using System.Threading.Tasks;
 
 namespace OpenRA.Platforms.Browser
 {
@@ -25,7 +26,7 @@ namespace OpenRA.Platforms.Browser
 		internal static partial int[] GetCanvasSize();
 
 		[JSImport("getWindowSize", "webgl.js")]
-		internal static partial int[] GetWindowSize();
+		internal static partial Task<int[]> GetWindowSize();
 
 		[JSImport("viewport", "webgl.js")]
 		internal static partial void Viewport(int x, int y, int width, int height);
