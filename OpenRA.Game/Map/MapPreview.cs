@@ -449,13 +449,21 @@ namespace OpenRA
 				newData.Status = MapStatus.Unavailable;
 			}
 
+			Console.WriteLine("[diag] UpdateFromMap: about to call SetCustomRules");
 			newData.SetCustomRules(modData, this, yaml, modDataRules);
+			Console.WriteLine("[diag] UpdateFromMap: SetCustomRules done");
 
 			if (cache.LoadPreviewImages && p.Contains("map.png"))
+			{
+				Console.WriteLine("[diag] UpdateFromMap: map.png present, about to decode Png");
 				using (var dataStream = p.GetStream("map.png"))
 					newData.Preview = new Png(dataStream);
+				Console.WriteLine("[diag] UpdateFromMap: Png decode done");
+			}
 
+			Console.WriteLine("[diag] UpdateFromMap: about to get ModifiedDate");
 			newData.ModifiedDate = p.Name != null ? File.GetLastWriteTime(p.Name) : DateTime.Now;
+			Console.WriteLine("[diag] UpdateFromMap: ModifiedDate done");
 
 			// Assign the new data atomically
 			// Local maps have higher precedence than remote/generated maps,
