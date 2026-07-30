@@ -201,19 +201,7 @@ namespace OpenRA.FileSystem
 		public Stream Open(string filename)
 		{
 			if (!TryOpen(filename, out var s))
-			{
-				Console.WriteLine($"[diag] FileSystem.Open: '{filename}' not in fileIndex. Scanning {mountedPackages.Count} mounted packages for a case-insensitive or partial match...");
-				foreach (var package in mountedPackages.Keys)
-				{
-					var matches = package.Contents.Where(c => c.Contains(filename, StringComparison.OrdinalIgnoreCase)).ToList();
-					if (matches.Count > 0)
-						Console.WriteLine($"[diag] FileSystem.Open: package '{package.Name}' contains near-matches: {string.Join(", ", matches)}");
-				}
-
-				Console.WriteLine($"[diag] FileSystem.Open: mounted package names: {string.Join(", ", mountedPackages.Keys.Select(p => p.Name))}");
-
 				throw new FileNotFoundException($"File not found: {filename}", filename);
-			}
 
 			return s;
 		}
