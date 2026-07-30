@@ -32,7 +32,9 @@ namespace OpenRA.FileSystem
 			public ReadOnlyZipFile(Stream s, string filename)
 			{
 				Name = filename;
+				Console.WriteLine($"[diag] ZipFile: opening '{filename}', stream length={s.Length}, CanSeek={s.CanSeek}, Position={s.Position}");
 				pkg = new ZipFile(s);
+				Console.WriteLine($"[diag] ZipFile: opened '{filename}' OK");
 			}
 
 			public Stream GetStream(string filename)
@@ -226,8 +228,10 @@ namespace OpenRA.FileSystem
 
 		public bool TryParsePackage(Stream s, string filename, FileSystem context, out IReadOnlyPackage package)
 		{
+			Console.WriteLine($"[diag] TryParsePackage: about to read signature for '{filename}'");
 			var readSignature = s.ReadUInt32();
 			s.Position -= 4;
+			Console.WriteLine($"[diag] TryParsePackage: signature read for '{filename}' = 0x{readSignature:x8}");
 
 			if (readSignature != ZipSignature)
 			{
