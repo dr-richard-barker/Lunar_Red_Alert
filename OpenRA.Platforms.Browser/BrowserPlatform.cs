@@ -80,8 +80,6 @@ namespace OpenRA.Platforms.Browser
 			// Phase W3d: drain the JS-side event queue (8 doubles per record;
 			// layout documented in wwwroot/main.js) into engine input events.
 			var flat = GL.PumpEvents();
-			if (flat.Length > 0)
-				Console.WriteLine($"[diag] PumpInput: {flat.Length / 8} record(s)");
 
 			for (var i = 0; i + 7 < flat.Length; i += 8)
 			{
@@ -96,7 +94,6 @@ namespace OpenRA.Platforms.Browser
 						_ => MouseInputEvent.Scroll,
 					};
 
-					Console.WriteLine($"[diag] PumpInput: mouse {mouseEvent} at ({(int)flat[i + 3]},{(int)flat[i + 4]}) button={(int)flat[i + 2]}");
 					inputHandler.OnMouseInput(new MouseInput(
 						mouseEvent,
 						(MouseButton)(int)flat[i + 2],

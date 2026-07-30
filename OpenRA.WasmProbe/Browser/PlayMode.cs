@@ -44,15 +44,7 @@ namespace OpenRA.WasmProbe
 			Game.Sound = new Sound(platform, Game.Settings.Sound);
 
 			Console.WriteLine("[play] booting Lunar Red Alert…");
-			try
-			{
-				Game.InitializeMod(manifest, Arguments.Empty);
-			}
-			catch (Exception e)
-			{
-				Console.WriteLine($"[diag] InitializeMod threw: {e}");
-				throw;
-			}
+			Game.InitializeMod(manifest, Arguments.Empty);
 
 			Console.WriteLine($"[play] boot complete — active mod '{Game.ModData?.Manifest.Id}'");
 
