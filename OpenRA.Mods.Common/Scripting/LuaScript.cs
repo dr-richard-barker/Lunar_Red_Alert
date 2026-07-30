@@ -9,6 +9,7 @@
  */
 #endregion
 
+using System;
 using System.Collections.Frozen;
 using System.Linq;
 using OpenRA.Graphics;
@@ -41,6 +42,12 @@ namespace OpenRA.Mods.Common.Scripting
 
 		void IWorldLoaded.WorldLoaded(World world, WorldRenderer worldRenderer)
 		{
+			// Eluant P/Invokes a real native lua51 library, which cannot exist in a
+			// browser sandbox. Map/mission Lua scripts just don't run in-browser --
+			// everything else (rendering, movement, combat) is unaffected.
+			if (OperatingSystem.IsBrowser())
+				return;
+
 			var scripts = info.Scripts ?? Enumerable.Empty<string>();
 			Context = new ScriptContext(world, worldRenderer, scripts);
 			Context.WorldLoaded();
@@ -48,7 +55,7 @@ namespace OpenRA.Mods.Common.Scripting
 
 		void ITick.Tick(Actor self)
 		{
-			Context.Tick();
+			Context?.Tick();
 		}
 
 		void INotifyActorDisposing.Disposing(Actor self)
@@ -61,6 +68,6 @@ namespace OpenRA.Mods.Common.Scripting
 			disposed = true;
 		}
 
-		public bool FatalErrorOccurred => Context.FatalErrorOccurred;
+		public bool FatalErrorOccurred => Context?.FatalErrorOccurred ?? false;
 	}
 }
