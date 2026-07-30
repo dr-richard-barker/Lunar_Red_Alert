@@ -132,69 +132,75 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 
 			SettingsUtils.BindCheckboxPref(panel, "HIDE_REPLAY_CHAT_CHECKBOX", gameSettings, "HideReplayChat");
 
-			var localProfile = Game.LocalPlayerProfile;
-			profileUsernameTextfield = panel.Get<TextFieldWidget>("USERNAME");
-			profileUsernameTextfield.IsDisabled = () => localProfile.State != LocalPlayerProfile.LinkState.Unlinked;
-
-			profilePasswordTextfield = panel.Get<PasswordFieldWidget>("PASSWORD");
-			profilePasswordTextfield.IsDisabled = profileUsernameTextfield.IsDisabled;
-
-			localProfile.OnStateChanged += UpdateForumAuthFields;
-			UpdateForumAuthFields();
-
-			var checkingFingerprintLabel = panel.Get<LabelWidget>("CHECKING_FINGERPRINT");
-			checkingFingerprintLabel.IsVisible = () => localProfile.State == LocalPlayerProfile.LinkState.CheckingLink;
-
-			var connectionErrorLabel = panel.Get<LabelWidget>("CONNECTION_ERROR");
-			connectionErrorLabel.IsVisible = () => localProfile.State == LocalPlayerProfile.LinkState.ConnectionFailed;
-
-			var linkResult = LocalPlayerProfile.LinkResult.Success;
-			var resultLabels = new Dictionary<LocalPlayerProfile.LinkResult, string>
+			// The forum-linking section is optional chrome: mods with no forum/account
+			// system (e.g. a standalone browser port) can omit these widgets entirely
+			// from their settings-gameplay.yaml rather than carry a non-functional link.
+			profileUsernameTextfield = panel.GetOrNull<TextFieldWidget>("USERNAME");
+			if (profileUsernameTextfield != null)
 			{
-				{ LocalPlayerProfile.LinkResult.Success, null },
-				{ LocalPlayerProfile.LinkResult.AuthFailure, FluentProvider.GetMessage(LabelForumProfileResultAuthFailure) },
-				{ LocalPlayerProfile.LinkResult.LoginAttempts, FluentProvider.GetMessage(LabelForumProfileResultLoginAttempts) },
-				{ LocalPlayerProfile.LinkResult.Banned, FluentProvider.GetMessage(LabelForumProfileResultBanned) },
-				{ LocalPlayerProfile.LinkResult.Error, FluentProvider.GetMessage(LabelForumProfileResultError) },
-				{ LocalPlayerProfile.LinkResult.ConnectionFailed, FluentProvider.GetMessage(LabelForumProfileResultConnectionFailed) },
-			};
+				var localProfile = Game.LocalPlayerProfile;
+				profileUsernameTextfield.IsDisabled = () => localProfile.State != LocalPlayerProfile.LinkState.Unlinked;
 
-			var resultLinkedLabel = FluentProvider.GetMessage(LabelForumProfileResultLinked);
-			var resultUnlinkedLabel = FluentProvider.GetMessage(LabelForumProfileResultUnlinked);
+				profilePasswordTextfield = panel.Get<PasswordFieldWidget>("PASSWORD");
+				profilePasswordTextfield.IsDisabled = profileUsernameTextfield.IsDisabled;
 
-			var profileStatusLabel = panel.Get<LabelWidget>("PROFILE_STATUS");
-			profileStatusLabel.IsVisible = () => localProfile.State != LocalPlayerProfile.LinkState.ConnectionFailed &&
-				localProfile.State != LocalPlayerProfile.LinkState.CheckingLink;
-			profileStatusLabel.GetText = () => resultLabels[linkResult] ?? (
-				localProfile.State == LocalPlayerProfile.LinkState.Linked ? resultLinkedLabel : resultUnlinkedLabel);
+				localProfile.OnStateChanged += UpdateForumAuthFields;
+				UpdateForumAuthFields();
 
-			var linkLabel = FluentProvider.GetMessage(ButtonForumProfileLink);
-			var unlinkLabel = FluentProvider.GetMessage(ButtonForumProfileUnlink);
-			var linkButton = panel.Get<ButtonWidget>("LINK_BUTTON");
-			linkButton.IsVisible = () => localProfile.State != LocalPlayerProfile.LinkState.ConnectionFailed;
-			linkButton.IsDisabled = () =>
-			{
-				if (localProfile.State == LocalPlayerProfile.LinkState.Unlinked)
-					return string.IsNullOrWhiteSpace(profileUsernameTextfield.Text) || string.IsNullOrWhiteSpace(profilePasswordTextfield.Text);
-				return localProfile.State != LocalPlayerProfile.LinkState.Linked;
-			};
+				var checkingFingerprintLabel = panel.Get<LabelWidget>("CHECKING_FINGERPRINT");
+				checkingFingerprintLabel.IsVisible = () => localProfile.State == LocalPlayerProfile.LinkState.CheckingLink;
 
-			linkButton.GetText = () => localProfile.State == LocalPlayerProfile.LinkState.Unlinked ? linkLabel : unlinkLabel;
-			linkButton.OnClick = () =>
-			{
-				if (localProfile.State == LocalPlayerProfile.LinkState.Linked)
-					localProfile.DeleteKeypair();
-				else if (localProfile.State == LocalPlayerProfile.LinkState.Unlinked)
-					localProfile.LinkForumAccount(profileUsernameTextfield.Text, profilePasswordTextfield.Text, r => linkResult = r);
-			};
+				var connectionErrorLabel = panel.Get<LabelWidget>("CONNECTION_ERROR");
+				connectionErrorLabel.IsVisible = () => localProfile.State == LocalPlayerProfile.LinkState.ConnectionFailed;
 
-			var retryButton = panel.Get<ButtonWidget>("RETRY_BUTTON");
-			retryButton.IsVisible = connectionErrorLabel.IsVisible;
-			retryButton.OnClick = localProfile.RefreshPlayerData;
+				var linkResult = LocalPlayerProfile.LinkResult.Success;
+				var resultLabels = new Dictionary<LocalPlayerProfile.LinkResult, string>
+				{
+					{ LocalPlayerProfile.LinkResult.Success, null },
+					{ LocalPlayerProfile.LinkResult.AuthFailure, FluentProvider.GetMessage(LabelForumProfileResultAuthFailure) },
+					{ LocalPlayerProfile.LinkResult.LoginAttempts, FluentProvider.GetMessage(LabelForumProfileResultLoginAttempts) },
+					{ LocalPlayerProfile.LinkResult.Banned, FluentProvider.GetMessage(LabelForumProfileResultBanned) },
+					{ LocalPlayerProfile.LinkResult.Error, FluentProvider.GetMessage(LabelForumProfileResultError) },
+					{ LocalPlayerProfile.LinkResult.ConnectionFailed, FluentProvider.GetMessage(LabelForumProfileResultConnectionFailed) },
+				};
 
-			var playerDatabase = modData.GetOrCreate<PlayerDatabase>();
-			var forumButton = panel.Get<ButtonWidget>("FORUM_BUTTON");
-			forumButton.OnClick = () => Game.Renderer.TryOpenUrl(playerDatabase.Forum);
+				var resultLinkedLabel = FluentProvider.GetMessage(LabelForumProfileResultLinked);
+				var resultUnlinkedLabel = FluentProvider.GetMessage(LabelForumProfileResultUnlinked);
+
+				var profileStatusLabel = panel.Get<LabelWidget>("PROFILE_STATUS");
+				profileStatusLabel.IsVisible = () => localProfile.State != LocalPlayerProfile.LinkState.ConnectionFailed &&
+					localProfile.State != LocalPlayerProfile.LinkState.CheckingLink;
+				profileStatusLabel.GetText = () => resultLabels[linkResult] ?? (
+					localProfile.State == LocalPlayerProfile.LinkState.Linked ? resultLinkedLabel : resultUnlinkedLabel);
+
+				var linkLabel = FluentProvider.GetMessage(ButtonForumProfileLink);
+				var unlinkLabel = FluentProvider.GetMessage(ButtonForumProfileUnlink);
+				var linkButton = panel.Get<ButtonWidget>("LINK_BUTTON");
+				linkButton.IsVisible = () => localProfile.State != LocalPlayerProfile.LinkState.ConnectionFailed;
+				linkButton.IsDisabled = () =>
+				{
+					if (localProfile.State == LocalPlayerProfile.LinkState.Unlinked)
+						return string.IsNullOrWhiteSpace(profileUsernameTextfield.Text) || string.IsNullOrWhiteSpace(profilePasswordTextfield.Text);
+					return localProfile.State != LocalPlayerProfile.LinkState.Linked;
+				};
+
+				linkButton.GetText = () => localProfile.State == LocalPlayerProfile.LinkState.Unlinked ? linkLabel : unlinkLabel;
+				linkButton.OnClick = () =>
+				{
+					if (localProfile.State == LocalPlayerProfile.LinkState.Linked)
+						localProfile.DeleteKeypair();
+					else if (localProfile.State == LocalPlayerProfile.LinkState.Unlinked)
+						localProfile.LinkForumAccount(profileUsernameTextfield.Text, profilePasswordTextfield.Text, r => linkResult = r);
+				};
+
+				var retryButton = panel.Get<ButtonWidget>("RETRY_BUTTON");
+				retryButton.IsVisible = connectionErrorLabel.IsVisible;
+				retryButton.OnClick = localProfile.RefreshPlayerData;
+
+				var playerDatabase = modData.GetOrCreate<PlayerDatabase>();
+				var forumButton = panel.Get<ButtonWidget>("FORUM_BUTTON");
+				forumButton.OnClick = () => Game.Renderer.TryOpenUrl(playerDatabase.Forum);
+			}
 
 			var autoSaveIntervalDropDown = panel.Get<DropDownButtonWidget>("AUTO_SAVE_INTERVAL_DROP_DOWN");
 			autoSaveIntervalDropDown.OnClick = () =>
@@ -277,6 +283,9 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 
 		void UpdateForumAuthFields()
 		{
+			if (profileUsernameTextfield == null)
+				return;
+
 			var state = Game.LocalPlayerProfile.State;
 			if (state == LocalPlayerProfile.LinkState.Linked)
 			{

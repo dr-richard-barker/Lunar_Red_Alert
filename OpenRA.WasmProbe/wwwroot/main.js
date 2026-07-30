@@ -377,6 +377,72 @@ canvas.addEventListener('contextmenu', e => e.preventDefault());
 window.addEventListener('keydown', e => inputQueue.push([2, 0, keycodeOf(e), mods(e), e.key.length === 1 ? e.key.charCodeAt(0) : 0, e.repeat ? 1 : 0, 0, 0]));
 window.addEventListener('keyup', e => inputQueue.push([2, 1, keycodeOf(e), mods(e), 0, 0, 0, 0]));
 
+// Touch support (iPad/touchscreen): the engine's RTS controls assume separate
+// left (select/move) and right (attack-move/cancel) mouse buttons, which touch
+// has no equivalent of. Map a quick tap to a left click, a long-press held in
+// place to a right click, and a touch dragged past a small tolerance to a
+// left-button drag (marquee-select), same as the mouse path above.
+const TOUCH_LONGPRESS_MS = 450;
+const TOUCH_MOVE_TOLERANCE = 10;
+let touch = null;
+
+const touchXY = t => {
+	const r = canvas.getBoundingClientRect();
+	return [
+		Math.round((t.clientX - r.left) * (canvas.width / r.width)),
+		Math.round((t.clientY - r.top) * (canvas.height / r.height)),
+	];
+};
+
+canvas.addEventListener('touchstart', e => {
+	e.preventDefault();
+	if (e.touches.length !== 1) return;
+	const t = e.touches[0];
+	const [x, y] = touchXY(t);
+	touch = { x, y, clientX: t.clientX, clientY: t.clientY, dragging: false, longPressed: false, timer: null };
+	touch.timer = setTimeout(() => {
+		if (!touch || touch.dragging) return;
+		touch.longPressed = true;
+		inputQueue.push([1, 0, buttonFlag(2), touch.x, touch.y, 0, 0, 0]);
+		inputQueue.push([1, 2, buttonFlag(2), touch.x, touch.y, 0, 0, 0]);
+	}, TOUCH_LONGPRESS_MS);
+}, { passive: false });
+
+canvas.addEventListener('touchmove', e => {
+	e.preventDefault();
+	if (!touch || e.touches.length !== 1) return;
+	const t = e.touches[0];
+	const [x, y] = touchXY(t);
+	if (!touch.dragging && !touch.longPressed &&
+		(Math.abs(t.clientX - touch.clientX) > TOUCH_MOVE_TOLERANCE || Math.abs(t.clientY - touch.clientY) > TOUCH_MOVE_TOLERANCE)) {
+		clearTimeout(touch.timer);
+		touch.dragging = true;
+		inputQueue.push([1, 0, buttonFlag(0), touch.x, touch.y, 0, 0, 0]);
+	}
+	if (touch.dragging) {
+		touch.x = x; touch.y = y;
+		inputQueue.push([1, 1, 0, x, y, 0, 0, 0]);
+	}
+}, { passive: false });
+
+canvas.addEventListener('touchend', e => {
+	e.preventDefault();
+	if (!touch) return;
+	clearTimeout(touch.timer);
+	if (touch.dragging)
+		inputQueue.push([1, 2, buttonFlag(0), touch.x, touch.y, 0, 0, 0]);
+	else if (!touch.longPressed) {
+		inputQueue.push([1, 0, buttonFlag(0), touch.x, touch.y, 0, 0, 0]);
+		inputQueue.push([1, 2, buttonFlag(0), touch.x, touch.y, 0, 0, 0]);
+	}
+	touch = null;
+}, { passive: false });
+
+canvas.addEventListener('touchcancel', () => {
+	if (touch) clearTimeout(touch.timer);
+	touch = null;
+}, { passive: false });
+
 try {
 	const { setModuleImports, getAssemblyExports, getConfig, runMain } = await dotnet.create();
 	setModuleImports('webgl.js', webgl);
