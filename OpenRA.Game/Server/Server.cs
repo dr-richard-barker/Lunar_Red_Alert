@@ -235,64 +235,73 @@ namespace OpenRA.Server
 			}
 		}
 
+		// Browser/WebAssembly support: true when this Server has no real TCP
+		// listeners/background threads at all -- its tick loop and any local
+		// connections are pumped inline, once per browser frame, instead.
+		readonly bool isBrowserLocal;
+
 		public Server(List<IPEndPoint> endpoints, ServerSettings settings, ModData modData, ServerType type)
 		{
 			Log.AddChannel("server", "server.log", true);
 
-			SocketException lastException = null;
-			foreach (var endpoint in endpoints)
+			isBrowserLocal = OperatingSystem.IsBrowser();
+			if (!isBrowserLocal)
 			{
-				var listener = new TcpListener(endpoint);
-				try
+				SocketException lastException = null;
+				foreach (var endpoint in endpoints)
 				{
+					var listener = new TcpListener(endpoint);
 					try
 					{
-						listener.Server.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, 1);
-					}
-					catch (Exception ex) when (ex is SocketException || ex is ArgumentException)
-					{
-						Log.Write("server", $"Failed to set socket option on {endpoint}: {ex.Message}");
-					}
-
-					listener.Start();
-					listeners.Add(listener);
-
-					new Thread(() =>
-					{
-						while (true)
+						try
 						{
-							if (State != ServerState.WaitingPlayers)
-							{
-								listener.Stop();
-								return;
-							}
-
-							// Use a 1s timeout so we can stop listening once the game starts
-							if (listener.Server.Poll(1000000, SelectMode.SelectRead))
-							{
-								try
-								{
-									events.Add(new ConnectionConnectEvent(listener.AcceptSocket()));
-								}
-								catch (Exception)
-								{
-									// Ignore the exception that may be generated if the connection
-									// drops while we are trying to connect
-								}
-							}
+							listener.Server.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, 1);
 						}
-					})
-					{ Name = $"Connection listener ({listener.LocalEndpoint})", IsBackground = true }.Start();
-				}
-				catch (SocketException ex)
-				{
-					lastException = ex;
-					Log.Write("server", $"Failed to listen on {endpoint}: {ex.Message}");
-				}
-			}
+						catch (Exception ex) when (ex is SocketException || ex is ArgumentException)
+						{
+							Log.Write("server", $"Failed to set socket option on {endpoint}: {ex.Message}");
+						}
 
-			if (listeners.Count == 0)
-				throw lastException;
+						listener.Start();
+						listeners.Add(listener);
+
+						new Thread(() =>
+						{
+							while (true)
+							{
+								if (State != ServerState.WaitingPlayers)
+								{
+									listener.Stop();
+									return;
+								}
+
+								// Use a 1s timeout so we can stop listening once the game starts
+								if (listener.Server.Poll(1000000, SelectMode.SelectRead))
+								{
+									try
+									{
+										events.Add(new ConnectionConnectEvent(listener.AcceptSocket()));
+									}
+									catch (Exception)
+									{
+										// Ignore the exception that may be generated if the connection
+										// drops while we are trying to connect
+									}
+								}
+							}
+						})
+						{ Name = $"Connection listener ({listener.LocalEndpoint})", IsBackground = true }.Start();
+					}
+					catch (SocketException ex)
+					{
+						lastException = ex;
+						Log.Write("server", $"Failed to listen on {endpoint}: {ex.Message}");
+					}
+				}
+
+				if (listeners.Count == 0)
+					throw lastException;
+			}
 
 			Type = type;
 			Settings = settings;
@@ -344,61 +353,154 @@ namespace OpenRA.Server
 				RecordFakeHandshake();
 			}
 
-			new Thread(_ =>
+			if (isBrowserLocal)
 			{
-				// Note: at least one of these is required to set the initial LobbyInfo.Map and MapStatus
-				foreach (var t in serverTraits.WithInterface<INotifyServerStart>())
-					t.ServerStarted(this);
-
-				Log.Write("server", $"Initial mod: {ModData.Manifest.Id}");
-				Log.Write("server", $"Initial map: {LobbyInfo.GlobalSettings.Map}");
-
-				while (true)
+				// Browser/WebAssembly support: no background thread exists to run this
+				// loop on -- PumpBrowserTick() is called inline once per browser frame
+				// instead (see Game.PerformBrowserFrame).
+				ServerStartedOnce();
+			}
+			else
+			{
+				new Thread(_ =>
 				{
-					if (State != ServerState.ShuttingDown)
+					ServerStartedOnce();
+
+					while (true)
 					{
-						if (events.TryTake(out var e, 1000))
-							e.Invoke(this);
+						TickOnce(1000);
 
-						// PERF: Dedicated servers need to drain the action queue to remove references blocking the GC from cleaning up disposed objects.
-						if (Type == ServerType.Dedicated)
-							Game.PerformDelayedActions();
-
-						foreach (var t in serverTraits.WithInterface<ITick>())
-							t.Tick(this);
-
-						if (State == ServerState.GameStarted)
-						{
-							foreach (var (playerIndex, scale) in orderBuffer.GetTickScales())
-							{
-								var frame = CreateTickScaleFrame(scale);
-								var con = Conns.SingleOrDefault(c => c.PlayerIndex == playerIndex);
-
-								if (con != null && con.Validated)
-									DispatchFrameToClient(con, playerIndex, frame);
-							}
-						}
+						if (State == ServerState.ShuttingDown)
+							break;
 					}
 
-					if (State == ServerState.ShuttingDown)
+					ServerShutdownOnce();
+				})
+				{ IsBackground = true, Name = "ServerThread" }.Start();
+			}
+		}
+
+		void ServerStartedOnce()
+		{
+			// Note: at least one of these is required to set the initial LobbyInfo.Map and MapStatus
+			foreach (var t in serverTraits.WithInterface<INotifyServerStart>())
+				t.ServerStarted(this);
+
+			Log.Write("server", $"Initial mod: {ModData.Manifest.Id}");
+			Log.Write("server", $"Initial map: {LobbyInfo.GlobalSettings.Map}");
+		}
+
+		bool shutdownHandled;
+		bool shutdownNotified;
+
+		// One iteration of the server's tick loop -- draining pending connection/order
+		// events, ticking server traits, and dispatching frames to clients. Runs
+		// either on the server's own background thread (desktop, blocking up to
+		// eventTimeoutMs waiting for the next event) or inline once per browser
+		// frame (isBrowserLocal, eventTimeoutMs=0 so it never blocks the UI thread).
+		void TickOnce(int eventTimeoutMs)
+		{
+			if (State != ServerState.ShuttingDown)
+			{
+				if (events.TryTake(out var e, eventTimeoutMs))
+					e.Invoke(this);
+
+				// PERF: Dedicated servers need to drain the action queue to remove references blocking the GC from cleaning up disposed objects.
+				if (Type == ServerType.Dedicated)
+					Game.PerformDelayedActions();
+
+				foreach (var t in serverTraits.WithInterface<ITick>())
+					t.Tick(this);
+
+				if (State == ServerState.GameStarted)
+				{
+					foreach (var (playerIndex, scale) in orderBuffer.GetTickScales())
 					{
-						EndGame();
-						if (IsMultiplayer)
-							Nat.TryRemovePortForward();
-						break;
+						var frame = CreateTickScaleFrame(scale);
+						var con = Conns.SingleOrDefault(c => c.PlayerIndex == playerIndex);
+
+						if (con != null && con.Validated)
+							DispatchFrameToClient(con, playerIndex, frame);
 					}
 				}
+			}
 
-				foreach (var t in serverTraits.WithInterface<INotifyServerShutdown>())
-					t.ServerShutdown(this);
+			if (State == ServerState.ShuttingDown && !shutdownHandled)
+			{
+				shutdownHandled = true;
+				EndGame();
+				if (IsMultiplayer)
+					Nat.TryRemovePortForward();
+			}
+		}
 
-				// Make sure to immediately close connections after the server is shutdown, we don't want to keep clients waiting
-				foreach (var c in Conns)
-					c.Dispose();
+		void ServerShutdownOnce()
+		{
+			foreach (var t in serverTraits.WithInterface<INotifyServerShutdown>())
+				t.ServerShutdown(this);
 
-				Conns.Clear();
-			})
-			{ IsBackground = true, Name = "ServerThread" }.Start();
+			// Make sure to immediately close connections after the server is shutdown, we don't want to keep clients waiting
+			foreach (var c in Conns)
+				c.Dispose();
+
+			Conns.Clear();
+		}
+
+		// Browser/WebAssembly support: called once per browser frame in place of the
+		// dedicated server thread desktop uses. Pumps any local (in-memory) client
+		// connections' incoming bytes, runs one non-blocking tick iteration, and
+		// performs shutdown cleanup inline the first time the server is told to stop.
+		public void PumpBrowserTick()
+		{
+			foreach (var c in Conns)
+				c.PumpBrowserReceive(this);
+
+			TickOnce(0);
+
+			if (State == ServerState.ShuttingDown && shutdownHandled && !shutdownNotified)
+			{
+				shutdownNotified = true;
+				ServerShutdownOnce();
+			}
+		}
+
+		public void AcceptLocalConnection(LocalTransport transport)
+		{
+			if (State != ServerState.WaitingPlayers)
+				return;
+
+			// Validate player identity by asking them to sign a random blob of data
+			// which we can then verify against the player public key database
+			var token = Convert.ToBase64String(OpenRA.Exts.MakeArray(256, _ => (byte)Random.Next()));
+
+			var newConn = new Connection(this, transport, token);
+			try
+			{
+				var ms = new MemoryStream(8);
+				ms.Write(ProtocolVersion.Handshake);
+				ms.Write(newConn.PlayerIndex);
+				newConn.TrySendData(ms.ToArray());
+
+				var request = new HandshakeRequest
+				{
+					Mod = ModData.Manifest.Id,
+					Version = ModData.Manifest.Metadata.Version,
+					AuthToken = token
+				};
+
+				DispatchOrdersToClient(newConn, 0, 0, new Order("HandshakeRequest", null, false)
+				{
+					Type = OrderType.Handshake,
+					IsImmediate = true,
+					TargetString = request.Serialize()
+				}.Serialize());
+			}
+			catch (Exception e)
+			{
+				Log.Write("server", $"Handshake for local client failed: {e}");
+			}
+
+			Conns.Add(newConn);
 		}
 
 		int nextPlayerIndex;

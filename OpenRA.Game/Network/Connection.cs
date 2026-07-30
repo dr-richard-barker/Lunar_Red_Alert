@@ -111,6 +111,13 @@ namespace OpenRA.Network
 		volatile int clientId;
 		bool disposed;
 
+		// Browser/WebAssembly support: set only when this connection was constructed
+		// over a LocalTransport (no socket, no background threads) instead of a real
+		// TCP loopback connection to a local Server. The wire-level packet framing
+		// and OrderIO serialization are identical either way -- only the transport
+		// (a Queue<byte[]> pair instead of a TcpClient stream) differs.
+		readonly LocalTransport localTransport;
+
 		public NetworkConnection(ConnectionTarget target)
 		{
 			Target = target;
@@ -119,6 +126,45 @@ namespace OpenRA.Network
 				Name = $"{GetType().Name} (connect to {target})",
 				IsBackground = true
 			}.Start();
+		}
+
+		public NetworkConnection(LocalTransport transport)
+		{
+			localTransport = transport;
+			EndPoint = new IPEndPoint(IPAddress.Loopback, 0);
+
+			// The server (Server.AcceptLocalConnection) enqueues this raw 8-byte
+			// handshake (protocol version + assigned player index) before this
+			// constructor can run, so it is always available immediately here --
+			// mirroring NetworkConnectionReceive's first (blocking) socket read,
+			// just synchronous instead of threaded.
+			var handshake = localTransport.ToClient.Dequeue();
+			var handshakeProtocol = BitConverter.ToInt32(handshake, 0);
+			if (handshakeProtocol != ProtocolVersion.Handshake)
+				throw new InvalidOperationException($"Handshake protocol version mismatch. Server={handshakeProtocol} Client={ProtocolVersion.Handshake}");
+
+			clientId = BitConverter.ToInt32(handshake, 4);
+			connectionState = ConnectionState.Connected;
+		}
+
+		// Browser/WebAssembly support: called once per browser frame in place of the
+		// dedicated receive thread desktop uses. Each queued byte[] is one complete
+		// CreateFrame()-formatted record (length, fromClient, payload) -- no
+		// incremental buffering needed since frame boundaries are already preserved
+		// by the queue, unlike a raw TCP byte stream.
+		public void PumpBrowserReceive()
+		{
+			if (localTransport == null)
+				return;
+
+			while (localTransport.ToClient.Count > 0)
+			{
+				var bytes = localTransport.ToClient.Dequeue();
+				var len = BitConverter.ToInt32(bytes, 0);
+				var fromClient = BitConverter.ToInt32(bytes, 4);
+				var buf = bytes[8..(8 + len)];
+				receivedPackets.Enqueue((fromClient, buf));
+			}
 		}
 
 		public ConnectionState ConnectionState => connectionState;
@@ -274,7 +320,15 @@ namespace OpenRA.Network
 				}
 
 				queuedSyncPackets.Clear();
-				ms.WriteTo(tcp.GetStream());
+
+				// Browser/WebAssembly support: the receiving side (Server.Connection.
+				// PumpBrowserReceive) buffers and re-parses this the same way a real
+				// TCP stream would, so multiple concatenated records in one array
+				// here are handled correctly regardless of chunk boundaries.
+				if (localTransport != null)
+					localTransport.ToServer.Enqueue(ms.ToArray());
+				else
+					ms.WriteTo(tcp.GetStream());
 			}
 			catch (SocketException) { /* drop this on the floor; we'll pick up the disconnect from the reader thread */ }
 			catch (ObjectDisposedException) { /* ditto */ }

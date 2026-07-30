@@ -63,9 +63,23 @@ namespace OpenRA
 
 		public static event Action OnShellmapLoaded = () => { };
 
+		// Browser/WebAssembly support: set by CreateLocalServer immediately before
+		// returning its placeholder ConnectionTarget, and consumed here -- there is
+		// no real network to connect the returned target to in-browser, so this is
+		// how JoinServer learns which in-memory transport actually pairs with it.
+		static LocalTransport pendingLocalTransport;
+
 		public static OrderManager JoinServer(ConnectionTarget endpoint, string password, bool recordReplay = true)
 		{
-			var newConnection = new NetworkConnection(endpoint);
+			NetworkConnection newConnection;
+			if (OperatingSystem.IsBrowser() && pendingLocalTransport != null)
+			{
+				newConnection = new NetworkConnection(pendingLocalTransport);
+				pendingLocalTransport = null;
+			}
+			else
+				newConnection = new NetworkConnection(endpoint);
+
 			if (recordReplay)
 				newConnection.StartRecording(() => TimestampedFilename());
 
@@ -796,6 +810,13 @@ namespace OpenRA
 
 		public static int PerformBrowserFrame()
 		{
+			// Browser/WebAssembly support: pump the local server (if any) and this
+			// client's local-transport connection once per frame -- there are no
+			// real background threads doing this here, unlike desktop.
+			server?.PumpBrowserTick();
+			if (OrderManager?.Connection is NetworkConnection localNetworkConnection)
+				localNetworkConnection.PumpBrowserReceive();
+
 			if (browserNextLogic < 0)
 				browserNextLogic = RunTime;
 
@@ -1024,6 +1045,23 @@ namespace OpenRA
 				AdvertiseOnline = false,
 				AdvertiseOnLocalNetwork = !isSkirmish
 			};
+
+			// Browser/WebAssembly support: there is no raw socket API at all, so even
+			// a local loopback TCP connection (what every other platform uses here,
+			// single player included) is impossible. Server's constructor skips
+			// creating real TcpListeners when OperatingSystem.IsBrowser(); pair it
+			// with an in-memory LocalTransport instead, connected immediately (no
+			// listening needed -- there's only ever one, synchronous local client).
+			// The placeholder ConnectionTarget signals JoinServer to pick up
+			// pendingLocalTransport instead of trying to dial these (invalid) endpoints.
+			if (OperatingSystem.IsBrowser())
+			{
+				server = new Server.Server([], settings, ModData, isSkirmish ? ServerType.Skirmish : ServerType.Local);
+				var transport = new LocalTransport();
+				server.AcceptLocalConnection(transport);
+				pendingLocalTransport = transport;
+				return new ConnectionTarget();
+			}
 
 			// Always connect to local games using the same loopback connection
 			// Exposing multiple endpoints introduces a race condition on the client's PlayerIndex (sometimes 0, sometimes 1)

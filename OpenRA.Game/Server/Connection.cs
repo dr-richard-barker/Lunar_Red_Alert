@@ -18,6 +18,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using OpenRA.Network;
 
 namespace OpenRA.Server
 {
@@ -44,6 +45,16 @@ namespace OpenRA.Server
 		readonly BlockingCollection<byte[]> sendQueue = [];
 		readonly Queue<int> pingHistory = [];
 
+		// Browser/WebAssembly support: set only when this Connection was constructed
+		// over a LocalTransport (no socket at all) instead of a real Socket. The
+		// receive-side state machine below is shared between both paths; only
+		// the source of incoming bytes and the destination of outgoing bytes differ.
+		readonly LocalTransport localTransport;
+		readonly List<byte> localReadBuffer;
+		ReceiveState localState;
+		int localExpectLength;
+		int localFrame;
+
 		public Connection(Server server, Socket socket, string authToken)
 		{
 			PlayerIndex = server.ChooseFreePlayerIndex();
@@ -55,6 +66,80 @@ namespace OpenRA.Server
 				Name = $"Client communication ({EndPoint}",
 				IsBackground = true
 			}.Start((server, socket));
+		}
+
+		// Browser/WebAssembly support: no real socket, no background thread --
+		// PumpBrowserReceive() is called inline once per server tick instead.
+		public Connection(Server server, LocalTransport transport, string authToken)
+		{
+			PlayerIndex = server.ChooseFreePlayerIndex();
+			AuthToken = authToken;
+			EndPoint = new IPEndPoint(IPAddress.Loopback, 0);
+
+			localTransport = transport;
+			localReadBuffer = [];
+			localState = ReceiveState.Header;
+			localExpectLength = 8;
+		}
+
+		// Browser/WebAssembly support: mirrors SendReceiveLoop's receive-side state
+		// machine (header then data, repeated), but drains LocalTransport.ToServer
+		// instead of polling a Socket. Called once per server tick.
+		public void PumpBrowserReceive(Server server)
+		{
+			if (localTransport == null)
+				return;
+
+			while (localTransport.ToServer.Count > 0)
+			{
+				localReadBuffer.AddRange(localTransport.ToServer.Dequeue());
+				lastReceivedTime = Game.RunTime;
+				TimeoutMessageShown = false;
+			}
+
+			while (localReadBuffer.Count >= localExpectLength)
+			{
+				var bytes = localReadBuffer.GetRange(0, localExpectLength).ToArray();
+				localReadBuffer.RemoveRange(0, localExpectLength);
+
+				switch (localState)
+				{
+					case ReceiveState.Header:
+					{
+						localExpectLength = BitConverter.ToInt32(bytes, 0) - 4;
+						localFrame = BitConverter.ToInt32(bytes, 4);
+						localState = ReceiveState.Data;
+
+						if (localExpectLength < 0 || (server.IsMultiplayer && localExpectLength > MaxOrderLength))
+						{
+							Log.Write("server", $"Closing local connection because of excessive order length: {localExpectLength}");
+							server.OnConnectionDisconnect(this);
+							return;
+						}
+
+						break;
+					}
+
+					case ReceiveState.Data:
+					{
+						if (localExpectLength == 10 && bytes[0] == (byte)OrderType.Ping)
+						{
+							if (pingHistory.Count == MaxPingSamples)
+								pingHistory.Dequeue();
+
+							pingHistory.Enqueue((int)(Game.RunTime - BitConverter.ToInt64(bytes, 1)));
+							server.OnConnectionPing(this, pingHistory.ToArray(), bytes[9]);
+						}
+						else
+							server.OnConnectionPacket(this, localFrame, bytes);
+
+						localExpectLength = 8;
+						localState = ReceiveState.Header;
+
+						break;
+					}
+				}
+			}
 		}
 
 		static byte[] CreatePingFrame()
@@ -194,6 +279,12 @@ namespace OpenRA.Server
 
 		public bool TrySendData(byte[] data)
 		{
+			if (localTransport != null)
+			{
+				localTransport.ToClient.Enqueue(data);
+				return true;
+			}
+
 			if (sendQueue.IsAddingCompleted)
 				return false;
 
@@ -212,7 +303,8 @@ namespace OpenRA.Server
 		public void Dispose()
 		{
 			// Tell the sendReceiveThread that the socket should be closed
-			sendQueue.CompleteAdding();
+			if (localTransport == null)
+				sendQueue.CompleteAdding();
 		}
 	}
 
