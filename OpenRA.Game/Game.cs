@@ -250,7 +250,12 @@ namespace OpenRA
 			// - We can remove any fragmentation in the LOH caused by temporary loading garbage.
 			// - A loading screen is visible, so a delay won't matter to the user.
 			//   Much better to clean up now then to drop frames during gameplay for GC pauses.
-			GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+			// Browser/WebAssembly support: the wasm GC has no segmented-heap concept, so
+			// this desktop CLR tuning knob throws PlatformNotSupportedException there.
+			// GC.Collect() itself is still worthwhile and portable.
+			if (!OperatingSystem.IsBrowser())
+				GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+
 			GC.Collect();
 
 			// PostLoadComplete is designed for anything that should trigger at the very end of loading.
