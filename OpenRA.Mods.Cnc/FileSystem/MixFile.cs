@@ -71,12 +71,10 @@ namespace OpenRA.Mods.Cnc.FileSystem
 				// Try and find a local mix database
 				var dbNameClassic = PackageEntry.HashFilename("local mix database.dat", PackageHashType.Classic);
 				var dbNameCRC = PackageEntry.HashFilename("local mix database.dat", PackageHashType.CRC32);
-				var foundLocalDb = false;
 				foreach (var kv in entries)
 				{
 					if (kv.Key == dbNameClassic || kv.Key == dbNameCRC)
 					{
-						foundLocalDb = true;
 						using (var content = GetContent(kv.Value))
 						{
 							var db = new XccLocalDatabase(content);
@@ -108,11 +106,6 @@ namespace OpenRA.Mods.Cnc.FileSystem
 				var unknown = entries.Count - bestIndex.Count;
 				if (unknown > 0)
 					Log.Write("debug", $"{Name}: failed to resolve filenames for {unknown} unknown hashes");
-
-				var mouseClassic = PackageEntry.HashFilename("mouse.shp", PackageHashType.Classic);
-				var mouseCrc = PackageEntry.HashFilename("mouse.shp", PackageHashType.CRC32);
-				var rawHasMouse = entries.ContainsKey(mouseClassic) || entries.ContainsKey(mouseCrc);
-				Console.WriteLine($"[diag] MixFile '{Name}': {entries.Count} raw entries, {bestIndex.Count} name-resolved, foundLocalDb={foundLocalDb}, globalFilenames.Length={globalFilenames.Length}, rawHasMouseShpHash={rawHasMouse}");
 
 				bestIndex.TrimExcess();
 				return bestIndex;
