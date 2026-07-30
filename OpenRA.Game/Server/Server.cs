@@ -366,13 +366,8 @@ namespace OpenRA.Server
 				{
 					ServerStartedOnce();
 
-					while (true)
-					{
+					while (State != ServerState.ShuttingDown)
 						TickOnce(1000);
-
-						if (State == ServerState.ShuttingDown)
-							break;
-					}
 
 					ServerShutdownOnce();
 				})
