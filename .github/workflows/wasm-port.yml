@@ -214,6 +214,8 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Clone Repository
         uses: actions/checkout@v7
@@ -240,3 +242,40 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  playwasm-smoke-test:
+    name: Live /play-wasm/ smoke test
+    needs: deploy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Clone Repository
+        uses: actions/checkout@v7
+
+      - name: Install Playwright Chromium
+        run: |
+          npm init -y > /dev/null
+          npm install --no-audit --no-fund playwright > /dev/null
+          npx playwright install --with-deps chromium
+
+      - name: Hit the live deployed page and require a real boot
+        # Coverage for the class of bug that shipped silently once before:
+        # PlayMode.Run() (the deployed page's actual boot path) has no gates
+        # of its own, so a regression here was only ever discoverable by a
+        # human loading the page. This waits for the real "[play] boot
+        # complete" console line against the page GitHub Pages just served,
+        # not a synthetic probe path.
+        run: |
+          set -o pipefail
+          node OpenRA.WasmProbe/playwasm-smoke-test.mjs "${{ needs.deploy.outputs.page_url }}play-wasm/" 2>&1 | tee playwasm-smoke.log
+
+      - name: Upload smoke test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwasm-smoke-output
+          path: |
+            playwasm-smoke.log
+            playwasm-smoke-screenshot.png
+          if-no-files-found: warn
+          retention-days: 7
