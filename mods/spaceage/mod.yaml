@@ -24,7 +24,7 @@ FileSystem: ContentInstallerFileSystem
 		content|conquer.mix
 		content|interior.mix
 		content|lores.mix: lores
-		~content|hires.mix
+		content|hires.mix
 		content|local.mix
 		content|russian.mix
 		content|snow.mix
