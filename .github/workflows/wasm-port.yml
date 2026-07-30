@@ -77,9 +77,16 @@ jobs:
           # FileNotFoundException per map during MapCache scanning, expensive
           # enough across ~74 maps on a single interpreted wasm thread to look
           # like a hang) plus a few per-map custom overrides (.shp/.pal/.aud).
+          # .dat: ra/uibits/"global mix database.dat" -- MIX archives store only
+          # filename hashes, never names; several content mixes (lores/hires/
+          # local/speech/expand/desert) ship with no embedded per-mix filename
+          # database, so nothing inside them (e.g. mouse.shp) can ever resolve
+          # a real name without this external one, built from every filename
+          # this repo's own YAML already references.
           rsync -a --include='*/' --include='*.yaml' --include='*.ftl' --include='*.lua' \
             --include='*.ttf' --include='*.png' --include='*.oramap' \
-            --include='*.bin' --include='*.shp' --include='*.pal' --include='*.aud' --exclude='*' \
+            --include='*.bin' --include='*.shp' --include='*.pal' --include='*.aud' \
+            --include='*.dat' --exclude='*' \
             mods/ra mods/ra-content mods/common mods/common-content mods/spaceage "$WWWROOT/probe-data/mods/"
           # W3i: engine shaders — the Renderer compiles these from EngineDir/glsl.
           cp glsl/*.vert glsl/*.frag "$WWWROOT/probe-data/glsl/"
