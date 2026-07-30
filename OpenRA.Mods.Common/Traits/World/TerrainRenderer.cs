@@ -75,7 +75,14 @@ namespace OpenRA.Mods.Common.Traits
 			if (terrainInfo == null)
 				throw new InvalidDataException($"{nameof(TerrainRenderer)} can only be used with the {nameof(DefaultTerrain)} parser");
 
-			tileCache = new DefaultTileCache(terrainInfo);
+			// A template whose sprite is missing from the installed content renders as
+			// tileCache.MissingTile instead of crashing outright -- ValidateTileSprites
+			// (above) is the place that treats this as a hard error, at lint time.
+			tileCache = new DefaultTileCache(terrainInfo, (id, f) =>
+			{
+				Console.WriteLine($"[warn] Template `{id}` references sprite `{f}` that does not exist.");
+				Log.Write("debug", $"Template `{id}` references sprite `{f}` that does not exist.");
+			});
 		}
 
 		void IWorldLoaded.WorldLoaded(World world, WorldRenderer wr)
