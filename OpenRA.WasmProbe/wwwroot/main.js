@@ -144,6 +144,9 @@ const webgl = {
 	// where they should for the wrong, smaller canvas, so nothing the user
 	// sees ever responds. Poll until two consecutive checks agree (or a
 	// generous cap elapses) before committing to a size.
+	// Resolves "width,height" (a plain string -- Task<int[]> isn't supported
+	// by the JSImport source generator for async returns, only sync ones;
+	// Task<string> is the same pattern fetchText/fetchBase64 already use).
 	getWindowSize: () => new Promise(resolve => {
 		let last = [window.innerWidth, window.innerHeight];
 		let stableChecks = 0;
@@ -153,7 +156,7 @@ const webgl = {
 			if (now[0] === last[0] && now[1] === last[1]) {
 				stableChecks++;
 				if (stableChecks >= 2 || Date.now() >= deadline) {
-					resolve(now);
+					resolve(`${now[0]},${now[1]}`);
 					return;
 				}
 			} else {

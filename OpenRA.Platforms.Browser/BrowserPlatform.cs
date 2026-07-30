@@ -53,8 +53,8 @@ namespace OpenRA.Platforms.Browser
 		// see the comment on getWindowSize in main.js for why that matters.
 		public static async Task<Size> GetWindowSize()
 		{
-			var wh = await GL.GetWindowSize();
-			return new Size(wh[0], wh[1]);
+			var wh = (await GL.GetWindowSize()).Split(',');
+			return new Size(int.Parse(wh[0]), int.Parse(wh[1]));
 		}
 	}
 

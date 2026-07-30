@@ -26,7 +26,7 @@ namespace OpenRA.Platforms.Browser
 		internal static partial int[] GetCanvasSize();
 
 		[JSImport("getWindowSize", "webgl.js")]
-		internal static partial Task<int[]> GetWindowSize();
+		internal static partial Task<string> GetWindowSize();
 
 		[JSImport("viewport", "webgl.js")]
 		internal static partial void Viewport(int x, int y, int width, int height);
