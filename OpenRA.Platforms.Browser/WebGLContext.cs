@@ -228,7 +228,9 @@ namespace OpenRA.Platforms.Browser
 
 		public void SetDataFromReadBuffer(Rectangle rect)
 		{
-			throw new NotImplementedException("Browser platform: read-buffer textures not yet implemented (W3c)");
+			GL.BindTexture(Handle);
+			GL.CopyTexImage2D(rect.X, rect.Y, rect.Width, rect.Height);
+			Size = new Size(rect.Width, rect.Height);
 		}
 
 		public byte[] GetData()

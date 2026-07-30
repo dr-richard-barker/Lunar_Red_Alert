@@ -107,6 +107,15 @@ const webgl = {
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 	},
 
+	// Mirrors the desktop platform's glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, ...):
+	// copies straight from the currently-bound framebuffer into the currently-bound
+	// texture on the GPU, allocating storage sized to match -- no CPU readback needed.
+	copyTexImage2D: (x, y, w, h) => {
+		gl.copyTexImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, x, y, w, h, 0);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+	},
+
 	drawArrays: (first, count) => gl.drawArrays(gl.TRIANGLE_STRIP, first, count),
 
 	readPixel: (x, y) => {

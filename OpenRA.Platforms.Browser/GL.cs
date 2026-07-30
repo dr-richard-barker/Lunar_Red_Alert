@@ -120,6 +120,9 @@ namespace OpenRA.Platforms.Browser
 		[JSImport("texImage2DFloat", "webgl.js")]
 		internal static partial void TexImage2DFloat(int width, int height, double[] data);
 
+		[JSImport("copyTexImage2D", "webgl.js")]
+		internal static partial void CopyTexImage2D(int x, int y, int width, int height);
+
 		[JSImport("texFilter", "webgl.js")]
 		internal static partial void TexFilter(bool linear);
 
