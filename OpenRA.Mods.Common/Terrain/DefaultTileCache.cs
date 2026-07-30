@@ -89,7 +89,17 @@ namespace OpenRA.Mods.Common.Terrain
 					var start = indices.Min();
 					var end = indices.Max();
 					if (start < 0 || end >= frameCount)
+					{
+						if (onMissingImage != null)
+						{
+							// The sprite exists but is truncated/incomplete (fewer frames than the
+							// template expects) -- treat it the same as a fully missing sprite.
+							onMissingImage(t.Key, i);
+							continue;
+						}
+
 						throw new YamlException($"Template `{t.Key}` uses frames [{start}..{end}] of {i}, but only [0..{frameCount - 1}] actually exist");
+					}
 
 					variants.Add(indices.Select(j =>
 					{
