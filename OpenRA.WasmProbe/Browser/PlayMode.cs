@@ -34,6 +34,14 @@ namespace OpenRA.WasmProbe
 			Game.InitializeSettings(Arguments.Empty);
 			BrowserBoot.ApplyDefaults();
 
+			// Size the window (and everything the chrome YAML lays out
+			// against) to the real browser viewport instead of the engine's
+			// fixed 1024x768 default -- a small canvas inside a much bigger
+			// window left real screen space unused and made the page look
+			// low-resolution.
+			var windowSize = BrowserPlatform.GetWindowSize();
+			Game.Settings.Graphics.WindowedSize = new int2(windowSize.Width, windowSize.Height);
+
 			var installed = new InstalledMods([Platform.ResolvePath("^EngineDir|mods")], []);
 			typeof(Game).GetProperty(nameof(Game.Mods), BindingFlags.Public | BindingFlags.Static)
 				.GetSetMethod(nonPublic: true).Invoke(null, [installed]);

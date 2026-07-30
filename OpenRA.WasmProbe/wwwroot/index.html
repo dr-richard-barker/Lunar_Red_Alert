@@ -2,13 +2,20 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<!-- Without this, mobile browsers lay the page out at a default desktop-ish
+     viewport width and then zoom the whole page to fit the screen, which is
+     a real source of click/tap coordinates not lining up with what's drawn. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>OpenRA WasmProbe — Phase W2</title>
 <style>
-  body { margin: 0; background: #0a0e14; color: #cdd6e2; font: 14px/1.5 monospace; }
+  html, body { margin: 0; padding: 0; overflow: hidden; background: #0a0e14; color: #cdd6e2; font: 14px/1.5 monospace; }
   #log { padding: 10px 14px; white-space: pre-wrap; }
-  /* No border/padding on the canvas: input coordinates are padding-box
-     relative, and any border skews the engine's pixel coordinates. */
-  canvas { display: block; margin: 14px; image-rendering: pixelated; }
+  /* No border/padding/margin on the canvas: input coordinates are
+     padding-box relative, and any border/margin skews the engine's pixel
+     coordinates against getBoundingClientRect(). The canvas is sized in JS
+     to exactly fill the viewport (see getWindowSize in main.js), so margin
+     would also just push it past the edge of the window. */
+  canvas { display: block; image-rendering: pixelated; }
 </style>
 </head>
 <body>

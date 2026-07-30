@@ -42,6 +42,16 @@ namespace OpenRA.Platforms.Browser
 			// sans-serif face for now (FontFace-loading the ttf is a later step).
 			return new Canvas2DFont();
 		}
+
+		// The real viewport size (window.innerWidth/innerHeight), for callers
+		// that want to size the window/canvas to the actual browser tab
+		// instead of a fixed default -- read before CreateWindow, since the
+		// window size it's given is fixed for the life of the window.
+		public static Size GetWindowSize()
+		{
+			var wh = GL.GetWindowSize();
+			return new Size(wh[0], wh[1]);
+		}
 	}
 
 	sealed class BrowserWindow : IPlatformWindow

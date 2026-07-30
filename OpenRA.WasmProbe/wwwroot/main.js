@@ -128,6 +128,11 @@ const webgl = {
 
 	// --- Phase W3c: full platform-layer surface (OpenRA.Platforms.Browser) ---
 	getCanvasSize: () => [canvas.width, canvas.height],
+
+	// The engine's WINDOW_WIDTH/HEIGHT (and everything the chrome YAML lays
+	// out against) comes straight from this at boot -- used to size the
+	// canvas to the real available viewport instead of a fixed 1024x768.
+	getWindowSize: () => [window.innerWidth, window.innerHeight],
 	viewport: (x, y, w, h) => gl.viewport(x, y, w, h),
 	clearAll: () => gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT),
 	clearDepth: () => gl.clear(gl.DEPTH_BUFFER_BIT),
