@@ -96,6 +96,17 @@ const webgl = {
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 	},
 
+	// RGBA32F is a core WebGL2 sampling format (no extension needed for
+	// texImage2D/sampling -- only rendering INTO one needs EXT_color_buffer_float).
+	// Forced to NEAREST: OES_texture_float_linear isn't guaranteed, and palette/
+	// lookup-style float data (e.g. HardwarePalette's color shifts) wants exact
+	// texel reads, not interpolation, anyway.
+	texImage2DFloat: (w, h, data) => {
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, w, h, 0, gl.RGBA, gl.FLOAT, new Float32Array(data));
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+	},
+
 	drawArrays: (first, count) => gl.drawArrays(gl.TRIANGLE_STRIP, first, count),
 
 	readPixel: (x, y) => {

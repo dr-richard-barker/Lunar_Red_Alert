@@ -218,7 +218,12 @@ namespace OpenRA.Platforms.Browser
 
 		public void SetFloatData(float[] data, int width, int height)
 		{
-			throw new NotImplementedException("Browser platform: float textures not yet implemented (W3c)");
+			GL.BindTexture(Handle);
+			var values = new double[data.Length];
+			for (var i = 0; i < data.Length; i++)
+				values[i] = data[i];
+			GL.TexImage2DFloat(width, height, values);
+			Size = new Size(width, height);
 		}
 
 		public void SetDataFromReadBuffer(Rectangle rect)
