@@ -194,12 +194,18 @@ namespace OpenRA
 				}
 				catch (Exception e)
 				{
+					Console.WriteLine($"[diag] SetCustomRules: caught exception: {e}");
 					Log.Write("debug", $"Failed to load rules for `{Title}` with error:");
 					Log.Write("debug", e);
 				}
 
-				WorldActorInfo = modData.DefaultRules.Actors[SystemActors.World];
-				PlayerActorInfo = modData.DefaultRules.Actors[SystemActors.Player];
+				Console.WriteLine("[diag] SetCustomRules: falling back to modData.DefaultRules, about to access it");
+				var defaultRules = modData.DefaultRules;
+				Console.WriteLine("[diag] SetCustomRules: got DefaultRules, about to index World actor");
+				WorldActorInfo = defaultRules.Actors[SystemActors.World];
+				Console.WriteLine("[diag] SetCustomRules: got World actor, about to index Player actor");
+				PlayerActorInfo = defaultRules.Actors[SystemActors.Player];
+				Console.WriteLine("[diag] SetCustomRules: fallback done");
 			}
 
 			public InnerData Clone()
