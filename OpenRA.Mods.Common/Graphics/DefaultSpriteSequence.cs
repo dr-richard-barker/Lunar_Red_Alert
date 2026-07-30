@@ -468,6 +468,27 @@ namespace OpenRA.Mods.Common.Graphics
 			if (bounds != null)
 				return;
 
+			try
+			{
+				ResolveSpritesInner(cache);
+			}
+			catch (FileNotFoundException)
+			{
+				// One or more of this sequence's sprite files are missing from the
+				// installed content (SequenceSet.LoadSprites already logged it). Fall
+				// back to a single blank, fully transparent frame -- matching
+				// DefaultTileCache's MissingTile philosophy -- so every later query
+				// against this "resolved" sequence (Length/Bounds/GetSprite/...) gets
+				// a safe, real answer instead of re-throwing on first use.
+				var blank = cache.SheetBuilders[SheetType.BGRA].Add(new byte[4], SpriteFrameType.Bgra32, new Size(1, 1));
+				length = 1;
+				sprites = [blank];
+				bounds = Rectangle.Empty;
+			}
+		}
+
+		void ResolveSpritesInner(SpriteCache cache)
+		{
 			Sprite depthSprite = null;
 			if (depthSpriteReservation != null)
 				depthSprite = cache.ResolveSprites(depthSpriteReservation.Value).First(s => s != null);
