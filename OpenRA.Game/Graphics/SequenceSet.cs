@@ -11,6 +11,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using OpenRA.FileSystem;
 using OpenRA.Primitives;
 
@@ -107,8 +108,25 @@ namespace OpenRA.Graphics
 		{
 			SpriteCache.LoadReservations(modData);
 			foreach (var sequences in images.Values)
+			{
 				foreach (var sequence in sequences)
-					sequence.Value.ResolveSprites(SpriteCache);
+				{
+					try
+					{
+						sequence.Value.ResolveSprites(SpriteCache);
+					}
+					catch (FileNotFoundException e)
+					{
+						// A single missing sprite (typically one tileset-specific variant of a
+						// multi-theatre sequence, e.g. only the desert version of a building) is
+						// not worth failing the entire mod load over -- other theatres/sequences
+						// are unaffected and the actor just won't render correctly on this one.
+						Console.WriteLine($"[warn] Failed to resolve sprites for sequence '{sequence.Key}': {e.Message}");
+						Log.Write("debug", $"Failed to resolve sprites for sequence '{sequence.Key}':");
+						Log.Write("debug", e);
+					}
+				}
+			}
 		}
 
 		public void Dispose()
