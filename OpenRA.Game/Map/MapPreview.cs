@@ -128,6 +128,8 @@ namespace OpenRA
 				ModelSequenceDefinitions = LoadRuleSection(yaml, "ModelSequences");
 				FluentMessageDefinitions = LoadRuleSection(yaml, "FluentMessages");
 
+				Console.WriteLine($"[diag] SetCustomRules: sections loaded, RuleDefinitions={(RuleDefinitions != null)}, FluentMessageDefinitions={(FluentMessageDefinitions != null)}");
+
 				try
 				{
 					if (FluentMessageDefinitions != null)
@@ -147,7 +149,9 @@ namespace OpenRA
 							text = builder.ToString();
 						}
 
+						Console.WriteLine("[diag] SetCustomRules: about to construct FluentBundle");
 						FluentBundle = new FluentBundle(modData.Manifest.FluentCulture, files, fileSystem, text);
+						Console.WriteLine("[diag] SetCustomRules: FluentBundle constructed");
 					}
 					else
 						FluentBundle = null;
@@ -156,6 +160,7 @@ namespace OpenRA
 					// This assumes/enforces that these actor types can only inherit abstract definitions (starting with ^)
 					if (RuleDefinitions != null)
 					{
+						Console.WriteLine("[diag] SetCustomRules: RuleDefinitions present, about to GetRulesYaml/gather sources");
 						modDataRules ??= modData.GetRulesYaml();
 						var files = Enumerable.Empty<string>();
 						if (RuleDefinitions.Value != null)
@@ -171,15 +176,19 @@ namespace OpenRA
 						if (RuleDefinitions.Nodes.Length > 0)
 							sources = sources.Append(RuleDefinitions.Nodes.Where(IsLoadableRuleDefinition).ToList());
 
+						Console.WriteLine("[diag] SetCustomRules: about to MiniYaml.Merge(sources)");
 						var yamlNodes = MiniYaml.Merge(sources);
+						Console.WriteLine($"[diag] SetCustomRules: merged {yamlNodes.Count} nodes, about to construct world ActorInfo");
 						WorldActorInfo = new ActorInfo(
 							modData.ObjectCreator,
 							"world",
 							yamlNodes.First(n => string.Equals(n.Key, "world", StringComparison.InvariantCultureIgnoreCase)).Value);
+						Console.WriteLine("[diag] SetCustomRules: world ActorInfo done, about to construct player ActorInfo");
 						PlayerActorInfo = new ActorInfo(
 							modData.ObjectCreator,
 							"player",
 							yamlNodes.First(n => string.Equals(n.Key, "player", StringComparison.InvariantCultureIgnoreCase)).Value);
+						Console.WriteLine("[diag] SetCustomRules: player ActorInfo done");
 						return;
 					}
 				}
