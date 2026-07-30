@@ -9,7 +9,9 @@
  */
 #endregion
 
+using System;
 using System.Collections.Generic;
+using System.IO;
 using OpenRA.Graphics;
 using OpenRA.Primitives;
 using OpenRA.Traits;
@@ -46,19 +48,33 @@ namespace OpenRA.Mods.Cnc.Traits
 				var row = f / 8;
 				var col = f % 8;
 
-				using (var stream = self.World.Map.Open($"hole{f:D04}.lut"))
+				// This mod's installed content may not include the chronosphere vortex
+				// texture frames -- they're only ever drawn if a chronosphere is actually
+				// used in a game, so a gap here shouldn't take down the whole world/actor
+				// just because one cosmetic effect's assets are missing.
+				try
 				{
-					for (var y = 0; y < 64; y++)
+					using (var stream = self.World.Map.Open($"hole{f:D04}.lut"))
 					{
-						var i = 2048 * (64 * row + y) + 256 * col;
-						for (var x = 0; x < 64; x++)
+						for (var y = 0; y < 64; y++)
 						{
-							data[i++] = (byte)(stream.ReadUInt8() + 128 - x);
-							data[i++] = (byte)(stream.ReadUInt8() + 128 - y);
-							data[i++] = stream.ReadUInt8();
-							data[i++] = 255;
+							var i = 2048 * (64 * row + y) + 256 * col;
+							for (var x = 0; x < 64; x++)
+							{
+								data[i++] = (byte)(stream.ReadUInt8() + 128 - x);
+								data[i++] = (byte)(stream.ReadUInt8() + 128 - y);
+								data[i++] = stream.ReadUInt8();
+								data[i++] = 255;
+							}
 						}
 					}
+				}
+				catch (FileNotFoundException e)
+				{
+					Console.WriteLine($"[warn] Chronosphere vortex texture frame {f} unavailable: {e.Message}");
+					Log.Write("debug", $"Chronosphere vortex texture frame {f} unavailable:");
+					Log.Write("debug", e);
+					break;
 				}
 
 				var tl = new float2(col, row) / 8;
