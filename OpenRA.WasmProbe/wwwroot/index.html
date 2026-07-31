@@ -16,12 +16,6 @@
      to exactly fill the viewport (see getWindowSize in main.js), so margin
      would also just push it past the edge of the window. */
   canvas { display: block; image-rendering: pixelated; }
-  /* Temporary on-screen diagnostic, added to debug a click-alignment report
-     that persisted across several rendering fixes -- shows live geometry
-     and the last click/tap position directly on the page, since we can't
-     attach devtools to a real user's device. Remove once resolved. */
-  #diag { position: fixed; top: 0; left: 0; z-index: 9999; background: rgba(0,0,0,0.8); color: #6f6; font: 11px/1.4 monospace; padding: 4px 8px; white-space: pre; pointer-events: none; }
-  #diag-marker { position: fixed; z-index: 9999; width: 24px; height: 24px; margin-left: -12px; margin-top: -12px; border: 3px solid #f33; border-radius: 50%; pointer-events: none; display: none; box-sizing: border-box; }
   /* Autoplay toggle: hands the player's base to the mod's AI. Fixed to the
      top-right so it stays clear of the engine's own sidebar hit areas, and
      sized for a comfortable touch target on tablets. */
@@ -32,8 +26,6 @@
 <body>
 <canvas id="canvas" width="256" height="256"></canvas>
 <div id="log">booting .NET wasm runtime…</div>
-<div id="diag"></div>
-<div id="diag-marker"></div>
 <button id="autoplay" type="button">AI: OFF</button>
 <!-- __BUILD_ID__ is replaced with the commit SHA at deploy time (see
      wasm-port.yml). GitHub Pages caches every file for up to 10 minutes with

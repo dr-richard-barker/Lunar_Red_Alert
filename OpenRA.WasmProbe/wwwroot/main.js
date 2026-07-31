@@ -15,29 +15,9 @@ const log = line => { logEl.textContent += '\n' + line; };
 
 const canvas = document.getElementById('canvas');
 
-// Temporary on-screen diagnostic (see index.html comment) -- shows live
-// window/canvas geometry and marks the last click/tap so a real user can
-// describe or screenshot exactly what their device is doing, since we can't
-// attach devtools to it directly.
-const diagEl = document.getElementById('diag');
-const diagMarkerEl = document.getElementById('diag-marker');
-let lastInputInfo = 'no click/tap yet';
-const updateDiag = () => {
-	const r = canvas.getBoundingClientRect();
-	diagEl.textContent =
-		`build: __BUILD_ID__\n` +
-		`window: ${window.innerWidth}x${window.innerHeight}  dpr: ${window.devicePixelRatio || 1}${dprOverride ? ` (forced ${dprOverride})` : ''}\n` +
-		`canvas buffer: ${canvas.width}x${canvas.height}  canvas CSS: ${Math.round(r.width)}x${Math.round(r.height)} @ (${Math.round(r.left)},${Math.round(r.top)})\n` +
-		lastInputInfo;
-};
-setInterval(updateDiag, 500);
-const markInput = (clientX, clientY, engineX, engineY, kind) => {
-	lastInputInfo = `last ${kind}: screen(${Math.round(clientX)},${Math.round(clientY)}) -> engine(${engineX},${engineY})`;
-	diagMarkerEl.style.left = `${clientX}px`;
-	diagMarkerEl.style.top = `${clientY}px`;
-	diagMarkerEl.style.display = 'block';
-	updateDiag();
-};
+// Build id is logged rather than drawn on screen: still useful when someone
+// reports a problem, without putting developer chrome over the game.
+console.log('[play] build __BUILD_ID__');
 
 let gl = null;
 const handles = new Map();
@@ -485,7 +465,7 @@ const canvasXY = e => {
 	const r = canvas.getBoundingClientRect();
 	return [Math.round(e.clientX - r.left), Math.round(e.clientY - r.top)];
 };
-canvas.addEventListener('mousedown', e => { const [x, y] = canvasXY(e); markInput(e.clientX, e.clientY, x, y, 'mousedown'); inputQueue.push([1, 0, buttonFlag(e.button), x, y, 0, 0, mods(e)]); });
+canvas.addEventListener('mousedown', e => { const [x, y] = canvasXY(e); inputQueue.push([1, 0, buttonFlag(e.button), x, y, 0, 0, mods(e)]); });
 canvas.addEventListener('mousemove', e => { const [x, y] = canvasXY(e); inputQueue.push([1, 1, 0, x, y, e.movementX, e.movementY, mods(e)]); });
 canvas.addEventListener('mouseup', e => { const [x, y] = canvasXY(e); inputQueue.push([1, 2, buttonFlag(e.button), x, y, 0, 0, mods(e)]); });
 canvas.addEventListener('wheel', e => { const [x, y] = canvasXY(e); inputQueue.push([1, 3, 0, x, y, 0, Math.sign(-e.deltaY), mods(e)]); });
@@ -513,7 +493,6 @@ canvas.addEventListener('touchstart', e => {
 	if (e.touches.length !== 1) return;
 	const t = e.touches[0];
 	const [x, y] = touchXY(t);
-	markInput(t.clientX, t.clientY, x, y, 'touchstart');
 	touch = { x, y, clientX: t.clientX, clientY: t.clientY, dragging: false, longPressed: false, timer: null };
 	touch.timer = setTimeout(() => {
 		if (!touch || touch.dragging) return;

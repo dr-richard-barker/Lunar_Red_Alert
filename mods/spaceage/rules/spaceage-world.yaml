@@ -5,3 +5,14 @@ World:
 	LowGravity:
 		# 16 = Moon, 38 = Mars, 100 = Earth
 		GravityPercent: 16
+
+	# Start a skirmish with a landing party rather than a lone MCV. The engine
+	# default for this option is the "none" class, which despite the name is
+	# the MCV-Only group -- so a new match dropped a single construction
+	# vehicle and no infantry at all, which reads as "there's nobody here".
+	# "light" is the same MCV plus a squad (3 rifle infantry, 2 rocket
+	# soldiers, a light vehicle and a tank), so the base is populated and
+	# obviously yours the moment the match opens. Still a lobby dropdown --
+	# this only moves the default.
+	SpawnStartingUnits:
+		StartingUnitsClass: light
