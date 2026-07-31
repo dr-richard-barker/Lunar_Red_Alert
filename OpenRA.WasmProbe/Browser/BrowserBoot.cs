@@ -9,6 +9,8 @@
  */
 #endregion
 
+using System;
+
 namespace OpenRA.WasmProbe
 {
 	// Shared browser boot defaults, applied right after InitializeSettings:
@@ -23,6 +25,17 @@ namespace OpenRA.WasmProbe
 		{
 			foreach (var channel in new[] { "perf", "debug", "server", "sound", "graphics", "geoip", "nat", "client" })
 				Log.AddChannel(channel, null);
+
+			// There is no log directory in MEMFS worth writing to, so mirror
+			// the engine's own channels into the browser console -- otherwise
+			// engine-level diagnostics (including the reason a world-load step
+			// bailed out) are silently discarded on the deployed page. "perf"
+			// is excluded as it logs every tick and would drown everything.
+			Log.Sink = (channel, text) =>
+			{
+				if (channel != "perf")
+					Console.WriteLine($"[{channel}] {text}");
+			};
 
 			Game.Settings.Graphics.Mode = WindowMode.Windowed;
 		}

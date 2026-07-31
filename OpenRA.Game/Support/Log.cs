@@ -107,8 +107,19 @@ namespace OpenRA
 			FlushToDisk();
 		}
 
+		/// <summary>
+		/// Optional additional destination for every logged line, invoked as
+		/// (channel, text). Set by hosts that have no usable log directory --
+		/// notably the browser build, where channels are registered without
+		/// filenames and would otherwise discard everything, including the
+		/// engine-level diagnostics needed to debug a deployed page.
+		/// </summary>
+		public static Action<string, string> Sink;
+
 		static void WriteValue(ChannelData item)
 		{
+			Sink?.Invoke(item.Channel, item.Text);
+
 			var channel = GetChannel(item.Channel);
 			var writer = channel.Writer;
 			if (writer == null)
