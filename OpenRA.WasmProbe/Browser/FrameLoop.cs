@@ -30,8 +30,11 @@ namespace OpenRA.WasmProbe
 		[JSExport]
 		public static bool OnFrame(double timestamp)
 		{
-			if (lastTimestamp >= 0 && timestamp <= lastTimestamp)
-				throw new InvalidOperationException($"rAF timestamp not monotonic: {timestamp} after {lastTimestamp}");
+			// Equal timestamps are legal: the spec gives every callback in the
+			// same frame one shared timestamp, and a loaded CI machine does
+			// occasionally deliver two that way. Only going backwards is a bug.
+			if (lastTimestamp >= 0 && timestamp < lastTimestamp)
+				throw new InvalidOperationException($"rAF timestamp went backwards: {timestamp} after {lastTimestamp}");
 
 			if (firstTimestamp < 0)
 				firstTimestamp = timestamp;
