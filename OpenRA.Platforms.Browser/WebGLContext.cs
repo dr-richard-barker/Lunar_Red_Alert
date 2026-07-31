@@ -121,7 +121,14 @@ namespace OpenRA.Platforms.Browser
 
 		public void DrawElements(int numIndices, int offset)
 		{
-			GL.DrawElementsBytes(numIndices, offset * sizeof(uint));
+			// offset is already a BYTE offset -- SpriteRenderer.DrawVertexBuffer
+			// passes UintSize * start, matching the desktop context which hands
+			// it straight to glDrawElements. Scaling it again here only ever
+			// looked correct for the sprite batches, whose offset is always 0;
+			// the terrain layer is the one caller that passes a non-zero row
+			// offset, so it alone drew from far outside its index buffer and
+			// rendered nothing -- a black map under correctly-drawn actors.
+			GL.DrawElementsBytes(numIndices, offset);
 		}
 
 		public void Clear()
