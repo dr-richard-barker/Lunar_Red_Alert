@@ -230,8 +230,18 @@ const webgl = {
 			last = now;
 
 			const settled = usable && stableChecks >= REQUIRED_STABLE && elapsed >= MIN_SETTLE_MS;
-			if (settled || (usable && elapsed >= MAX_WAIT_MS)) {
+			if (settled) {
 				resolve(`${now[0]},${now[1]}`);
+				return;
+			}
+
+			if (elapsed >= MAX_WAIT_MS) {
+				// Out of patience. If the window still reports nothing usable
+				// (a tab that never got a layout), boot at a sane default
+				// rather than waiting forever -- a playable default size beats
+				// a page that never starts, and beats a 0x0 canvas.
+				const [w, h] = usable ? now : [1024, 768];
+				resolve(`${w},${h}`);
 				return;
 			}
 
