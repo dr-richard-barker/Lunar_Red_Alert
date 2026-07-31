@@ -179,6 +179,10 @@ jobs:
         # ships beside it.
         run: |
           WWWROOT=$(dirname "$(find bin/publish -name dotnet.js -path '*_framework*' | head -1)")/..
+          # Stamp the script chain with this build's SHA (see index.html's
+          # __BUILD_ID__ comment): makes cross-deploy cache mixes impossible
+          # and lets the on-page diagnostic report which build is running.
+          sed -i "s/__BUILD_ID__/${GITHUB_SHA::9}/g" "$WWWROOT/index.html" "$WWWROOT/main.js"
           {
             echo "CONTENT NOTICE"
             echo "The game data files under probe-data/supportdir/ are the"

@@ -29,6 +29,13 @@
 <div id="log">booting .NET wasm runtime…</div>
 <div id="diag"></div>
 <div id="diag-marker"></div>
-<script type="module" src="./main.js"></script>
+<!-- __BUILD_ID__ is replaced with the commit SHA at deploy time (see
+     wasm-port.yml). GitHub Pages caches every file for up to 10 minutes with
+     no coordination between them, so around a deploy a browser could pair a
+     cached old main.js with new engine assemblies (or vice versa) -- the two
+     halves of the HiDPI canvas sizing then disagree and every click lands
+     off-target. Versioning the whole script chain from here down makes the
+     load all-old or all-new, never mixed. -->
+<script type="module" src="./main.js?v=__BUILD_ID__"></script>
 </body>
 </html>

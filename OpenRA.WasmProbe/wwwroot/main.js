@@ -2,7 +2,10 @@
 // 'webgl.js' import module backing OpenRA.WasmProbe.Browser.WebGL ([JSImport]).
 // Handles are ints into a JS-side table so the managed side never touches
 // JSObject marshalling. See WASM-PORT-PLAN.md.
-import { dotnet } from './_framework/dotnet.js';
+// The ?v= query continues the versioned chain started in index.html: dotnet.js
+// is the one _framework file whose name is NOT content-hashed, so without this
+// a cached copy could load a previous build's (still-cached) assemblies.
+import { dotnet } from './_framework/dotnet.js?v=__BUILD_ID__';
 
 const logEl = document.getElementById('log');
 const log = line => { logEl.textContent += '\n' + line; };
@@ -19,7 +22,8 @@ let lastInputInfo = 'no click/tap yet';
 const updateDiag = () => {
 	const r = canvas.getBoundingClientRect();
 	diagEl.textContent =
-		`window: ${window.innerWidth}x${window.innerHeight}  dpr: ${window.devicePixelRatio || 1}\n` +
+		`build: __BUILD_ID__\n` +
+		`window: ${window.innerWidth}x${window.innerHeight}  dpr: ${window.devicePixelRatio || 1}${dprOverride ? ` (forced ${dprOverride})` : ''}\n` +
 		`canvas buffer: ${canvas.width}x${canvas.height}  canvas CSS: ${Math.round(r.width)}x${Math.round(r.height)} @ (${Math.round(r.left)},${Math.round(r.top)})\n` +
 		lastInputInfo;
 };
@@ -38,6 +42,12 @@ let nextHandle = 1;
 const keep = obj => { handles.set(nextHandle, obj); return nextHandle++; };
 
 const bootMode = new URLSearchParams(location.search).get('mode') === 'play' ? 'play' : 'probe';
+
+// Testing override: ?dpr=2 forces a devicePixelRatio, letting a standard
+// display session exercise the exact HiDPI code path that a Retina
+// laptop/iPad (dpr 2) hits for real. Real users never set this.
+const dprOverride = parseFloat(new URLSearchParams(location.search).get('dpr'));
+const effectiveDpr = () => dprOverride || window.devicePixelRatio || 1;
 
 const webgl = {
 	hasDocument: () => true,
@@ -74,14 +84,13 @@ const webgl = {
 	init: (w, h) => {
 		canvas.width = w;
 		canvas.height = h;
-		const dpr = window.devicePixelRatio || 1;
-		canvas.style.width = (w / dpr) + 'px';
-		canvas.style.height = (h / dpr) + 'px';
+		canvas.style.width = (w / effectiveDpr()) + 'px';
+		canvas.style.height = (h / effectiveDpr()) + 'px';
 		gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true });
 		return gl ? 1 : 0;
 	},
 
-	getDevicePixelRatio: () => window.devicePixelRatio || 1,
+	getDevicePixelRatio: () => effectiveDpr(),
 
 	clearColor: (r, g, b, a) => gl.clearColor(r, g, b, a),
 	clear: () => gl.clear(gl.COLOR_BUFFER_BIT),
