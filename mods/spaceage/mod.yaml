@@ -94,6 +94,7 @@ TileSets:
 	ra|tilesets/interior.yaml
 	ra|tilesets/temperat.yaml
 	ra|tilesets/desert.yaml
+	spaceage|tilesets/lunar.yaml
 
 Cursors:
 	ra|cursors.yaml
@@ -180,6 +181,7 @@ Weapons:
 	ra|weapons/other.yaml
 	ra|weapons/smallcaliber.yaml
 	ra|weapons/superweapons.yaml
+	spaceage|weapons/spaceage-weapons.yaml
 
 Voices:
 	ra|audio/voices.yaml

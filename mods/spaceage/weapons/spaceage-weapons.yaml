@@ -9,7 +9,7 @@
 
 # ---- Arcing artillery, retuned for 1/6 g (YAML-only route) -----------------
 # Longer range + flatter launch because shells hang in low gravity.
-ArtilleryShell:
+155mm:
 	Projectile: GravityBomb
 		# If NOT using the engine patch, cut Acceleration to ~1/6 to fake low-g:
 		Acceleration: 20      # was ~128 on Earth; tune to taste
@@ -20,7 +20,7 @@ ArtilleryShell:
 		# No air -> no fire spread; drop any IncendiaryWarhead you inherited.
 
 # ---- Ballistic small-arms: flatten the arc -----------------------------
-Rifle:
+M1Carbine:
 	Projectile: Bullet
 		LaunchAngle: 0        # flat; vacuum + low-g = laser-straight tracers
 		Speed: 850

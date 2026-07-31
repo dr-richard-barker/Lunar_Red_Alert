@@ -1,0 +1,9 @@
+index	terrain	sheet_xy
+0	Regolith	(0,0)
+1	Regolith	(24,0)
+2	Regolith	(48,0)
+3	CraterFloor	(72,0)
+4	CraterFloor	(96,0)
+5	CraterWall	(120,0)
+6	CraterWall	(144,0)
+7	Basalt	(168,0)

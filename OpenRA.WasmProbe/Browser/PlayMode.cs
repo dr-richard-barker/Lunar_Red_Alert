@@ -25,7 +25,7 @@ namespace OpenRA.WasmProbe
 	// rather than diverting into the content-installer mod.
 	internal static class PlayMode
 	{
-		public static async Task Run()
+		public static async Task Run(string mode = "play")
 		{
 			Console.WriteLine("[play] staging game files into MEMFS…");
 			await MemfsDemo.Run();
@@ -34,11 +34,6 @@ namespace OpenRA.WasmProbe
 			Game.InitializeSettings(Arguments.Empty);
 			BrowserBoot.ApplyDefaults();
 
-			// Size the window (and everything the chrome YAML lays out
-			// against) to the real browser viewport instead of the engine's
-			// fixed 1024x768 default -- a small canvas inside a much bigger
-			// window left real screen space unused and made the page look
-			// low-resolution.
 			var windowSize = await BrowserPlatform.GetWindowSize();
 			Game.Settings.Graphics.WindowedSize = new int2(windowSize.Width, windowSize.Height);
 
@@ -52,7 +47,23 @@ namespace OpenRA.WasmProbe
 			Game.Sound = new Sound(platform, Game.Settings.Sound);
 
 			Console.WriteLine("[play] booting Lunar Red Alert…");
-			Game.InitializeMod(manifest, Arguments.Empty);
+			
+			var args = Arguments.Empty;
+			// In autopilot mode, we could start a specific map or just let the shellmap run
+			// but we hide the UI to let the user spectate the shellmap AI battle.
+			if (mode == "autopilot")
+			{
+				// Launching the shellmap as a regular map makes it a full game, 
+				// or we can pass a specific map if one exists.
+				args = new Arguments("Launch.Map", "shellmap");
+			}
+
+			Game.InitializeMod(manifest, args);
+
+			if (mode == "autopilot")
+			{
+				Ui.ResetAll();
+			}
 
 			Console.WriteLine($"[play] boot complete — active mod '{Game.ModData?.Manifest.Id}'");
 

@@ -38,9 +38,10 @@ namespace OpenRA.WasmProbe
 		{
 			// Phase W5: the deployed page boots straight into the game; the
 			// CI harness (and Node) runs the full probe gate ladder below.
-			if (WebGL.GetBootMode() == "play")
+			var bootMode = WebGL.GetBootMode();
+			if (bootMode == "play" || bootMode == "autopilot")
 			{
-				await PlayMode.Run();
+				await PlayMode.Run(bootMode);
 				return;
 			}
 

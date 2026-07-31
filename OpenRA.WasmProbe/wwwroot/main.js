@@ -24,7 +24,8 @@ const handles = new Map();
 let nextHandle = 1;
 const keep = obj => { handles.set(nextHandle, obj); return nextHandle++; };
 
-const bootMode = new URLSearchParams(location.search).get('mode') === 'play' ? 'play' : 'probe';
+const qmode = new URLSearchParams(location.search).get('mode');
+const bootMode = (qmode === 'play' || qmode === 'autopilot') ? qmode : 'probe';
 
 // Testing override: ?dpr=2 forces a devicePixelRatio, letting a standard
 // display session exercise the exact HiDPI code path that a Retina
