@@ -17,6 +17,21 @@
 # palette is declared without a Tileset filter in ra|rules/palettes.yaml, so it
 # resolves on temperate/snow/interior maps too.
 
+# --- Regolith palette ------------------------------------------------------
+# The strongest lever available short of new tile art. Each tileset loads its
+# own terrain palette, and RA already ships a tan-grey one for the desert
+# theatre, so pointing snow/temperate/interior at desert.pal repaints the
+# actual ground rather than tinting it: green fields and blue snow come out as
+# dusty regolith. The tile GEOMETRY is still Earth (rivers, shorelines), which
+# is what the real lunar tileset in tilesets/lunar-template.yaml will replace.
+^Palettes:
+	PaletteFromFile@terrain-snow:
+		Filename: desert.pal
+	PaletteFromFile@terrain-temperat:
+		Filename: desert.pal
+	PaletteFromFile@terrain-interior:
+		Filename: desert.pal
+
 World:
 	# Regolith cast. This effect can only scale each channel, so it cannot
 	# desaturate directly -- the way to neutralise colour is to pull DOWN the
