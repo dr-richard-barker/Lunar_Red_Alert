@@ -199,23 +199,43 @@ const webgl = {
 	// by the JSImport source generator for async returns, only sync ones;
 	// Task<string> is the same pattern fetchText/fetchBase64 already use).
 	getWindowSize: () => new Promise(resolve => {
-		let last = [window.innerWidth, window.innerHeight];
+		// Two matching reads ~200ms apart is NOT enough evidence that the
+		// layout has settled: a pane or tab often opens small and expands a
+		// moment later (a phone collapsing its URL bar does the same), and
+		// sampling during that quiet period locks the engine to the small
+		// size for the whole session -- it renders into a corner of a much
+		// larger canvas, because the size is read once and never revisited.
+		// Require a longer unbroken run of identical reads AND a minimum
+		// settle time before committing. Zero sizes never count as stable:
+		// a hidden or not-yet-laid-out tab reports 0 and would otherwise be
+		// treated as a legitimate answer.
+		const POLL_MS = 100;
+		const REQUIRED_STABLE = 4;   // ~400ms unchanged
+		const MIN_SETTLE_MS = 600;
+		const MAX_WAIT_MS = 4000;
+
+		const started = Date.now();
+		let last = [0, 0];
 		let stableChecks = 0;
-		const deadline = Date.now() + 1500;
 		const poll = () => {
 			const now = [window.innerWidth, window.innerHeight];
-			if (now[0] === last[0] && now[1] === last[1]) {
+			const elapsed = Date.now() - started;
+			const usable = now[0] > 0 && now[1] > 0;
+
+			if (usable && now[0] === last[0] && now[1] === last[1])
 				stableChecks++;
-				if (stableChecks >= 2 || Date.now() >= deadline) {
-					resolve(`${now[0]},${now[1]}`);
-					return;
-				}
-			} else {
+			else
 				stableChecks = 0;
-				last = now;
+
+			last = now;
+
+			const settled = usable && stableChecks >= REQUIRED_STABLE && elapsed >= MIN_SETTLE_MS;
+			if (settled || (usable && elapsed >= MAX_WAIT_MS)) {
+				resolve(`${now[0]},${now[1]}`);
+				return;
 			}
 
-			setTimeout(poll, 100);
+			setTimeout(poll, POLL_MS);
 		};
 
 		poll();
