@@ -569,6 +569,39 @@ try {
 	// managed code each frame until FrameLoop.OnFrame returns false.
 	const exports = await getAssemblyExports(getConfig().mainAssemblyName);
 
+	// Autoplay toggle. ToggleAutoplay returns the resulting state, and returns
+	// false without doing anything when there's no local player yet (menu,
+	// lobby, spectator) -- so the label always reflects what actually happened
+	// rather than what was requested.
+	const autoplayEl = document.getElementById('autoplay');
+	autoplayEl.addEventListener('click', () => {
+		let on = false;
+		try {
+			on = exports.OpenRA.WasmProbe.GameLoop.ToggleAutoplay();
+		} catch (err) {
+			console.error('[play] autoplay toggle failed:', err);
+		}
+
+		autoplayEl.textContent = on ? 'AI: ON' : 'AI: OFF';
+		autoplayEl.classList.toggle('on', on);
+	});
+	// ?autoplay=1 arms it for automated runs: the local player only exists once
+	// a match starts, so keep retrying until the handover actually takes.
+	if (new URLSearchParams(location.search).has('autoplay')) {
+		const arm = setInterval(() => {
+			let on = false;
+			try {
+				on = exports.OpenRA.WasmProbe.GameLoop.ToggleAutoplay();
+			} catch { /* world not up yet */ }
+
+			if (on) {
+				clearInterval(arm);
+				autoplayEl.textContent = 'AI: ON';
+				autoplayEl.classList.add('on');
+			}
+		}, 2000);
+	}
+
 	// Phase W4c: after the probe frame counter, hand the browser's frame to
 	// the LIVE game loop — Game.PerformBrowserFrame per rAF, indefinitely
 	// (the gate stops after its target frames; a real deployment never stops).

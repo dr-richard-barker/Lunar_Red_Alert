@@ -14,6 +14,7 @@ using System.Linq;
 using System.Runtime.InteropServices.JavaScript;
 using OpenRA.Mods.Common.Activities;
 using OpenRA.Mods.Common.Traits;
+using OpenRA.Traits;
 
 namespace OpenRA.WasmProbe
 {
@@ -45,6 +46,37 @@ namespace OpenRA.WasmProbe
 		public static bool IsReady()
 		{
 			return Ready;
+		}
+
+		// Autoplay: hand the local player's base over to one of the mod's own
+		// AI personalities, using the same IBot.Activate hook the engine uses
+		// to start bots for AI slots. Returns the resulting state so the page
+		// button can label itself; returns false (and does nothing) when there
+		// is no local player to hand over, e.g. in the menu or as a spectator.
+		[JSExport]
+		public static bool ToggleAutoplay()
+		{
+			var player = Game.ActiveWorld?.LocalPlayer;
+			if (player == null)
+				return false;
+
+			var bots = player.PlayerActor.TraitsImplementing<IBot>().ToArray();
+			var bot = bots.FirstOrDefault(b => b.Info.Type == "normal") ?? bots.FirstOrDefault();
+			if (bot is not ModularBot modular)
+				return false;
+
+			if (modular.IsEnabled)
+			{
+				// Activate() wires up the module lists, so once it has run the
+				// enable flag alone is enough to stop and restart the AI.
+				modular.IsEnabled = false;
+				Console.WriteLine("[play] autoplay off — you have control");
+				return false;
+			}
+
+			bot.Activate(player);
+			Console.WriteLine($"[play] autoplay on — '{bot.Info.Type}' AI is playing for you");
+			return modular.IsEnabled;
 		}
 
 		[JSExport]
