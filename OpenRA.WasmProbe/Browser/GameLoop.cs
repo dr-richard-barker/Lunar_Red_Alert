@@ -75,16 +75,33 @@ namespace OpenRA.WasmProbe
 				return;
 			}
 
-			var owned = world.Actors.Count(a => a.Owner == p && a.IsInWorld);
-			Console.WriteLine(
-				$"[diag] world '{id}': local player '{p.InternalName}' faction '{p.Faction?.InternalName}' " +
-				$"spawn {p.HomeLocation} owns {owned} actor(s); " +
-				$"startingunits='{world.LobbyInfo.GlobalSettings.OptionOrDefault("startingunits", "?")}'");
-
-			foreach (var a in world.Actors.Where(a => a.Owner == p && a.IsInWorld).Take(10))
-				Console.WriteLine($"[diag]   owns: {a.Info.Name} at {a.Location}");
-
+			// Centre first: this is the actual fix, and it must not be hostage
+			// to the reporting below.
 			CenterOnSpawn(world, p);
+
+			// Never let diagnostics take down the game loop -- an earlier
+			// version of this threw partway through and silently froze the
+			// match at 00:00 with a black screen.
+			try
+			{
+				var owned = world.Actors.Where(a => a.Owner == p && a.IsInWorld).ToArray();
+				Console.WriteLine(
+					$"[diag] world '{id}': local player '{p.InternalName}' faction '{p.Faction?.InternalName}' " +
+					$"spawn {p.HomeLocation} owns {owned.Length} actor(s); " +
+					$"startingunits='{world.LobbyInfo.GlobalSettings.OptionOrDefault("startingunits", "?")}'");
+
+				foreach (var a in owned.Take(10))
+				{
+					// Actors without an OccupiesSpace trait (player proxies and
+					// similar) have no Location to read.
+					var where = a.OccupiesSpace != null ? a.Location.ToString() : "(no position)";
+					Console.WriteLine($"[diag]   owns: {a.Info.Name} at {where}");
+				}
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine($"[diag] world report failed (ignored): {e.Message}");
+			}
 		}
 
 		// MapStartingLocations.WorldLoaded is supposed to leave the camera on
@@ -95,20 +112,27 @@ namespace OpenRA.WasmProbe
 		// opens on your base like it does on desktop.
 		static void CenterOnSpawn(World world, Player p)
 		{
-			// Game.worldRenderer is private; PlayMode already reaches for
-			// non-public Game members during browser boot for the same reason.
-			var wr = typeof(Game)
-				.GetField("worldRenderer", BindingFlags.NonPublic | BindingFlags.Static)
-				?.GetValue(null) as WorldRenderer;
-
-			if (wr == null)
+			try
 			{
-				Console.WriteLine("[diag] could not reach the world renderer to centre the camera");
-				return;
-			}
+				// Game.worldRenderer is private; PlayMode already reaches for
+				// non-public Game members during browser boot for the same reason.
+				var wr = typeof(Game)
+					.GetField("worldRenderer", BindingFlags.NonPublic | BindingFlags.Static)
+					?.GetValue(null) as WorldRenderer;
 
-			wr.Viewport.Center(world.Map.CenterOfCell(p.HomeLocation));
-			Console.WriteLine($"[diag] camera centred on spawn {p.HomeLocation}");
+				if (wr == null)
+				{
+					Console.WriteLine("[diag] could not reach the world renderer to centre the camera");
+					return;
+				}
+
+				wr.Viewport.Center(world.Map.CenterOfCell(p.HomeLocation));
+				Console.WriteLine($"[diag] camera centred on spawn {p.HomeLocation}");
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine($"[diag] centring the camera failed (ignored): {e.Message}");
+			}
 		}
 
 		// Autoplay: hand the local player's base over to one of the mod's own
