@@ -18,13 +18,20 @@
 # resolves on temperate/snow/interior maps too.
 
 World:
-	# Airless, sunlit-grey cast: pull the warm channels down, leave blue near
-	# full, and take a little ambient out so shadows read harder like vacuum.
+	# Regolith cast. This effect can only scale each channel, so it cannot
+	# desaturate directly -- the way to neutralise colour is to pull DOWN the
+	# channels the source art is strongest in. RA's terrain is dominated by
+	# green (temperate) and blue (snow/water), so both come down while red
+	# stays full, which drags the palette toward the warm grey-tan of Apollo
+	# surface photography instead of tinting it.
+	#
+	# An earlier pass raised blue instead and simply made everything look like
+	# cold blue snow, which is the opposite of the intended read.
 	TintPostProcessEffect:
-		Red: 0.84
-		Green: 0.86
-		Blue: 0.97
-		Ambient: 0.93
+		Red: 1.0
+		Green: 0.92
+		Blue: 0.82
+		Ambient: 0.97
 
 # A felled "tree" should leave broken rock, not a charred stump. Every tree
 # husk inherits this base, so one override covers all of them.
