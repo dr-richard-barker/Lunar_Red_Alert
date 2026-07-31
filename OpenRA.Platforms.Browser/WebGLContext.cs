@@ -9,7 +9,6 @@
  */
 #endregion
 
-using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using OpenRA.Graphics;
@@ -17,9 +16,6 @@ using OpenRA.Primitives;
 
 namespace OpenRA.Platforms.Browser
 {
-	// Phase W3c: OpenRA's IGraphicsContext over WebGL2. Functional members are
-	// real; members the boot path hasn't reached yet throw loudly rather than
-	// pretend (see WASM-PORT-PLAN.md — no silent stubs).
 	// The GL viewport is global state, but WebGL has no glGetIntegerv(GL_VIEWPORT)
 	// binding here, so track it ourselves: whoever sets the viewport records it,
 	// and FrameBuffer.Bind/Unbind saves and restores around its own
@@ -41,6 +37,7 @@ namespace OpenRA.Platforms.Browser
 		}
 	}
 
+	// Phase W3c: OpenRA's IGraphicsContext over WebGL2.
 	sealed class WebGLContext : IGraphicsContext
 	{
 		public string GLVersion => "WebGL 2.0 (GLES3)";
@@ -263,7 +260,7 @@ namespace OpenRA.Platforms.Browser
 
 		public byte[] GetData()
 		{
-			throw new NotImplementedException("Browser platform: texture readback not yet implemented (W3c)");
+			return GL.ReadTexturePixels(Handle, Size.Width, Size.Height);
 		}
 
 		public void Dispose() { }

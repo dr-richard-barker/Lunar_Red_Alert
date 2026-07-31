@@ -163,6 +163,29 @@ const webgl = {
 
 	drawArrays: (first, count) => gl.drawArrays(gl.TRIANGLE_STRIP, first, count),
 
+	// Texture readback. WebGL2 is GLES-flavoured and has no glGetTexImage, so
+	// take the same route OpenRA.Platforms.Default takes on Embedded profiles:
+	// attach the texture to a scratch framebuffer and readPixels out of it,
+	// restoring the previously bound framebuffer afterwards. Returns BGRA to
+	// match what the engine's SheetType.BGRA consumers expect.
+	readTexturePixels: (t, w, h) => {
+		const prevFb = gl.getParameter(gl.FRAMEBUFFER_BINDING);
+		const fb = gl.createFramebuffer();
+		gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+		gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, handles.get(t), 0);
+		const px = new Uint8Array(w * h * 4);
+		gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, px);
+		gl.bindFramebuffer(gl.FRAMEBUFFER, prevFb);
+		gl.deleteFramebuffer(fb);
+		for (let i = 0; i < px.length; i += 4) {
+			const r = px[i];
+			px[i] = px[i + 2];
+			px[i + 2] = r;
+		}
+
+		return px;
+	},
+
 	readPixel: (x, y) => {
 		const px = new Uint8Array(4);
 		gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);

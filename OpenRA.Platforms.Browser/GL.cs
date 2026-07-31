@@ -148,6 +148,9 @@ namespace OpenRA.Platforms.Browser
 		[JSImport("readPixel", "webgl.js")]
 		internal static partial int[] ReadPixel(int x, int y);
 
+		[JSImport("readTexturePixels", "webgl.js")]
+		internal static partial byte[] ReadTexturePixels(int texture, int width, int height);
+
 		[JSImport("getError", "webgl.js")]
 		internal static partial int GetError();
 
