@@ -40,12 +40,24 @@ const webgl = {
 		return btoa(s);
 	},
 
+	// w/h are physical pixels (the engine's "native" resolution: logical
+	// window size * devicePixelRatio, computed C#-side from getWindowSize +
+	// getDevicePixelRatio) -- a HiDPI backing buffer for crisp text/art,
+	// same convention desktop OpenRA uses on Retina displays. The element is
+	// then displayed at the smaller logical CSS size via style.width/height,
+	// which is what makes the extra buffer density actually sharpen the
+	// picture instead of just rendering a bigger picture.
 	init: (w, h) => {
 		canvas.width = w;
 		canvas.height = h;
+		const dpr = window.devicePixelRatio || 1;
+		canvas.style.width = (w / dpr) + 'px';
+		canvas.style.height = (h / dpr) + 'px';
 		gl = canvas.getContext('webgl2', { preserveDrawingBuffer: true });
 		return gl ? 1 : 0;
 	},
+
+	getDevicePixelRatio: () => window.devicePixelRatio || 1,
 
 	clearColor: (r, g, b, a) => gl.clearColor(r, g, b, a),
 	clear: () => gl.clear(gl.COLOR_BUFFER_BIT),
@@ -401,14 +413,18 @@ const keycodeOf = e => {
 };
 const buttonFlag = b => (b === 0 ? 1 : b === 2 ? 2 : b === 1 ? 4 : 0);
 
-// Map client coordinates to canvas pixel space, robust to CSS scaling and
-// borders (offsetX is padding-box relative and skews if the canvas has one).
+// Map client coordinates to the engine's logical/effective coordinate space
+// (WINDOW_WIDTH/HEIGHT -- what every chrome YAML X/Y is expressed in), NOT
+// the physical pixel buffer: canvas.width is now devicePixelRatio times
+// larger than its CSS display size (see init/getDevicePixelRatio above), so
+// a raw CSS-relative offset already lands exactly in logical space without
+// any further scaling. Multiplying by canvas.width/rect.width here would
+// instead produce physical-pixel coordinates and misalign every click by
+// exactly the DPI scale factor. offsetX is padding-box relative and skews if
+// the canvas ever gets a border, hence going through getBoundingClientRect().
 const canvasXY = e => {
 	const r = canvas.getBoundingClientRect();
-	return [
-		Math.round((e.clientX - r.left) * (canvas.width / r.width)),
-		Math.round((e.clientY - r.top) * (canvas.height / r.height)),
-	];
+	return [Math.round(e.clientX - r.left), Math.round(e.clientY - r.top)];
 };
 canvas.addEventListener('mousedown', e => { const [x, y] = canvasXY(e); inputQueue.push([1, 0, buttonFlag(e.button), x, y, 0, 0, mods(e)]); });
 canvas.addEventListener('mousemove', e => { const [x, y] = canvasXY(e); inputQueue.push([1, 1, 0, x, y, e.movementX, e.movementY, mods(e)]); });
@@ -427,12 +443,10 @@ const TOUCH_LONGPRESS_MS = 450;
 const TOUCH_MOVE_TOLERANCE = 10;
 let touch = null;
 
+// Same logical-space reasoning as canvasXY above -- no buffer-size scaling.
 const touchXY = t => {
 	const r = canvas.getBoundingClientRect();
-	return [
-		Math.round((t.clientX - r.left) * (canvas.width / r.width)),
-		Math.round((t.clientY - r.top) * (canvas.height / r.height)),
-	];
+	return [Math.round(t.clientX - r.left), Math.round(t.clientY - r.top)];
 };
 
 canvas.addEventListener('touchstart', e => {

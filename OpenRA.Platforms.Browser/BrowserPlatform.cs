@@ -62,10 +62,15 @@ namespace OpenRA.Platforms.Browser
 	{
 		public IGraphicsContext Context { get; }
 
+		// HiDPI, following the same convention desktop OpenRA uses on Retina
+		// displays (see Renderer.cs's "In HiDPI windows..." comment): chrome
+		// YAML/widget layout is expressed in Effective (logical, CSS-pixel)
+		// space, while the actual WebGL backing buffer is the denser Native
+		// (physical, devicePixelRatio-scaled) space for crisp text and art.
 		public Size NativeWindowSize { get; }
-		public Size EffectiveWindowSize => NativeWindowSize;
-		public float NativeWindowScale => 1f;
-		public float EffectiveWindowScale => 1f;
+		public Size EffectiveWindowSize { get; }
+		public float NativeWindowScale { get; }
+		public float EffectiveWindowScale { get; }
 		public Size SurfaceSize => NativeWindowSize;
 		public int DisplayCount => 1;
 		public int CurrentDisplay => 0;
@@ -81,11 +86,16 @@ namespace OpenRA.Platforms.Browser
 
 		public BrowserWindow(Size size)
 		{
-			NativeWindowSize = size;
-			if (GL.Init(size.Width, size.Height) == 0)
+			var dpr = (float)GL.GetDevicePixelRatio();
+			EffectiveWindowSize = size;
+			EffectiveWindowScale = dpr;
+			NativeWindowScale = dpr;
+			NativeWindowSize = new Size((int)Math.Round(size.Width * dpr), (int)Math.Round(size.Height * dpr));
+
+			if (GL.Init(NativeWindowSize.Width, NativeWindowSize.Height) == 0)
 				throw new InvalidOperationException("WebGL2 context creation failed");
 
-			GL.Viewport(0, 0, size.Width, size.Height);
+			GL.Viewport(0, 0, NativeWindowSize.Width, NativeWindowSize.Height);
 			Context = new WebGLContext();
 		}
 

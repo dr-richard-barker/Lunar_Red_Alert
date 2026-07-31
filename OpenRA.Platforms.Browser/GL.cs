@@ -28,6 +28,9 @@ namespace OpenRA.Platforms.Browser
 		[JSImport("getWindowSize", "webgl.js")]
 		internal static partial Task<string> GetWindowSize();
 
+		[JSImport("getDevicePixelRatio", "webgl.js")]
+		internal static partial double GetDevicePixelRatio();
+
 		[JSImport("viewport", "webgl.js")]
 		internal static partial void Viewport(int x, int y, int width, int height);
 
