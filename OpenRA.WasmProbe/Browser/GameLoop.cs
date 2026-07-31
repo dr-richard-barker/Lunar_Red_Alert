@@ -120,9 +120,9 @@ namespace OpenRA.WasmProbe
 					.GetField("worldRenderer", BindingFlags.NonPublic | BindingFlags.Static)
 					?.GetValue(null) as WorldRenderer;
 
-				if (wr == null)
+				if (wr?.Viewport == null)
 				{
-					Console.WriteLine("[diag] could not reach the world renderer to centre the camera");
+					Console.WriteLine("[diag] no world renderer/viewport yet — camera not centred");
 					return;
 				}
 
@@ -183,7 +183,18 @@ namespace OpenRA.WasmProbe
 			// Play mode: no gates — keep the engine on the browser's frame.
 			if (PlayForever)
 			{
-				ReportWorldOnce();
+				// Belt and braces: nothing in here is worth losing the match
+				// over, and an inner catch already failed to contain one throw.
+				// Log the full stack so the next failure names its own site.
+				try
+				{
+					ReportWorldOnce();
+				}
+				catch (Exception e)
+				{
+					Console.WriteLine($"[diag] world report threw (ignored): {e}");
+				}
+
 				return true;
 			}
 
