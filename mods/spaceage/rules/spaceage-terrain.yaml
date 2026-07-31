@@ -1,0 +1,149 @@
+# Space-Age: make stock Red Alert maps read as lunar surface.
+#
+# A full lunar TILESET (tilesets/lunar-template.yaml + generated tile sheets) is
+# still the end goal, but it needs an art pipeline to turn generated tiles into
+# a sheet the engine can load. This file gets most of the visual payoff without
+# that pipeline, so every existing RA map plays as Moon terrain today:
+#
+#   1. Trees become boulders/craters. Trees are the single strongest "Earth"
+#      signal on a map -- a vegetated battlefield can never read as lunar. The
+#      rock props already ship with the desert theatre content, so this is a
+#      sprite swap with no new art. Footprints are left alone so existing maps
+#      keep their pathing and cover exactly as authored.
+#   2. A cool, slightly darkened tint over the whole scene, which pushes RA's
+#      warm greens and browns toward airless grey.
+#
+# The rocks are drawn with the desert palette (as ra's own ^Rock does); that
+# palette is declared without a Tileset filter in ra|rules/palettes.yaml, so it
+# resolves on temperate/snow/interior maps too.
+
+World:
+	# Airless, sunlit-grey cast: pull the warm channels down, leave blue near
+	# full, and take a little ambient out so shadows read harder like vacuum.
+	TintPostProcessEffect:
+		Red: 0.84
+		Green: 0.86
+		Blue: 0.97
+		Ambient: 0.93
+
+# A felled "tree" should leave broken rock, not a charred stump. Every tree
+# husk inherits this base, so one override covers all of them.
+^TreeHusk:
+	RenderSprites:
+		Image: rock2
+		Palette: desert
+
+# --- Trees -> lunar boulders and crater rims -------------------------------
+# Cycled across the seven rock props so a treeline becomes a varied rock field
+# rather than a row of identical stones.
+
+T01:
+	RenderSprites:
+		Image: rock1
+		Palette: desert
+
+T02:
+	RenderSprites:
+		Image: rock2
+		Palette: desert
+
+T03:
+	RenderSprites:
+		Image: rock3
+		Palette: desert
+
+T04:
+	RenderSprites:
+		Image: rock4
+		Palette: desert
+
+T05:
+	RenderSprites:
+		Image: rock5
+		Palette: desert
+
+T06:
+	RenderSprites:
+		Image: rock6
+		Palette: desert
+
+T07:
+	RenderSprites:
+		Image: rock7
+		Palette: desert
+
+T08:
+	RenderSprites:
+		Image: rock1
+		Palette: desert
+
+T09:
+	RenderSprites:
+		Image: rock2
+		Palette: desert
+
+T10:
+	RenderSprites:
+		Image: rock3
+		Palette: desert
+
+T11:
+	RenderSprites:
+		Image: rock4
+		Palette: desert
+
+T12:
+	RenderSprites:
+		Image: rock5
+		Palette: desert
+
+T13:
+	RenderSprites:
+		Image: rock6
+		Palette: desert
+
+T14:
+	RenderSprites:
+		Image: rock7
+		Palette: desert
+
+T15:
+	RenderSprites:
+		Image: rock1
+		Palette: desert
+
+T16:
+	RenderSprites:
+		Image: rock2
+		Palette: desert
+
+T17:
+	RenderSprites:
+		Image: rock3
+		Palette: desert
+
+# Tree clumps -> larger boulder clusters.
+TC01:
+	RenderSprites:
+		Image: rock4
+		Palette: desert
+
+TC02:
+	RenderSprites:
+		Image: rock5
+		Palette: desert
+
+TC03:
+	RenderSprites:
+		Image: rock6
+		Palette: desert
+
+TC04:
+	RenderSprites:
+		Image: rock7
+		Palette: desert
+
+TC05:
+	RenderSprites:
+		Image: rock1
+		Palette: desert

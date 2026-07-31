@@ -75,6 +75,7 @@ Rules:
 	ra|rules/map-generators.yaml
 	# --- Space-Age total conversion overlays (load AFTER the base ra rules) ---
 	spaceage|rules/spaceage-world.yaml
+	spaceage|rules/spaceage-terrain.yaml
 	spaceage|rules/spaceage-defaults.yaml
 	spaceage|rules/spaceage-infantry.yaml
 	spaceage|rules/spaceage-structures.yaml
