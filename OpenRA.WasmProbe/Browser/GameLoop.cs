@@ -11,7 +11,9 @@
 
 using System;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices.JavaScript;
+using OpenRA.Graphics;
 using OpenRA.Mods.Common.Activities;
 using OpenRA.Mods.Common.Traits;
 using OpenRA.Traits;
@@ -81,6 +83,32 @@ namespace OpenRA.WasmProbe
 
 			foreach (var a in world.Actors.Where(a => a.Owner == p && a.IsInWorld).Take(10))
 				Console.WriteLine($"[diag]   owns: {a.Info.Name} at {a.Location}");
+
+			CenterOnSpawn(world, p);
+		}
+
+		// MapStartingLocations.WorldLoaded is supposed to leave the camera on
+		// the local player's spawn, but on the deployed page it consistently
+		// starts over unexplored map instead -- the player's own MCV sits at
+		// its spawn cell, invisible, behind shroud. Re-centre once here, after
+		// the world is fully up and the viewport has its final size, so a match
+		// opens on your base like it does on desktop.
+		static void CenterOnSpawn(World world, Player p)
+		{
+			// Game.worldRenderer is private; PlayMode already reaches for
+			// non-public Game members during browser boot for the same reason.
+			var wr = typeof(Game)
+				.GetField("worldRenderer", BindingFlags.NonPublic | BindingFlags.Static)
+				?.GetValue(null) as WorldRenderer;
+
+			if (wr == null)
+			{
+				Console.WriteLine("[diag] could not reach the world renderer to centre the camera");
+				return;
+			}
+
+			wr.Viewport.Center(world.Map.CenterOfCell(p.HomeLocation));
+			Console.WriteLine($"[diag] camera centred on spawn {p.HomeLocation}");
 		}
 
 		// Autoplay: hand the local player's base over to one of the mod's own
