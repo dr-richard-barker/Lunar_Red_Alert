@@ -48,6 +48,41 @@ namespace OpenRA.WasmProbe
 			return Ready;
 		}
 
+		static string reportedWorld;
+
+		// One-shot summary of each world the play loop takes over, to pin down
+		// why the local player ends up with no units: whether there IS a local
+		// player, which faction it resolved to (the StartingUnits groups are
+		// faction-gated), where its spawn is, and what it actually owns.
+		static void ReportWorldOnce()
+		{
+			var world = Game.ActiveWorld;
+			if (world == null)
+				return;
+
+			var id = $"{world.Type}:{world.Map?.Title}";
+			if (reportedWorld == id)
+				return;
+
+			reportedWorld = id;
+
+			var p = world.LocalPlayer;
+			if (p == null)
+			{
+				Console.WriteLine($"[diag] world '{id}' loaded with NO local player (spectator?)");
+				return;
+			}
+
+			var owned = world.Actors.Count(a => a.Owner == p && a.IsInWorld);
+			Console.WriteLine(
+				$"[diag] world '{id}': local player '{p.InternalName}' faction '{p.Faction?.InternalName}' " +
+				$"spawn {p.HomeLocation} owns {owned} actor(s); " +
+				$"startingunits='{world.LobbyInfo.GlobalSettings.OptionOrDefault("startingunits", "?")}'");
+
+			foreach (var a in world.Actors.Where(a => a.Owner == p && a.IsInWorld).Take(10))
+				Console.WriteLine($"[diag]   owns: {a.Info.Name} at {a.Location}");
+		}
+
 		// Autoplay: hand the local player's base over to one of the mod's own
 		// AI personalities, using the same IBot.Activate hook the engine uses
 		// to start bots for AI slots. Returns the resulting state so the page
@@ -95,7 +130,10 @@ namespace OpenRA.WasmProbe
 
 			// Play mode: no gates — keep the engine on the browser's frame.
 			if (PlayForever)
+			{
+				ReportWorldOnce();
 				return true;
+			}
 
 			if (firstWorldTick == int.MinValue)
 				firstWorldTick = tick;
