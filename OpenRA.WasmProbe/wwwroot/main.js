@@ -2,10 +2,13 @@
 // 'webgl.js' import module backing OpenRA.WasmProbe.Browser.WebGL ([JSImport]).
 // Handles are ints into a JS-side table so the managed side never touches
 // JSObject marshalling. See WASM-PORT-PLAN.md.
-// The ?v= query continues the versioned chain started in index.html: dotnet.js
-// is the one _framework file whose name is NOT content-hashed, so without this
-// a cached copy could load a previous build's (still-cached) assemblies.
-import { dotnet } from './_framework/dotnet.js?v=__BUILD_ID__';
+// Deliberately NOT cache-busted with ?v=: dotnet.js derives the URLs of the
+// runtime's own sub-modules from its own, so the query rides along to
+// dotnet.runtime.*.js and dotnet.native.*.js and their fetches fail. Every
+// other _framework file is already content-hashed by the build, so versioning
+// this one bought nothing; index.html's versioned main.js is what actually
+// prevents a stale/fresh mix.
+import { dotnet } from './_framework/dotnet.js';
 
 const logEl = document.getElementById('log');
 const log = line => { logEl.textContent += '\n' + line; };
