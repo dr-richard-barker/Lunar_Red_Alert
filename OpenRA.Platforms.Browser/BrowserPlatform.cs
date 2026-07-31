@@ -95,8 +95,8 @@ namespace OpenRA.Platforms.Browser
 			if (GL.Init(NativeWindowSize.Width, NativeWindowSize.Height) == 0)
 				throw new InvalidOperationException("WebGL2 context creation failed");
 
-			GL.Viewport(0, 0, NativeWindowSize.Width, NativeWindowSize.Height);
 			Context = new WebGLContext();
+			WebGLContext.SetWindowViewport(NativeWindowSize);
 		}
 
 		public void PumpInput(IInputHandler inputHandler)

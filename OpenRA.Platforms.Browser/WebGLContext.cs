@@ -20,9 +20,37 @@ namespace OpenRA.Platforms.Browser
 	// Phase W3c: OpenRA's IGraphicsContext over WebGL2. Functional members are
 	// real; members the boot path hasn't reached yet throw loudly rather than
 	// pretend (see WASM-PORT-PLAN.md — no silent stubs).
+	// The GL viewport is global state, but WebGL has no glGetIntegerv(GL_VIEWPORT)
+	// binding here, so track it ourselves: whoever sets the viewport records it,
+	// and FrameBuffer.Bind/Unbind saves and restores around its own
+	// full-framebuffer viewport (mirroring OpenRA.Platforms.Default's
+	// FrameBuffer, which reads the value back from GL instead).
+	//
+	// Without this the viewport stays at the window size while rendering into a
+	// larger power-of-two framebuffer, so everything is drawn into a fraction of
+	// it and comes out shrunk toward one corner -- with UI hit-testing still
+	// using full-size layout coordinates, which is what made clicks miss.
+	static class ViewportState
+	{
+		public static Rectangle Current;
+
+		public static void Set(int x, int y, int width, int height)
+		{
+			Current = new Rectangle(x, y, width, height);
+			GL.Viewport(x, y, width, height);
+		}
+	}
+
 	sealed class WebGLContext : IGraphicsContext
 	{
 		public string GLVersion => "WebGL 2.0 (GLES3)";
+
+		// Called once by BrowserWindow after context creation to establish the
+		// backbuffer viewport that FrameBuffer.Unbind restores to.
+		public static void SetWindowViewport(Size size)
+		{
+			ViewportState.Set(0, 0, size.Width, size.Height);
+		}
 
 		public IVertexBuffer<T> CreateEmptyVertexBuffer<T>(int size) where T : struct
 		{
@@ -245,10 +273,12 @@ namespace OpenRA.Platforms.Browser
 	{
 		readonly int handle;
 		readonly Color clearColor;
+		readonly Size size;
 
 		public FrameBuffer(Size size, Color clearColor)
 		{
 			this.clearColor = clearColor;
+			this.size = size;
 			var created = GL.CreateFramebufferTex(size.Width, size.Height);
 			handle = created[0];
 			Texture = new Texture(created[1], size);
@@ -256,9 +286,16 @@ namespace OpenRA.Platforms.Browser
 
 		public ITexture Texture { get; }
 
+		Rectangle cachedViewport;
+
 		public void Bind()
 		{
+			// Cache the viewport to restore when unbinding, then cover the
+			// whole framebuffer -- same sequence as the desktop platform.
+			cachedViewport = ViewportState.Current;
+
 			GL.BindFramebuffer(handle);
+			ViewportState.Set(0, 0, size.Width, size.Height);
 			GL.ClearColor(clearColor.R / 255d, clearColor.G / 255d, clearColor.B / 255d, clearColor.A / 255d);
 			GL.ClearAll();
 		}
@@ -266,6 +303,7 @@ namespace OpenRA.Platforms.Browser
 		public void Unbind()
 		{
 			GL.BindFramebuffer(0);
+			ViewportState.Set(cachedViewport.X, cachedViewport.Y, cachedViewport.Width, cachedViewport.Height);
 		}
 
 		public void EnableScissor(Rectangle rect)
