@@ -8,6 +8,16 @@
 #
 # Vehicles are implicitly vacuum-proof: they simply don't get Oxygen / DamagedByVacuum.
 
+# Dummy actor to declare Vacuum damage type for the linter
+VacuumDamageTypeDecl:
+	Armor:
+		Type: VacuumDecl
+	Armor@vacuum:
+		Type: none
+	DamageMultiplier@vacuum:
+		DamageTypes: Vacuum
+		Modifier: 100
+
 ^Soldier:
 	# Declare that this unit is willing to RECEIVE the pressurised external condition.
 	ExternalCondition@PRESSURE:
