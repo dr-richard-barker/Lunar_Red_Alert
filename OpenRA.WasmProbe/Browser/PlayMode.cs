@@ -14,6 +14,7 @@ using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 using OpenRA.Platforms.Browser;
+using OpenRA.Widgets;
 
 namespace OpenRA.WasmProbe
 {
