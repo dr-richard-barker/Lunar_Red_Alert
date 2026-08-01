@@ -1012,6 +1012,7 @@ craters:
 
 mine:
 	idle:
+		Filename: mine.tem
 		TilesetFilenames:
 			SNOW: mine.sno
 			INTERIOR: mine.int
@@ -1042,6 +1043,7 @@ ctflag:
 		Tick: 50
 		Offset: 0,-12
 	bib:
+		Filename: mbGAP.tem
 		TilesetFilenames:
 			SNOW: mbGAP.sno
 			INTERIOR: mbGAP.int

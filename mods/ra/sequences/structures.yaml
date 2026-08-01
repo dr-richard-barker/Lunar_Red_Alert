@@ -29,6 +29,7 @@ hosp:
 		Filename: hospmake.shp
 		Length: *
 	bib:
+		Filename: mbHOSP.tem
 		TilesetFilenames:
 			SNOW: mbHOSP.sno
 			INTERIOR: mbHOSP.int
@@ -150,6 +151,7 @@ silo:
 		Length: *
 		Offset: 0,-1
 	bib:
+		Filename: mbSILO.tem
 		TilesetFilenames:
 			SNOW: mbSILO.sno
 			INTERIOR: mbSILO.int
@@ -272,6 +274,7 @@ kenn:
 		Filename: kennmake.shp
 		Length: *
 	bib:
+		Filename: mbSILO.tem
 		TilesetFilenames:
 			SNOW: mbSILO.sno
 			INTERIOR: mbSILO.int
@@ -496,6 +499,7 @@ fix:
 		Length: *
 		Offset: 0,1
 	bib:
+		Filename: mbFIX.tem
 		TilesetFilenames:
 			SNOW: mbFIX.sno
 			INTERIOR: mbFIX.int
@@ -536,6 +540,7 @@ gun:
 		Filename: gunfire2.shp
 		Length: 5
 	bib:
+		Filename: mbGUN.tem
 		TilesetFilenames:
 			SNOW: mbGUN.sno
 			INTERIOR: mbGUN.int
@@ -579,6 +584,7 @@ agun:
 		Start: 1
 		Length: 4
 	bib:
+		Filename: mbAGUN.tem
 		TilesetFilenames:
 			SNOW: mbAGUN.sno
 			INTERIOR: mbAGUN.int
@@ -612,6 +618,7 @@ sam:
 		Facings: 8
 		Offset: -1,6
 	bib:
+		Filename: mbSAM.tem
 		TilesetFilenames:
 			SNOW: mbSAM.sno
 			INTERIOR: mbSAM.int
@@ -635,6 +642,7 @@ ftur:
 		Length: *
 		Offset: 0,-2
 	bib:
+		Filename: mbFTUR.tem
 		TilesetFilenames:
 			SNOW: mbFTUR.sno
 			INTERIOR: mbFTUR.int
@@ -667,6 +675,7 @@ tsla:
 		Tick: 100
 		Offset: 0,-13
 	bib:
+		Filename: mbTSLA.tem
 		TilesetFilenames:
 			SNOW: mbTSLA.sno
 			INTERIOR: mbTSLA.int
@@ -690,6 +699,7 @@ pbox:
 		Length: 6
 		Facings: 8
 	bib:
+		Filename: mbPBOX.tem
 		TilesetFilenames:
 			SNOW: mbPBOX.sno
 			INTERIOR: mbPBOX.int
@@ -739,6 +749,7 @@ gap:
 		Length: *
 		Offset: 0,-14
 	bib:
+		Filename: mbGAP.tem
 		TilesetFilenames:
 			SNOW: mbGAP.sno
 			INTERIOR: mbGAP.int
@@ -768,6 +779,7 @@ iron:
 		Length: *
 		Offset: 0,-4
 	bib:
+		Filename: mbIRON.tem
 		TilesetFilenames:
 			SNOW: mbIRON.sno
 			INTERIOR: mbIRON.int
@@ -797,6 +809,7 @@ pdox:
 		Filename: pdoxmake.shp
 		Length: *
 	bib:
+		Filename: mbPDOX.tem
 		TilesetFilenames:
 			SNOW: mbPDOX.sno
 			INTERIOR: mbPDOX.int
