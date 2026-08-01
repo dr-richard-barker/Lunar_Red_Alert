@@ -15,9 +15,10 @@ General:
 	EnableDepth: False
 
 Terrain:
-	TerrainType@Regolith:
-		Type: Regolith
-		Color: 9A9086          # dusty grey; drives the minimap
+	TerrainType@Clear:
+		Type: Clear
+		# dusty grey; drives the minimap
+		Color: 9A9086
 	TerrainType@CraterFloor:
 		Type: CraterFloor
 		Color: 6E655C
@@ -30,11 +31,14 @@ Terrain:
 		Type: Basalt
 		Color: 4A4A52
 	TerrainType@IceDeposit:
-		Type: IceDeposit          # the harvestable resource terrain (see ResourceLayer)
+		# the harvestable resource terrain (see ResourceLayer)
+		Type: IceDeposit
 		Color: BFE9FF
 	TerrainType@Vacuum:
-		Type: Vacuum              # exposed void; combine with GrantConditionOnTerrain
-		Color: 101014             # if you want terrain (not just "no dome") to expose units
+		# exposed void; combine with GrantConditionOnTerrain
+		Type: Vacuum
+		# if you want terrain (not just "no dome") to expose units
+		Color: 101014
 
 # Templates:
 #   (generated) — one Template block per tile, produced by tools/gen_tileset.py
@@ -44,9 +48,9 @@ Templates:
 		Images: lunar_tiles
 		Size: 8,1
 		Tiles:
-			0: Regolith
-			1: Regolith
-			2: Regolith
+			0: Clear
+			1: Clear
+			2: Clear
 			3: CraterFloor
 			4: CraterFloor
 			5: CraterWall
