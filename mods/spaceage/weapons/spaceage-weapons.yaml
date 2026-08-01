@@ -12,7 +12,7 @@
 155mm:
 	Projectile: GravityBomb
 		# If NOT using the engine patch, cut Acceleration to ~1/6 to fake low-g:
-		Acceleration: 20      # was ~128 on Earth; tune to taste
+		Acceleration: 0, 0, -2      # was ~15 on Earth; tune to taste
 		Velocity: 0,0,213
 	Warhead@damage: SpreadDamage
 		Damage: 4000
