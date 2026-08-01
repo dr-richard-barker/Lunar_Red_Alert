@@ -6,4 +6,8 @@ World:
 		# 16 = Moon, 38 = Mars, 100 = Earth
 		GravityPercent: 16
 
-
+	ResourceRenderer:
+		ResourceTypes:
+			Ore:
+				Sequences: gem01, gem02, gem03, gem04
+				Palette: player
