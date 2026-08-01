@@ -14,5 +14,5 @@ World:
 	# soldiers, a light vehicle and a tank), so the base is populated and
 	# obviously yours the moment the match opens. Still a lobby dropdown --
 	# this only moves the default.
-	SpawnStartingUnits:
-		StartingUnitsClass: light
+	# SpawnStartingUnits:
+	# 	StartingUnitsClass: light
