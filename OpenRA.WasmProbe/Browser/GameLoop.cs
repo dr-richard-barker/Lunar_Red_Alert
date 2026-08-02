@@ -147,7 +147,7 @@ namespace OpenRA.WasmProbe
 			if (player == null)
 				return null;
 
-			var stats = player.PlayerActor.TraitOrDefault<PlayerStatistics>();
+			var stats = player.PlayerActor?.TraitOrDefault<PlayerStatistics>();
 			if (stats == null)
 				return null;
 
