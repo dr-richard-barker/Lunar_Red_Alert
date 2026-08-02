@@ -48,8 +48,8 @@ FileSystem: ContentInstallerFileSystem
 		# "ra|bits/desert" threw DirectoryNotFoundException -- both silently
 		# forced isContentAvailable=false and diverted every boot into the
 		# content-installer regardless of the actual freeware content check.
-		~ra|bits
-		~ra|bits/desert
+		ra|bits
+		ra|bits/desert
 	ContentInstallerMod: ra-content
 
 MapFolders:

@@ -86,7 +86,7 @@ jobs:
           rsync -a --include='*/' --include='*.yaml' --include='*.ftl' --include='*.lua' \
             --include='*.ttf' --include='*.png' --include='*.oramap' \
             --include='*.bin' --include='*.shp' --include='*.pal' --include='*.aud' \
-            --include='*.dat' --exclude='*' \
+            --include='*.dat' --include='*.tem' --include='*.sno' --include='*.int' --include='*.des' --exclude='*' \
             mods/ra mods/ra-content mods/common mods/common-content mods/spaceage "$WWWROOT/probe-data/mods/"
           # W3i: engine shaders — the Renderer compiles these from EngineDir/glsl.
           cp glsl/*.vert glsl/*.frag "$WWWROOT/probe-data/glsl/"
@@ -155,6 +155,12 @@ jobs:
           grep -q "W3i SUCCESS" wasm-browser.log
           grep -q "W3i-b SUCCESS" wasm-browser.log
           grep -q "W4b SUCCESS" wasm-browser.log
+
+          MISSING=$(grep -c "\[warn\] Failed to resolve sprites" wasm-browser.log || true)
+          if [ "$MISSING" -gt 5 ]; then
+            echo "::error::Too many missing sprites: $MISSING"
+            exit 1
+          fi
 
       - name: Upload probe logs & payload
         if: always()
@@ -272,6 +278,12 @@ jobs:
         run: |
           set -o pipefail
           node OpenRA.WasmProbe/playwasm-smoke-test.mjs "${{ needs.deploy.outputs.page_url }}play-wasm/" 2>&1 | tee playwasm-smoke.log
+          
+          MISSING=$(grep -c "\[warn\] Failed to resolve sprites" playwasm-smoke.log || true)
+          if [ "$MISSING" -gt 5 ]; then
+            echo "::error::Too many missing sprites in smoke test: $MISSING"
+            exit 1
+          fi
 
       - name: Upload smoke test artifacts
         if: always()
