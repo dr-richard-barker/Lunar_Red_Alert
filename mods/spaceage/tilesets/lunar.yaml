@@ -17,8 +17,47 @@ General:
 Terrain:
 	TerrainType@Clear:
 		Type: Clear
+		TargetTypes: Ground
+		AcceptsSmudgeType: Crater, Scorch
 		# dusty grey; drives the minimap
 		Color: 9A9086
+		RestrictPlayerColor: true
+	TerrainType@Rough:
+		Type: Rough
+		TargetTypes: Ground
+		AcceptsSmudgeType: Crater, Scorch
+		Color: 6E655C
+	TerrainType@Road:
+		Type: Road
+		TargetTypes: Ground
+		AcceptsSmudgeType: Crater, Scorch
+		Color: 4A4A52
+	TerrainType@Bridge:
+		Type: Bridge
+		TargetTypes: Ground, Bridge
+		AcceptsSmudgeType: Crater, Scorch
+		Color: 4A4A52
+	TerrainType@Ore:
+		Type: Ore
+		TargetTypes: Ground
+		AcceptsSmudgeType: Crater, Scorch
+		Color: BFE9FF
+		RestrictPlayerColor: true
+	TerrainType@Gems:
+		Type: Gems
+		TargetTypes: Ground
+		AcceptsSmudgeType: Crater, Scorch
+		Color: BFE9FF
+		RestrictPlayerColor: true
+	TerrainType@Beach:
+		Type: Beach
+		TargetTypes: Ground
+		AcceptsSmudgeType: Crater, Scorch
+		Color: 9A9086
+	TerrainType@Water:
+		Type: Water
+		TargetTypes: Water
+		Color: 101014
 	TerrainType@CraterFloor:
 		Type: CraterFloor
 		Color: 6E655C

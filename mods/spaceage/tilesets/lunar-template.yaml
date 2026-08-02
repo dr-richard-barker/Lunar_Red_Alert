@@ -15,9 +15,49 @@ General:
 	EnableDepth: False
 
 Terrain:
-	TerrainType@Regolith:
-		Type: Regolith
-		Color: 9A9086          # dusty grey; drives the minimap
+	TerrainType@Clear:
+		Type: Clear
+		TargetTypes: Ground
+		AcceptsSmudgeType: Crater, Scorch
+		# dusty grey; drives the minimap
+		Color: 9A9086
+		RestrictPlayerColor: true
+	TerrainType@Rough:
+		Type: Rough
+		TargetTypes: Ground
+		AcceptsSmudgeType: Crater, Scorch
+		Color: 6E655C
+	TerrainType@Road:
+		Type: Road
+		TargetTypes: Ground
+		AcceptsSmudgeType: Crater, Scorch
+		Color: 4A4A52
+	TerrainType@Bridge:
+		Type: Bridge
+		TargetTypes: Ground, Bridge
+		AcceptsSmudgeType: Crater, Scorch
+		Color: 4A4A52
+	TerrainType@Ore:
+		Type: Ore
+		TargetTypes: Ground
+		AcceptsSmudgeType: Crater, Scorch
+		Color: BFE9FF
+		RestrictPlayerColor: true
+	TerrainType@Gems:
+		Type: Gems
+		TargetTypes: Ground
+		AcceptsSmudgeType: Crater, Scorch
+		Color: BFE9FF
+		RestrictPlayerColor: true
+	TerrainType@Beach:
+		Type: Beach
+		TargetTypes: Ground
+		AcceptsSmudgeType: Crater, Scorch
+		Color: 9A9086
+	TerrainType@Water:
+		Type: Water
+		TargetTypes: Water
+		Color: 101014
 	TerrainType@CraterFloor:
 		Type: CraterFloor
 		Color: 6E655C
@@ -30,11 +70,15 @@ Terrain:
 		Type: Basalt
 		Color: 4A4A52
 	TerrainType@IceDeposit:
-		Type: IceDeposit          # the harvestable resource terrain (see ResourceLayer)
+		# the harvestable resource terrain (see ResourceLayer)
+		Type: IceDeposit
 		Color: BFE9FF
 	TerrainType@Vacuum:
-		Type: Vacuum              # exposed void; combine with GrantConditionOnTerrain
-		Color: 101014             # if you want terrain (not just "no dome") to expose units
+		# exposed void; combine with GrantConditionOnTerrain
+		Type: Vacuum
+		# if you want terrain (not just "no dome") to expose units
+		Color: 101014
 
 # Templates:
 #   (generated) — one Template block per tile, produced by tools/gen_tileset.py
+
