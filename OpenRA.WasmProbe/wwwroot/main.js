@@ -655,29 +655,33 @@ try {
 	}
 
 	const recordMatch = (stats) => {
-		let history = JSON.parse(localStorage.getItem('lunar_red_alert_league') || '[]');
-		stats.Score = stats.KillsCost + (stats.BuildingsKilled * 500) + stats.ArmyValue;
-		history.push(stats);
-		history.sort((a, b) => b.Score - a.Score);
-		localStorage.setItem('lunar_red_alert_league', JSON.stringify(history));
-		
-		const tableBody = document.querySelector('#league-stats tbody');
-		if (tableBody) {
-			tableBody.innerHTML = '';
-			history.forEach(row => {
-				const tr = document.createElement('tr');
-				const stateClass = row.WinState === 'Won' ? 'won' : (row.WinState === 'Lost' ? 'lost' : '');
-				tr.innerHTML = `
-					<td class="${stateClass}" style="text-align:left">${row.WinState}</td>
-					<td>${row.Score.toLocaleString()}</td>
-					<td>${row.UnitsKilled}</td>
-					<td>${row.UnitsDead}</td>
-					<td>${row.BuildingsKilled}</td>
-					<td>${row.BuildingsDead}</td>
-				`;
-				tableBody.appendChild(tr);
-			});
-			leagueOverlay.style.display = 'flex';
+		try {
+			let history = JSON.parse(localStorage.getItem('lunar_red_alert_league') || '[]');
+			stats.Score = stats.KillsCost + (stats.BuildingsKilled * 500) + stats.ArmyValue;
+			history.push(stats);
+			history.sort((a, b) => b.Score - a.Score);
+			localStorage.setItem('lunar_red_alert_league', JSON.stringify(history));
+			
+			const tableBody = document.querySelector('#league-stats tbody');
+			if (tableBody) {
+				tableBody.innerHTML = '';
+				history.forEach(row => {
+					const tr = document.createElement('tr');
+					const stateClass = row.WinState === 'Won' ? 'won' : (row.WinState === 'Lost' ? 'lost' : '');
+					tr.innerHTML = `
+						<td class="${stateClass}" style="text-align:left">${row.WinState}</td>
+						<td>${row.Score.toLocaleString()}</td>
+						<td>${row.UnitsKilled}</td>
+						<td>${row.UnitsDead}</td>
+						<td>${row.BuildingsKilled}</td>
+						<td>${row.BuildingsDead}</td>
+					`;
+					tableBody.appendChild(tr);
+				});
+				leagueOverlay.style.display = 'flex';
+			}
+		} catch(e) {
+			console.error("League table failed:", e);
 		}
 	};
 
