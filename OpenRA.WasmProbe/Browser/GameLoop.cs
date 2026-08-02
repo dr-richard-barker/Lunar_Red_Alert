@@ -141,6 +141,22 @@ namespace OpenRA.WasmProbe
 		// button can label itself; returns false (and does nothing) when there
 		// is no local player to hand over, e.g. in the menu or as a spectator.
 		[JSExport]
+		public static string GetEndGameStats()
+		{
+			var player = Game.ActiveWorld?.LocalPlayer;
+			if (player == null)
+				return null;
+
+			var stats = player.PlayerActor.TraitOrDefault<PlayerStatistics>();
+			if (stats == null)
+				return null;
+
+			var winState = player.WinState.ToString();
+			
+			return $"{{\"WinState\":\"{winState}\",\"KillsCost\":{stats.KillsCost},\"DeathsCost\":{stats.DeathsCost},\"UnitsKilled\":{stats.UnitsKilled},\"UnitsDead\":{stats.UnitsDead},\"BuildingsKilled\":{stats.BuildingsKilled},\"BuildingsDead\":{stats.BuildingsDead},\"ArmyValue\":{stats.ArmyValue}}}";
+		}
+
+		[JSExport]
 		public static bool ToggleAutoplay()
 		{
 			var player = Game.ActiveWorld?.LocalPlayer;

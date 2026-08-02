@@ -521,50 +521,80 @@ const touchXY = t => {
 
 canvas.addEventListener('touchstart', e => {
 	e.preventDefault();
-	if (e.touches.length !== 1) return;
-	const t = e.touches[0];
-	const [x, y] = touchXY(t);
-	touch = { x, y, clientX: t.clientX, clientY: t.clientY, dragging: false, longPressed: false, timer: null };
-	touch.timer = setTimeout(() => {
-		if (!touch || touch.dragging) return;
-		touch.longPressed = true;
-		inputQueue.push([1, 0, buttonFlag(2), touch.x, touch.y, 0, 0, 0]);
-		inputQueue.push([1, 2, buttonFlag(2), touch.x, touch.y, 0, 0, 0]);
-	}, TOUCH_LONGPRESS_MS);
+	if (e.touches.length === 1) {
+		const t = e.touches[0];
+		const [x, y] = touchXY(t);
+		touch = { fingers: 1, x, y, clientX: t.clientX, clientY: t.clientY, dragging: false, longPressed: false, timer: null };
+		touch.timer = setTimeout(() => {
+			if (!touch || touch.fingers !== 1 || touch.dragging) return;
+			touch.longPressed = true;
+			inputQueue.push([1, 0, buttonFlag(2), touch.x, touch.y, 0, 0, 0]);
+			inputQueue.push([1, 2, buttonFlag(2), touch.x, touch.y, 0, 0, 0]);
+		}, TOUCH_LONGPRESS_MS);
+	} else if (e.touches.length === 2) {
+		if (touch && touch.timer) clearTimeout(touch.timer);
+		const [x0, y0] = touchXY(e.touches[0]);
+		const [x1, y1] = touchXY(e.touches[1]);
+		const cx = Math.round((x0 + x1) / 2);
+		const cy = Math.round((y0 + y1) / 2);
+		touch = { fingers: 2, x: cx, y: cy, dragging: true };
+		inputQueue.push([1, 0, buttonFlag(2), cx, cy, 0, 0, 0]);
+	}
 }, { passive: false });
 
 canvas.addEventListener('touchmove', e => {
 	e.preventDefault();
-	if (!touch || e.touches.length !== 1) return;
-	const t = e.touches[0];
-	const [x, y] = touchXY(t);
-	if (!touch.dragging && !touch.longPressed &&
-		(Math.abs(t.clientX - touch.clientX) > TOUCH_MOVE_TOLERANCE || Math.abs(t.clientY - touch.clientY) > TOUCH_MOVE_TOLERANCE)) {
-		clearTimeout(touch.timer);
-		touch.dragging = true;
-		inputQueue.push([1, 0, buttonFlag(0), touch.x, touch.y, 0, 0, 0]);
-	}
-	if (touch.dragging) {
-		touch.x = x; touch.y = y;
-		inputQueue.push([1, 1, 0, x, y, 0, 0, 0]);
+	if (!touch) return;
+	
+	if (touch.fingers === 1 && e.touches.length === 1) {
+		const t = e.touches[0];
+		const [x, y] = touchXY(t);
+		if (!touch.dragging && !touch.longPressed &&
+			(Math.abs(t.clientX - touch.clientX) > TOUCH_MOVE_TOLERANCE || Math.abs(t.clientY - touch.clientY) > TOUCH_MOVE_TOLERANCE)) {
+			clearTimeout(touch.timer);
+			touch.dragging = true;
+			inputQueue.push([1, 0, buttonFlag(0), touch.x, touch.y, 0, 0, 0]);
+		}
+		if (touch.dragging) {
+			touch.x = x; touch.y = y;
+			inputQueue.push([1, 1, 0, x, y, 0, 0, 0]);
+		}
+	} else if (touch.fingers === 2 && e.touches.length === 2) {
+		const [x0, y0] = touchXY(e.touches[0]);
+		const [x1, y1] = touchXY(e.touches[1]);
+		const cx = Math.round((x0 + x1) / 2);
+		const cy = Math.round((y0 + y1) / 2);
+		touch.x = cx; touch.y = cy;
+		inputQueue.push([1, 1, 0, cx, cy, 0, 0, 0]);
 	}
 }, { passive: false });
 
 canvas.addEventListener('touchend', e => {
 	e.preventDefault();
 	if (!touch) return;
-	clearTimeout(touch.timer);
-	if (touch.dragging)
-		inputQueue.push([1, 2, buttonFlag(0), touch.x, touch.y, 0, 0, 0]);
-	else if (!touch.longPressed) {
-		inputQueue.push([1, 0, buttonFlag(0), touch.x, touch.y, 0, 0, 0]);
-		inputQueue.push([1, 2, buttonFlag(0), touch.x, touch.y, 0, 0, 0]);
+	
+	if (touch.fingers === 1) {
+		clearTimeout(touch.timer);
+		if (touch.dragging)
+			inputQueue.push([1, 2, buttonFlag(0), touch.x, touch.y, 0, 0, 0]);
+		else if (!touch.longPressed) {
+			inputQueue.push([1, 0, buttonFlag(0), touch.x, touch.y, 0, 0, 0]);
+			inputQueue.push([1, 2, buttonFlag(0), touch.x, touch.y, 0, 0, 0]);
+		}
+	} else if (touch.fingers === 2) {
+		inputQueue.push([1, 2, buttonFlag(2), touch.x, touch.y, 0, 0, 0]);
 	}
-	touch = null;
+	
+	if (e.touches.length === 0) {
+		touch = null;
+	}
 }, { passive: false });
 
 canvas.addEventListener('touchcancel', () => {
-	if (touch) clearTimeout(touch.timer);
+	if (touch && touch.timer) clearTimeout(touch.timer);
+	if (touch && touch.fingers === 2) {
+		inputQueue.push([1, 2, buttonFlag(2), touch.x, touch.y, 0, 0, 0]);
+	}
 	touch = null;
 }, { passive: false });
 
@@ -615,6 +645,42 @@ try {
 		}, 2000);
 	}
 
+	// League Table logic
+	const leagueOverlay = document.getElementById('league-table');
+	const leagueCloseBtn = document.getElementById('league-close');
+	if (leagueCloseBtn) {
+		leagueCloseBtn.addEventListener('click', () => {
+			leagueOverlay.style.display = 'none';
+		});
+	}
+
+	const recordMatch = (stats) => {
+		let history = JSON.parse(localStorage.getItem('lunar_red_alert_league') || '[]');
+		stats.Score = stats.KillsCost + (stats.BuildingsKilled * 500) + stats.ArmyValue;
+		history.push(stats);
+		history.sort((a, b) => b.Score - a.Score);
+		localStorage.setItem('lunar_red_alert_league', JSON.stringify(history));
+		
+		const tableBody = document.querySelector('#league-stats tbody');
+		if (tableBody) {
+			tableBody.innerHTML = '';
+			history.forEach(row => {
+				const tr = document.createElement('tr');
+				const stateClass = row.WinState === 'Won' ? 'won' : (row.WinState === 'Lost' ? 'lost' : '');
+				tr.innerHTML = `
+					<td class="${stateClass}" style="text-align:left">${row.WinState}</td>
+					<td>${row.Score.toLocaleString()}</td>
+					<td>${row.UnitsKilled}</td>
+					<td>${row.UnitsDead}</td>
+					<td>${row.BuildingsKilled}</td>
+					<td>${row.BuildingsDead}</td>
+				`;
+				tableBody.appendChild(tr);
+			});
+			leagueOverlay.style.display = 'flex';
+		}
+	};
+
 	// Phase W4c: after the probe frame counter, hand the browser's frame to
 	// the LIVE game loop — Game.PerformBrowserFrame per rAF, indefinitely
 	// (the gate stops after its target frames; a real deployment never stops).
@@ -625,12 +691,39 @@ try {
 		}
 
 		log('starting LIVE game loop (Game.PerformBrowserFrame per rAF)…');
+		
+		let lastStats = null;
+		let matchRecorded = false;
+		// Throttle JSExport calls
+		let frameCounter = 0;
+
 		const onGameFrame = ts => {
 			try {
-				if (exports.OpenRA.WasmProbe.GameLoop.OnFrame(ts))
+				if (exports.OpenRA.WasmProbe.GameLoop.OnFrame(ts)) {
+					frameCounter++;
+					if (frameCounter % 30 === 0) { // Polling every ~30 frames
+						const statsJson = exports.OpenRA.WasmProbe.GameLoop.GetEndGameStats();
+						if (statsJson) {
+							lastStats = JSON.parse(statsJson);
+							if (lastStats.WinState !== "Undefined" && !matchRecorded) {
+								recordMatch(lastStats);
+								matchRecorded = true;
+							}
+						} else if (lastStats && !matchRecorded) {
+							lastStats.WinState = "Quit";
+							recordMatch(lastStats);
+							lastStats = null;
+						} else if (matchRecorded) {
+							lastStats = null;
+							matchRecorded = false;
+						}
+					}
+
 					requestAnimationFrame(onGameFrame);
-				else
+				}
+				else {
 					log('live loop gate complete — see console for [probe] W4c line');
+				}
 			} catch (err) {
 				console.error('[probe] FAILED in live game loop:', err);
 				log('FAILED: ' + err);
