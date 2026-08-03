@@ -73,7 +73,7 @@ Container@MAINMENU:
 							Y: 180
 							Width: 140
 							Height: 30
-							Text: League Table
+							Text: button-leaguetable-title
 							Font: Bold
 						Button@EXTRAS_BUTTON:
 							X: PARENT_WIDTH / 2 - WIDTH / 2

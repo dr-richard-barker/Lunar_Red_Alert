@@ -480,6 +480,7 @@ label-multiplayer-title = Multiplayer
 
 ## mainmenu.yaml, settings.yaml
 button-settings-title = Settings
+button-leaguetable-title = League Table
 
 ## map-chooser.yaml
 label-mapchooser-panel-title = Choose Map
