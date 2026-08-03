@@ -4,3 +4,6 @@ mod-windowtitle = OpenRA - Lunar Red Alert
 
 ## Tilesets
 Lunar = Lunar
+
+button-leaguetable-title = League Table
+
