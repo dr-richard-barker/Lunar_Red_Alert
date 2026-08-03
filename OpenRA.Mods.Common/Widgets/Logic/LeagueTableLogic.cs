@@ -26,17 +26,17 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 
 			list.RemoveChildren();
 
-			const string tableFilename = "leaguetable.yaml";
-			var path = Path.Combine(Platform.SupportDir, tableFilename);
+			const string TableFilename = "leaguetable.yaml";
+			var path = Path.Combine(Platform.SupportDir, TableFilename);
 			var existing = new List<MiniYamlNode>();
 
 			try
 			{
 				if (Platform.LoadPersistedData != null)
 				{
-					var data = Platform.LoadPersistedData(tableFilename);
+					var data = Platform.LoadPersistedData(TableFilename);
 					if (!string.IsNullOrEmpty(data))
-						existing = MiniYaml.FromString(data, tableFilename).ToList();
+						existing = MiniYaml.FromString(data, TableFilename).ToList();
 				}
 				else if (File.Exists(path))
 				{
