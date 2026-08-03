@@ -4,6 +4,9 @@ label-voxel-selector-roll = Roll
 label-voxel-selector-pitch = Pitch
 label-voxel-selector-yaw = Yaw
 
+button-leaguetable-title = League Table
+
+
 ## ingame-debug.yaml
 checkbox-debug-panel-show-depth-preview = Show Depth Data
 

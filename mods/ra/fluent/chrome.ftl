@@ -2,15 +2,13 @@
 label-economy-stats-harvesters-header = Harvesters
 label-economy-stats-derricks-header = Oil Derricks
 
-
+button-leaguetable-title = League Table
 
 ## ingame-player.yaml
 button-command-bar-force-move =
     .tooltip = Force Move
     .tooltipdesc =
-button-leaguetable-title = League Table
-
-    Selected units will move to the desired location
+        Selected units will move to the desired location
      - Default activity for the target is suppressed
      - Vehicles will attempt to crush enemies at the target location
      - Helicopters will land at the target location
