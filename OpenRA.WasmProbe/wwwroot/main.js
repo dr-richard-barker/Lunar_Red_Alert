@@ -36,6 +36,8 @@ const effectiveDpr = () => dprOverride || window.devicePixelRatio || 1;
 const webgl = {
 	hasDocument: () => true,
 	getBootMode: () => bootMode,
+	getPersistedData: key => window.localStorage.getItem(key) || "",
+	setPersistedData: (key, value) => window.localStorage.setItem(key, value),
 
 	// Phase W3a: text fetch for the VFS-over-HTTP direction.
 	fetchText: async url => {

@@ -22,6 +22,12 @@ namespace OpenRA.WasmProbe
 	// IGraphicsContext implementation (see WASM-PORT-PLAN.md).
 	internal static partial class WebGL
 	{
+		[JSImport("getPersistedData", "webgl.js")]
+		internal static partial string GetPersistedData(string key);
+
+		[JSImport("setPersistedData", "webgl.js")]
+		internal static partial void SetPersistedData(string key, string value);
+
 		[JSImport("hasDocument", "webgl.js")]
 		internal static partial bool HasDocument();
 

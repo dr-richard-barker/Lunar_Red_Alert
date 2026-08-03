@@ -97,6 +97,15 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 				});
 			};
 
+			mainMenu.Get<ButtonWidget>("LEAGUE_TABLE_BUTTON").OnClick = () =>
+			{
+				SwitchMenu(MenuType.None);
+				Game.OpenWindow("LEAGUETABLE_BG", new WidgetArgs
+				{
+					{ "onExit", () => SwitchMenu(MenuType.Main) }
+				});
+			};
+
 			mainMenu.Get<ButtonWidget>("EXTRAS_BUTTON").OnClick = () => SwitchMenu(MenuType.Extras);
 
 			mainMenu.Get<ButtonWidget>("QUIT_BUTTON").OnClick = Game.Exit;

@@ -126,6 +126,7 @@ ChromeLayout:
 	common|chrome/mainmenu.yaml
 	common|chrome/mainmenu-prompts.yaml
 	common|chrome/settings.yaml
+	spaceage|chrome/leaguetable.yaml
 	common|chrome/settings-display.yaml
 	common|chrome/settings-audio.yaml
 	common|chrome/settings-input.yaml

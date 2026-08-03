@@ -21,6 +21,12 @@ namespace OpenRA.Platforms.Browser
 	// until Canvas2D rasterization lands. Input pump arrives with W3d.
 	public sealed class BrowserPlatform : IPlatform
 	{
+		public BrowserPlatform()
+		{
+			Platform.SavePersistedData = GL.SetPersistedData;
+			Platform.LoadPersistedData = GL.GetPersistedData;
+		}
+
 		public IPlatformWindow CreateWindow(
 			Size size, WindowMode windowMode, float scaleModifier, int vertexBatchSize, int indexBatchSize, int videoDisplay, GLProfile profile)
 		{

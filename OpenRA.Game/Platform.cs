@@ -22,6 +22,9 @@ namespace OpenRA
 
 	public static class Platform
 	{
+		public static Action<string, string> SavePersistedData;
+		public static Func<string, string> LoadPersistedData;
+
 		public static PlatformType CurrentPlatform => LazyCurrentPlatform.Value;
 		public static Architecture CurrentArchitecture => RuntimeInformation.ProcessArchitecture;
 		public static readonly Guid SessionGUID = Guid.NewGuid();

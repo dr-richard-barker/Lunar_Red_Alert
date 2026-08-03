@@ -19,6 +19,12 @@ namespace OpenRA.Platforms.Browser
 	// marshalling only. JS half lives in wwwroot/main.js ('webgl.js' module).
 	internal static partial class GL
 	{
+		[JSImport("getPersistedData", "webgl.js")]
+		internal static partial string GetPersistedData(string key);
+
+		[JSImport("setPersistedData", "webgl.js")]
+		internal static partial void SetPersistedData(string key, string value);
+
 		[JSImport("init", "webgl.js")]
 		internal static partial int Init(int width, int height);
 

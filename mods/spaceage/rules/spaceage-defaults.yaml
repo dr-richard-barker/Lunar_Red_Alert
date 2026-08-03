@@ -44,3 +44,6 @@ VacuumDamageTypeDecl:
 	# Sealed cabins: no oxygen worries, just gentler low-g handling than infantry.
 	GravitySpeedModifier@LOWG:
 		Modifier: 110
+
+Player:
+	LeagueTableManager:
