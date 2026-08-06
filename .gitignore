@@ -55,3 +55,16 @@ update.log
 
 # IntelliJ files
 .idea
+
+# Local .NET SDK / wasm-tools installs and OpenRA's own runtime support dir,
+# both of which land in the repo root when tooling is fetched/run locally
+# instead of in CI.
+/.dotnet/
+/.dotnet_home/
+/Library/
+
+# Ad hoc local test/debug output (CI uploads the real artifacts instead).
+*.log
+ai-test-timeout.png
+ai-match-progress.png
+playwasm-smoke-screenshot.png
