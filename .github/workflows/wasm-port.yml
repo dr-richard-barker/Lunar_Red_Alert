@@ -20,6 +20,11 @@ on:
       - 'mods/spaceage/**'
       - 'mods/ra-content/**'
       - 'mods/common-content/**'
+      # The staging step also rsyncs mods/ra and mods/common wholesale
+      # (tilesets, maps, rules) into probe-data — map/tileset-only edits
+      # were silently skipping this whole pipeline before this was added.
+      - 'mods/ra/**'
+      - 'mods/common/**'
 
 permissions:
   contents: read
