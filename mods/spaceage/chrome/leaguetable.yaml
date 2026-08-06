@@ -10,7 +10,7 @@ Background@LEAGUETABLE_BG:
 			Y: 15
 			Width: PARENT_RIGHT
 			Height: 25
-			Text: League Table
+			Text: button-leaguetable-title
 			Align: Center
 			Font: Bold
 		Container@HEADER_ROW:
@@ -23,37 +23,37 @@ Background@LEAGUETABLE_BG:
 					X: 0
 					Width: 120
 					Height: 20
-					Text: Date
+					Text: label-leaguetable-header-date
 					Font: Small
 				Label@HEADER_RESULT:
 					X: 130
 					Width: 80
 					Height: 20
-					Text: Result
+					Text: label-leaguetable-header-result
 					Font: Small
 				Label@HEADER_SCORE:
 					X: 220
 					Width: 80
 					Height: 20
-					Text: Score
+					Text: label-leaguetable-header-score
 					Font: Small
 				Label@HEADER_KILLS:
 					X: 310
 					Width: 80
 					Height: 20
-					Text: Kills
+					Text: label-leaguetable-header-kills
 					Font: Small
 				Label@HEADER_INCOME:
 					X: 400
 					Width: 80
 					Height: 20
-					Text: Income
+					Text: label-leaguetable-header-income
 					Font: Small
 				Label@HEADER_DURATION:
 					X: 490
 					Width: 70
 					Height: 20
-					Text: Duration
+					Text: label-leaguetable-header-duration
 					Font: Small
 		ScrollPanel@LEAGUE_LIST:
 			X: 15
@@ -110,13 +110,13 @@ Background@LEAGUETABLE_BG:
 							Y: 0
 							Width: PARENT_RIGHT
 							Height: 25
-							Text: No games played yet.
+							Text: label-leaguetable-empty
 							Font: Tiny
 		Button@BACK_BUTTON:
 			X: (PARENT_RIGHT - WIDTH) / 2
 			Y: PARENT_BOTTOM - 45
 			Width: 140
 			Height: 35
-			Text: Back
+			Text: button-back
 			Font: Bold
 			Key: escape
