@@ -27,6 +27,11 @@ const keep = obj => { handles.set(nextHandle, obj); return nextHandle++; };
 const qmode = new URLSearchParams(location.search).get('mode');
 const bootMode = (qmode === 'play' || qmode === 'autopilot') ? qmode : 'probe';
 
+// Terrain toggle: which reskinned ysmir-*.oramap to launch. Persists across
+// reloads via the query string (see the #terrain button below), not state.
+const qterrain = new URLSearchParams(location.search).get('terrain');
+const terrainMode = (qterrain === 'lunar' || qterrain === 'mars') ? qterrain : 'earth';
+
 // Testing override: ?dpr=2 forces a devicePixelRatio, letting a standard
 // display session exercise the exact HiDPI code path that a Retina
 // laptop/iPad (dpr 2) hits for real. Real users never set this.
@@ -36,6 +41,7 @@ const effectiveDpr = () => dprOverride || window.devicePixelRatio || 1;
 const webgl = {
 	hasDocument: () => true,
 	getBootMode: () => bootMode,
+	getTerrainMode: () => terrainMode,
 	getPersistedData: key => window.localStorage.getItem(key) || "",
 	setPersistedData: (key, value) => window.localStorage.setItem(key, value),
 
@@ -646,6 +652,23 @@ try {
 			}
 		}, 2000);
 	}
+
+	// Terrain toggle: cycles Earth -> Lunar -> Mars -> Earth. This is a full
+	// page reload with a different ?terrain= value, not a live hot-swap --
+	// OpenRA doesn't support changing a running map's tileset.
+	const terrainLabels = { earth: 'Terrain: Earth', lunar: 'Terrain: Lunar', mars: 'Terrain: Mars' };
+	const terrainNext = { earth: 'lunar', lunar: 'mars', mars: 'earth' };
+	const terrainEl = document.getElementById('terrain');
+	terrainEl.textContent = terrainLabels[terrainMode];
+	terrainEl.addEventListener('click', () => {
+		const url = new URL(location.href);
+		const next = terrainNext[terrainMode];
+		if (next === 'earth')
+			url.searchParams.delete('terrain');
+		else
+			url.searchParams.set('terrain', next);
+		location.assign(url);
+	});
 
 	// League Table logic
 	const leagueOverlay = document.getElementById('league-table');

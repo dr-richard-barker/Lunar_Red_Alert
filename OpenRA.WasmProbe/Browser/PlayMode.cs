@@ -49,12 +49,18 @@ namespace OpenRA.WasmProbe
 
 			Console.WriteLine("[play] booting Lunar Red Alert…");
 			
-			var args = new Arguments("Launch.Map=ysmir.oramap");
+			var mapFile = WebGL.GetTerrainMode() switch
+			{
+				"lunar" => "ysmir-lunar.oramap",
+				"mars" => "ysmir-mars.oramap",
+				_ => "ysmir.oramap",
+			};
+			var args = new Arguments($"Launch.Map={mapFile}");
 			// In autopilot mode, we could start a specific map or just let the shellmap run
 			// but we hide the UI to let the user spectate the shellmap AI battle.
 			if (mode == "autopilot")
 			{
-				// Launching the shellmap as a regular map makes it a full game, 
+				// Launching the shellmap as a regular map makes it a full game,
 				// or we can pass a specific map if one exists.
 				args = new Arguments("Launch.Map=shellmap");
 			}

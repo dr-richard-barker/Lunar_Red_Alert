@@ -19,6 +19,8 @@ FileSystem: ContentInstallerFileSystem
 		common|scripts
 		ra|scripts
 		ra|uibits
+		spaceage|artwork/tilesets/lunar
+		spaceage|artwork/tilesets/mars
 	ContentPackages:
 		content|allies.mix
 		content|conquer.mix
@@ -95,6 +97,7 @@ TileSets:
 	ra|tilesets/temperat.yaml
 	ra|tilesets/desert.yaml
 	spaceage|tilesets/lunar.yaml
+	spaceage|tilesets/mars.yaml
 
 Cursors:
 	ra|cursors.yaml

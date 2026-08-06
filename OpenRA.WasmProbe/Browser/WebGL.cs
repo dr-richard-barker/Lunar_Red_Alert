@@ -49,6 +49,11 @@ namespace OpenRA.WasmProbe
 		[JSImport("getBootMode", "webgl.js")]
 		internal static partial string GetBootMode();
 
+		// Terrain toggle: "earth" (default, temperat ysmir), "lunar", or "mars"
+		// — picks which reskinned ysmir-*.oramap PlayMode launches.
+		[JSImport("getTerrainMode", "webgl.js")]
+		internal static partial string GetTerrainMode();
+
 		internal static async Task<byte[]> FetchBinary(string url)
 		{
 			return Convert.FromBase64String(await FetchBase64(url));
