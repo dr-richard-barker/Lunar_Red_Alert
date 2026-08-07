@@ -44,6 +44,19 @@ Terrain:
 	TerrainType@CraterWall:
 		Type: CraterWall
 		Color: 3B342E
+	# Not painted by any template on these maps, but ra|rules/world.yaml's
+	# ResourceLayer/EditorResourceLayer traits reference "Ore"/"Gems" as
+	# terrain type NAMES unconditionally (not just where resources actually
+	# grow) -- every tileset needs both registered or WorldLoaded crashes
+	# outright (confirmed live: "Tileset 'LUNAR' lacks terrain type 'Ore'").
+	TerrainType@Ore:
+		Type: Ore
+		TargetTypes: Ground
+		Color: 948060
+	TerrainType@Gems:
+		Type: Gems
+		TargetTypes: Ground
+		Color: 8470FF
 
 Templates:
 	Template@255:
