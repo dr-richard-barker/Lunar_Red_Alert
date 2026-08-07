@@ -56,6 +56,13 @@ FileSystem: ContentInstallerFileSystem
 
 MapFolders:
 	ra|maps: System
+	# ysmir/-lunar/-mars: spaceage-only content (LUNAR/MARS tilesets, the
+	# mapcamera actor type) that doesn't exist under plain ra, so it can't
+	# live in ra|maps -- the desktop "Check Mods" validator checks ra's own
+	# maps folder under ra's OWN rules too, with no spaceage overlay, and
+	# failed on both (missing LUNAR/MARS tileset defaults; mapcamera not
+	# defined by any rule).
+	spaceage|maps: System
 	~^SupportDir|maps/ra/{DEV_VERSION}: User
 
 Rules:
