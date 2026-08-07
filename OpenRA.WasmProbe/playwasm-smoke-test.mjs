@@ -5,15 +5,24 @@
 // Browser/PlayMode.cs) has no gates and no CI timeout of its own, so a
 // regression there was only ever discoverable by a human loading the page.
 //
-// Usage: node OpenRA.WasmProbe/playwasm-smoke-test.mjs https://example.github.io/repo/play-wasm/
+// Usage: node OpenRA.WasmProbe/playwasm-smoke-test.mjs https://example.github.io/repo/play-wasm/ [terrain]
+//
+// Optional 3rd arg selects a reskinned map via the same ?terrain= query
+// param the in-page toggle button uses ('lunar' or 'mars'; omit for the
+// default Earth map). Screenshot filename is suffixed with the terrain name
+// so a lunar/mars run doesn't clobber the default Earth screenshot when both
+// run in the same CI job.
 import { chromium } from 'playwright';
 
 const url = process.argv[2];
 if (!url) {
-	console.error('[smoke] usage: node playwasm-smoke-test.mjs <play-wasm base url>');
+	console.error('[smoke] usage: node playwasm-smoke-test.mjs <play-wasm base url> [terrain]');
 	process.exit(1);
 }
-const playUrl = url.endsWith('/') ? `${url}?mode=play` : `${url}/?mode=play`;
+const terrain = process.argv[3] || '';
+const base = url.endsWith('/') ? url : `${url}/`;
+const playUrl = terrain ? `${base}?mode=play&terrain=${terrain}` : `${base}?mode=play`;
+const screenshotPath = terrain ? `playwasm-smoke-screenshot-${terrain}.png` : 'playwasm-smoke-screenshot.png';
 
 // PlayMode's boot (MEMFS stage -> settings -> mods -> platform -> renderer ->
 // sound -> Game.InitializeMod) took well under a minute in manual testing;
@@ -62,7 +71,7 @@ if (ok) {
 }
 
 try {
-	await raceWatchdog(page.screenshot({ path: 'playwasm-smoke-screenshot.png', timeout: 15000 }), 'page.screenshot');
+	await raceWatchdog(page.screenshot({ path: screenshotPath, timeout: 15000 }), 'page.screenshot');
 } catch (e) {
 	console.error('[smoke] screenshot unavailable:', e.message);
 }

@@ -290,6 +290,17 @@ jobs:
             exit 1
           fi
 
+      - name: Capture the Lunar terrain map too
+        # Diagnostic + ongoing coverage for the reskinned maps: the default
+        # smoke test above only ever exercises the Earth/Temperat map, so a
+        # boot failure or render regression specific to ysmir-lunar.oramap
+        # would otherwise be invisible until a human clicked the toggle.
+        # Non-blocking (continue-on-error) since this is primarily here to
+        # get a real screenshot of the terrain for visual inspection.
+        continue-on-error: true
+        run: |
+          node OpenRA.WasmProbe/playwasm-smoke-test.mjs "${{ needs.deploy.outputs.page_url }}play-wasm/" lunar 2>&1 | tee playwasm-smoke-lunar.log
+
       - name: Upload smoke test artifacts
         if: always()
         uses: actions/upload-artifact@v7
@@ -298,5 +309,8 @@ jobs:
           path: |
             playwasm-smoke.log
             playwasm-smoke-screenshot.png
+            playwasm-smoke-lunar.log
+            playwasm-smoke-screenshot-lunar.png
+          if-no-files-found: ignore
           if-no-files-found: warn
           retention-days: 7
