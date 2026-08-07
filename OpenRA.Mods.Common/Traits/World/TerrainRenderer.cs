@@ -108,8 +108,16 @@ namespace OpenRA.Mods.Common.Traits
 			spriteLayer.Update(cell, sprite, paletteReference);
 		}
 
+		bool loggedRenderTerrainOnce;
+
 		void IRenderTerrain.RenderTerrain(WorldRenderer wr, Viewport viewport)
 		{
+			if (OperatingSystem.IsBrowser() && !loggedRenderTerrainOnce)
+			{
+				loggedRenderTerrainOnce = true;
+				Console.WriteLine($"[diag] RenderTerrain called, viewport visible cells nonzero={viewport.AllVisibleCells.CandidateMapCoords.TopLeft} to {viewport.AllVisibleCells.CandidateMapCoords.BottomRight}");
+			}
+
 			spriteLayer.Draw(wr.Viewport);
 
 			foreach (var r in wr.World.WorldActor.TraitsImplementing<IRenderOverlay>())
