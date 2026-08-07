@@ -54,7 +54,18 @@ const webgl = {
 	},
 
 	// Phase W3i-b: binary fetch as base64 (fonts, PNGs, later .mix content).
+	// probe-data.zip specifically is cache-busted: unlike every _framework
+	// file (content-hashed by the .NET publish itself) and index.html/
+	// main.js (the __BUILD_ID__ query param on main.js's own <script src>),
+	// this CI-built archive had no versioning of its own, so GitHub Pages'
+	// CDN (which caches for up to 10 minutes with no coordination between
+	// files) could keep serving a stale build's map/tileset/art content for
+	// a while after a fresh deploy -- confirmed live: a terrain recolour
+	// showed byte-identical "before" pixels on two different pushes several
+	// minutes apart, then the correct colour once fetched with this in place.
 	fetchBase64: async url => {
+		if (url === 'probe-data.zip')
+			url += '?v=__BUILD_ID__';
 		const r = await fetch(url);
 		if (!r.ok)
 			throw new Error(`fetch ${url} -> HTTP ${r.status}`);
