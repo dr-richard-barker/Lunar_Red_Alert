@@ -173,6 +173,9 @@ namespace OpenRA.WasmProbe
 
 			rivalCountApplied = true;
 
+			Console.WriteLine($"[diag] rival count apply: RivalCount={RivalCount}; world.Players=" +
+				string.Join(", ", world.Players.Select(p => $"{p.InternalName}(bot={p.IsBot},type={p.BotType})")));
+
 			var rivalNames = new[] { "Multi2", "Multi3", "Multi4" };
 			for (var i = 0; i < rivalNames.Length; i++)
 			{
@@ -180,7 +183,9 @@ namespace OpenRA.WasmProbe
 					continue;
 
 				var rival = world.Players.FirstOrDefault(p => p.InternalName == rivalNames[i]);
-				var bot = rival?.PlayerActor.TraitsImplementing<IBot>().FirstOrDefault(b => b.Info.Type == "normal");
+				var bots = rival?.PlayerActor.TraitsImplementing<IBot>().ToArray() ?? [];
+				Console.WriteLine($"[diag]   {rivalNames[i]}: rival={(rival == null ? "null" : rival.InternalName)} bots=[{string.Join(",", bots.Select(b => b.Info.Type))}]");
+				var bot = bots.FirstOrDefault(b => b.Info.Type == "normal");
 				var modular = bot as ModularBot;
 				if (modular != null)
 				{
