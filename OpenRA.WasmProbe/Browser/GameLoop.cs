@@ -298,8 +298,13 @@ namespace OpenRA.WasmProbe
 
 				try
 				{
+					// Delayed: the earlier Shroud.ExploreAll() investigation found
+					// shroud/visibility state can lag several ticks behind actor
+					// creation (resolvedType only catches up via Shroud.Tick()) --
+					// reporting immediately risked sampling the same kind of
+					// too-early snapshot again.
 					var w = Game.ActiveWorld;
-					if (w?.LocalPlayer != null)
+					if (w?.LocalPlayer != null && w.WorldTick > 100)
 						ReportTerrainOnce(w, w.LocalPlayer);
 				}
 				catch (Exception e)
