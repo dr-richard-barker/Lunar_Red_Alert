@@ -351,8 +351,20 @@ namespace OpenRA.Mods.Common.Traits
 			anyCellDirty = false;
 		}
 
+		bool loggedRenderShroudOnce;
+
 		void IRenderShroud.RenderShroud(WorldRenderer wr)
 		{
+			if (OperatingSystem.IsBrowser() && !loggedRenderShroudOnce)
+			{
+				loggedRenderShroudOnce = true;
+				var samplePuv = map.ProjectedCells.FirstOrDefault();
+				var vis = cellVisibility != null ? cellVisibility(samplePuv) : Shroud.CellVisibility.Hidden;
+				Console.WriteLine($"[diag] RenderShroud renderPlayer={world.RenderPlayer?.InternalName ?? "null"} " +
+					$"shroudRef={(shroud == null ? "null" : "set")} sampleCell={samplePuv} visibility={vis} " +
+					$"shroudExplored={shroud?.IsExplored(samplePuv)} shroudExploredAll={shroud?.ExploreMapEnabled}");
+			}
+
 			UpdateShroud(map.ProjectedCells);
 			fogLayer.Draw(wr.Viewport);
 			shroudLayer.Draw(wr.Viewport);
