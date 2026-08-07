@@ -73,11 +73,16 @@ namespace OpenRA.WasmProbe
 
 			using var vertexBuffer = context.CreateVertexBuffer(vertices);
 
+			// ITexture.SetData expects BGRA32 bytes (matching Sheet.cs's packing
+			// convention and the desktop platform's GL_BGRA upload) -- these four
+			// texels are byte-order-swapped from their intended magenta/yellow/
+			// cyan/grey so the quadrant assertions below check genuine rendered
+			// colour, not raw upload bytes.
 			var texture = context.CreateTexture();
 			texture.SetData(
 			[
-				255, 0, 255, 255, 255, 255, 0, 255,
-				0, 255, 255, 255, 64, 64, 64, 255,
+				255, 0, 255, 255, 0, 255, 255, 255,
+				255, 255, 0, 255, 64, 64, 64, 255,
 			], 2, 2);
 
 			var shader = context.CreateShader(new ProbeShaderBindings());
