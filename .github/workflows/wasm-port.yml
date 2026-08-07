@@ -311,6 +311,5 @@ jobs:
             playwasm-smoke-screenshot.png
             playwasm-smoke-lunar.log
             playwasm-smoke-screenshot-lunar.png
-          if-no-files-found: ignore
           if-no-files-found: warn
           retention-days: 7
