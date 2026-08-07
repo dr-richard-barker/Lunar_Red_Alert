@@ -96,8 +96,6 @@ namespace OpenRA.Mods.Common.Traits
 			map.Height.CellEntryChanged += UpdateCell;
 		}
 
-		static bool diagPrinted;
-
 		public void UpdateCell(CPos cell)
 		{
 			var tile = map.Tiles[cell];
@@ -107,13 +105,6 @@ namespace OpenRA.Mods.Common.Traits
 
 			var sprite = tileCache.TileSprite(tile);
 			var paletteReference = worldRenderer.Palette(palette);
-
-			if (!diagPrinted && terrainInfo.Id == "LUNAR")
-			{
-				diagPrinted = true;
-				Console.WriteLine($"[diag] terrain cell {cell}: tile.Type={tile.Type} palette-name={palette} sprite.Channel={sprite.Channel} HasColorShift={paletteReference.HasColorShift} TextureIndex={paletteReference.TextureIndex}");
-			}
-
 			spriteLayer.Update(cell, sprite, paletteReference);
 		}
 
