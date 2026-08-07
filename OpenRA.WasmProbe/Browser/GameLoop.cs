@@ -57,6 +57,27 @@ namespace OpenRA.WasmProbe
 		// why the local player ends up with no units: whether there IS a local
 		// player, which faction it resolved to (the StartingUnits groups are
 		// faction-gated), where its spawn is, and what it actually owns.
+		static bool groundPixelRead;
+
+		// One-shot GPU framebuffer readback, bypassing screenshots/PNG-file
+		// checks entirely: reads the ACTUAL rendered colour at a handful of
+		// on-screen points once the game has had time to settle (gated on
+		// frame count, not a timer, so it fires regardless of how fast/slow
+		// this particular run boots). WebGL readPixels origin is bottom-left
+		// (see QuadDemo's own comment on this), so y is canvas-height-relative.
+		static void ReadGroundPixelOnce()
+		{
+			if (groundPixelRead || frames < 180)
+				return;
+
+			groundPixelRead = true;
+			int[] Px(int x, int y) => WebGL.ReadPixel(x, y);
+			Console.WriteLine(
+				$"[diag] ground pixel readback: (400,668)={string.Join(",", Px(400, 668))} " +
+				$"(600,118)={string.Join(",", Px(600, 118))} (100,368)={string.Join(",", Px(100, 368))} " +
+				$"(700,468)={string.Join(",", Px(700, 468))}");
+		}
+
 		static void ReportWorldOnce()
 		{
 			var world = Game.ActiveWorld;
@@ -366,6 +387,15 @@ namespace OpenRA.WasmProbe
 				catch (Exception e)
 				{
 					Console.WriteLine($"[diag] free build tick threw (ignored): {e}");
+				}
+
+				try
+				{
+					ReadGroundPixelOnce();
+				}
+				catch (Exception e)
+				{
+					Console.WriteLine($"[diag] ground pixel read threw (ignored): {e}");
 				}
 
 				return true;
