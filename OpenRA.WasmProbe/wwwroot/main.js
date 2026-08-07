@@ -670,6 +670,23 @@ try {
 		location.assign(url);
 	});
 
+	// Free Build toggle: keeps cash topped up every frame so production is
+	// effectively free. ToggleFreeBuild returns false (does nothing) until a
+	// local player exists, same "no-op until the match is up" pattern as
+	// the autoplay toggle above.
+	const freebuildEl = document.getElementById('freebuild');
+	freebuildEl.addEventListener('click', () => {
+		let on = false;
+		try {
+			on = exports.OpenRA.WasmProbe.GameLoop.ToggleFreeBuild();
+		} catch (err) {
+			console.error('[play] free build toggle failed:', err);
+		}
+
+		freebuildEl.textContent = on ? 'Free Build: ON' : 'Free Build: OFF';
+		freebuildEl.classList.toggle('on', on);
+	});
+
 	// League Table logic
 	const leagueOverlay = document.getElementById('league-table');
 	const leagueCloseBtn = document.getElementById('league-close');

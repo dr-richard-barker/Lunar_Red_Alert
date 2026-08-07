@@ -57,13 +57,16 @@ Player:
 # (the engine's TileSearchRange limit -- confirmed live: a 70c0 range threw
 # "requested range (71) cannot exceed TileSearchRange (50)" every game-loop
 # tick after boot); the maps place a 3x3 grid of these to jointly cover the
-# full 90x90 playable area instead of one oversized camera.
+# full 90x90 playable area instead of one oversized camera. Confirmed live
+# that even Range: 50c0 throws ("requested range (51) cannot exceed
+# TileSearchRange (50)") -- the WDist->cell conversion rounds up by one --
+# so this stays a few cells under the real 50-cell hard cap.
 MAPCAMERA:
 	Interactable:
 	Immobile:
 		OccupiesSpace: false
 	RevealsShroud:
-		Range: 50c0
+		Range: 45c0
 		Type: CenterPosition
 	BodyOrientation:
 		QuantizedFacings: 1

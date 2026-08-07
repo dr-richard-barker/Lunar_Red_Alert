@@ -23,6 +23,9 @@
   #autoplay.on { background: #6f6; color: #000; }
   /* Terrain toggle: sits left of the autoplay button, same fixed top-right cluster. */
   #terrain { position: fixed; top: 8px; right: 130px; z-index: 9999; background: rgba(0,0,0,0.75); color: #5ec8ff; border: 1px solid #5ec8ff; border-radius: 4px; font: bold 13px/1 monospace; padding: 10px 14px; cursor: pointer; }
+  /* Free Build toggle: left of the terrain button, same cluster. */
+  #freebuild { position: fixed; top: 8px; right: 260px; z-index: 9999; background: rgba(0,0,0,0.75); color: #ffd35e; border: 1px solid #ffd35e; border-radius: 4px; font: bold 13px/1 monospace; padding: 10px 14px; cursor: pointer; }
+  #freebuild.on { background: #ffd35e; color: #000; }
   
   /* League Table Overlay */
   #league-table { position: fixed; inset: 0; background: rgba(10,14,20,0.9); z-index: 10000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
@@ -41,6 +44,7 @@
 <body>
 <canvas id="canvas" width="256" height="256"></canvas>
 <div id="log">booting .NET wasm runtime…</div>
+<button id="freebuild" type="button">Free Build: OFF</button>
 <button id="terrain" type="button">Terrain: Earth</button>
 <button id="autoplay" type="button">AI: OFF</button>
 <div id="league-table" style="display:none;">

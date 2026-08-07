@@ -156,6 +156,38 @@ namespace OpenRA.WasmProbe
 			return $"{{\"WinState\":\"{winState}\",\"KillsCost\":{stats.KillsCost},\"DeathsCost\":{stats.DeathsCost},\"UnitsKilled\":{stats.UnitsKilled},\"UnitsDead\":{stats.UnitsDead},\"BuildingsKilled\":{stats.BuildingsKilled},\"BuildingsDead\":{stats.BuildingsDead},\"ArmyValue\":{stats.ArmyValue}}}";
 		}
 
+		// Free Build: tops the local player's cash up to a floor whenever it
+		// drops below, so production is effectively free without touching
+		// per-item cost logic. Reuses the same ChangeCash the desktop debug
+		// menu's "Give Cash" cheat calls (DeveloperMode.cs), which is already
+		// unconditionally enabled here since a single non-bot player always
+		// satisfies DeveloperMode.Created()'s `NonBotPlayers.Count() == 1` check.
+		const int FreeBuildCashFloor = 20000;
+		static bool freeBuildEnabled;
+
+		[JSExport]
+		public static bool ToggleFreeBuild()
+		{
+			var player = Game.ActiveWorld?.LocalPlayer;
+			if (player == null)
+				return false;
+
+			freeBuildEnabled = !freeBuildEnabled;
+			Console.WriteLine(freeBuildEnabled ? "[play] free build on" : "[play] free build off");
+			return freeBuildEnabled;
+		}
+
+		static void TickFreeBuild()
+		{
+			if (!freeBuildEnabled)
+				return;
+
+			var player = Game.ActiveWorld?.LocalPlayer;
+			var resources = player?.PlayerActor.TraitOrDefault<PlayerResources>();
+			if (resources != null && resources.Cash < FreeBuildCashFloor)
+				resources.ChangeCash(FreeBuildCashFloor - resources.Cash);
+		}
+
 		[JSExport]
 		public static bool ToggleAutoplay()
 		{
@@ -209,6 +241,15 @@ namespace OpenRA.WasmProbe
 				catch (Exception e)
 				{
 					Console.WriteLine($"[diag] world report threw (ignored): {e}");
+				}
+
+				try
+				{
+					TickFreeBuild();
+				}
+				catch (Exception e)
+				{
+					Console.WriteLine($"[diag] free build tick threw (ignored): {e}");
 				}
 
 				return true;
