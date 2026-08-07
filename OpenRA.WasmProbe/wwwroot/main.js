@@ -670,6 +670,23 @@ try {
 		location.assign(url);
 	});
 
+	// War/Peace toggle: ceasefire with whichever players are hostile by
+	// default (the map's Creeps side). ToggleWarPeace returns false (does
+	// nothing) until a local player exists, same pattern as the other
+	// toggles above.
+	const warpeaceEl = document.getElementById('warpeace');
+	warpeaceEl.addEventListener('click', () => {
+		let peace = false;
+		try {
+			peace = exports.OpenRA.WasmProbe.GameLoop.ToggleWarPeace();
+		} catch (err) {
+			console.error('[play] war/peace toggle failed:', err);
+		}
+
+		warpeaceEl.textContent = peace ? 'Peace: ON' : 'War: ON';
+		warpeaceEl.classList.toggle('on', peace);
+	});
+
 	// Free Build toggle: keeps cash topped up every frame so production is
 	// effectively free. ToggleFreeBuild returns false (does nothing) until a
 	// local player exists, same "no-op until the match is up" pattern as

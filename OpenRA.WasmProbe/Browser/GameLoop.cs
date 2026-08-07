@@ -10,6 +10,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices.JavaScript;
@@ -207,6 +208,60 @@ namespace OpenRA.WasmProbe
 			{
 				Console.WriteLine($"[diag] terrain report failed (ignored): {e}");
 			}
+		}
+
+		// War/Peace: flips the local player's relationship with whichever
+		// players are currently Enemy (the map's hostile Creeps side, and
+		// anyone else hostile by default) to Ally and back. AlliedPlayersMask/
+		// EnemyPlayersMask are plain public bitset fields on Player -- no
+		// order/networking plumbing needed for a local, single-player match.
+		// Only touches players that were genuinely Enemy to begin with, so it
+		// can't accidentally turn two already-neutral/allied sides hostile.
+		static bool peaceMode;
+		static readonly List<Player> peaceModeAffected = [];
+
+		[JSExport]
+		public static bool ToggleWarPeace()
+		{
+			var world = Game.ActiveWorld;
+			var player = world?.LocalPlayer;
+			if (player == null)
+				return false;
+
+			peaceMode = !peaceMode;
+
+			if (peaceMode)
+			{
+				peaceModeAffected.Clear();
+				foreach (var other in world.Players)
+				{
+					if (other == player || player.RelationshipWith(other) != PlayerRelationship.Enemy)
+						continue;
+
+					peaceModeAffected.Add(other);
+					player.AlliedPlayersMask = player.AlliedPlayersMask.Union(other.PlayerMask);
+					player.EnemyPlayersMask = player.EnemyPlayersMask.Except(other.PlayerMask);
+					other.AlliedPlayersMask = other.AlliedPlayersMask.Union(player.PlayerMask);
+					other.EnemyPlayersMask = other.EnemyPlayersMask.Except(player.PlayerMask);
+				}
+
+				Console.WriteLine($"[play] peace mode on — ceasefire with {peaceModeAffected.Count} player(s)");
+			}
+			else
+			{
+				foreach (var other in peaceModeAffected)
+				{
+					player.AlliedPlayersMask = player.AlliedPlayersMask.Except(other.PlayerMask);
+					player.EnemyPlayersMask = player.EnemyPlayersMask.Union(other.PlayerMask);
+					other.AlliedPlayersMask = other.AlliedPlayersMask.Except(player.PlayerMask);
+					other.EnemyPlayersMask = other.EnemyPlayersMask.Union(player.PlayerMask);
+				}
+
+				Console.WriteLine("[play] peace mode off — war resumed");
+				peaceModeAffected.Clear();
+			}
+
+			return peaceMode;
 		}
 
 		// Free Build: tops the local player's cash up to a floor whenever it
