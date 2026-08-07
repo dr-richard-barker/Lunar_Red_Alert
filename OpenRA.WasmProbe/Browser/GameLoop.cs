@@ -180,8 +180,8 @@ namespace OpenRA.WasmProbe
 					continue;
 
 				var rival = world.Players.FirstOrDefault(p => p.InternalName == rivalNames[i]);
-				var modular = rival?.PlayerActor.TraitsImplementing<IBot>()
-					.OfType<ModularBot>().FirstOrDefault(b => b.Info.Type == "normal");
+				var bot = rival?.PlayerActor.TraitsImplementing<IBot>().FirstOrDefault(b => b.Info.Type == "normal");
+				var modular = bot as ModularBot;
 				if (modular != null)
 				{
 					modular.IsEnabled = false;
