@@ -14,8 +14,14 @@
      padding-box relative, and any border/margin skews the engine's pixel
      coordinates against getBoundingClientRect(). The canvas is sized in JS
      to exactly fill the viewport (see getWindowSize in main.js), so margin
-     would also just push it past the edge of the window. */
-  canvas { display: block; image-rendering: pixelated; }
+     would also just push it past the edge of the window. touch-action:none
+     opts the canvas fully out of the browser's own touch gesture handling
+     (scroll, pull-to-refresh, double-tap-zoom, pinch-zoom) -- main.js's own
+     touchstart/move/end listeners already call preventDefault(), but
+     without this some browsers still impose a wait-and-see delay before
+     delivering the events at all, which reads as janky/unresponsive touch
+     controls even though every gesture eventually "works". */
+  canvas { display: block; image-rendering: pixelated; touch-action: none; }
   /* HUD toggle cluster: top-LEFT, not top-right. The engine's own sidebar,
      minimap and cash/power readout always render top-right (see every
      smoke-test screenshot), so a fixed right-hand cluster sat directly on

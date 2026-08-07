@@ -105,6 +105,16 @@ namespace OpenRA.WasmProbe
 			}
 		}
 
+		// Game.worldRenderer is private; there's no other way to reach the
+		// live Viewport from outside the render/widget code.
+		static Viewport GetViewport()
+		{
+			var wr = typeof(Game)
+				.GetField("worldRenderer", BindingFlags.NonPublic | BindingFlags.Static)
+				?.GetValue(null) as WorldRenderer;
+			return wr?.Viewport;
+		}
+
 		// MapStartingLocations.WorldLoaded is supposed to leave the camera on
 		// the local player's spawn, but on the deployed page it consistently
 		// starts over unexplored map instead -- the player's own MCV sits at
@@ -115,24 +125,66 @@ namespace OpenRA.WasmProbe
 		{
 			try
 			{
-				// Game.worldRenderer is private; PlayMode already reaches for
-				// non-public Game members during browser boot for the same reason.
-				var wr = typeof(Game)
-					.GetField("worldRenderer", BindingFlags.NonPublic | BindingFlags.Static)
-					?.GetValue(null) as WorldRenderer;
-
-				if (wr?.Viewport == null)
+				var viewport = GetViewport();
+				if (viewport == null)
 				{
 					Console.WriteLine("[diag] no world renderer/viewport yet — camera not centred");
 					return;
 				}
 
-				wr.Viewport.Center(world.Map.CenterOfCell(p.HomeLocation));
+				viewport.Center(world.Map.CenterOfCell(p.HomeLocation));
 				Console.WriteLine($"[diag] camera centred on spawn {p.HomeLocation}");
 			}
 			catch (Exception e)
 			{
 				Console.WriteLine($"[diag] centring the camera failed (ignored): {e.Message}");
+			}
+		}
+
+		// Touch support: two-finger drag pans the camera, pinch zooms it.
+		// Neither is a real mouse button the engine's own input pipeline has a
+		// slot for -- desktop relies on ViewportEdgeScroll (hovering the
+		// pointer near the window edge), which has no touch equivalent at
+		// all, so without this most of a map bigger than one screen would
+		// simply be unreachable on a touchscreen. main.js's two-finger
+		// touchmove handler calls these directly rather than going through
+		// the usual inputQueue/pumpEvents mouse-event path. dx/dy and
+		// centerX/centerY are already in the engine's logical/effective
+		// coordinate space (the same canvasXY/touchXY convention every other
+		// input handler in main.js uses), matching what
+		// Viewport.CenterLocation/AdjustZoom expect.
+		[JSExport]
+		public static void PanViewport(int dx, int dy)
+		{
+			try
+			{
+				var viewport = GetViewport();
+				if (viewport == null)
+					return;
+
+				// CenterLocation's setter is private -- same reflection
+				// workaround GetViewport's own caller (Game.worldRenderer)
+				// needs, just one property deeper.
+				var prop = typeof(Viewport).GetProperty(nameof(Viewport.CenterLocation));
+				var current = (float2)prop.GetValue(viewport);
+				prop.SetValue(viewport, new float2(current.X - dx, current.Y - dy));
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine($"[diag] pan viewport failed (ignored): {e.Message}");
+			}
+		}
+
+		[JSExport]
+		public static void PinchZoom(double dz, int centerX, int centerY)
+		{
+			try
+			{
+				GetViewport()?.AdjustZoom((float)dz, new int2(centerX, centerY));
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine($"[diag] pinch zoom failed (ignored): {e.Message}");
 			}
 		}
 

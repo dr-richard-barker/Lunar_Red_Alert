@@ -560,10 +560,24 @@ window.addEventListener('keyup', e => inputQueue.push([2, 1, keycodeOf(e), mods(
 // left (select/move) and right (attack-move/cancel) mouse buttons, which touch
 // has no equivalent of. Map a quick tap to a left click, a long-press held in
 // place to a right click, and a touch dragged past a small tolerance to a
-// left-button drag (marquee-select), same as the mouse path above.
+// left-button drag (marquee-select), same as the mouse path above. Two
+// fingers pan (drag) and pinch-zoom the camera -- there's no mouse
+// equivalent for either (desktop relies on ViewportEdgeScroll, hovering the
+// pointer near the window edge, which has no touch analogue at all: without
+// this, most of a map bigger than one screen would simply be unreachable on
+// a touchscreen). PanViewport/PinchZoom call straight into GameLoop rather
+// than going through inputQueue/pumpEvents, since neither is a real mouse
+// button event the engine's own input pipeline has a slot for.
 const TOUCH_LONGPRESS_MS = 450;
 const TOUCH_MOVE_TOLERANCE = 10;
 let touch = null;
+
+// Set once the WASM runtime is up (see the bottom of this file) -- touch
+// listeners are registered below, well before that, so this starts null and
+// every call site guards on it. Never populated for the CI probe ladder
+// (GameLoop is a play-mode-only export), which is fine: nothing here fires
+// without an actual touchscreen sending events.
+let gameExports = null;
 
 // Same logical-space reasoning as canvasXY above -- no buffer-size scaling.
 const touchXY = t => {
@@ -589,8 +603,8 @@ canvas.addEventListener('touchstart', e => {
 		const [x1, y1] = touchXY(e.touches[1]);
 		const cx = Math.round((x0 + x1) / 2);
 		const cy = Math.round((y0 + y1) / 2);
-		touch = { fingers: 2, x: cx, y: cy, dragging: true };
-		inputQueue.push([1, 0, buttonFlag(2), cx, cy, 0, 0, 0]);
+		const dist = Math.hypot(x1 - x0, y1 - y0);
+		touch = { fingers: 2, x: cx, y: cy, dist };
 	}
 }, { passive: false });
 
@@ -616,15 +630,32 @@ canvas.addEventListener('touchmove', e => {
 		const [x1, y1] = touchXY(e.touches[1]);
 		const cx = Math.round((x0 + x1) / 2);
 		const cy = Math.round((y0 + y1) / 2);
-		touch.x = cx; touch.y = cy;
-		inputQueue.push([1, 1, 0, cx, cy, 0, 0, 0]);
+		const dist = Math.hypot(x1 - x0, y1 - y0);
+
+		if (gameExports) {
+			const dx = cx - touch.x, dy = cy - touch.y;
+			if (dx || dy)
+				gameExports.OpenRA.WasmProbe.GameLoop.PanViewport(dx, dy);
+
+			// Exponential (log of the ratio, not the raw pixel delta) to match
+			// AdjustZoom's own exponential step convention (Viewport.cs) --
+			// otherwise a pinch would zoom in and out at different rates
+			// depending on how far apart the fingers already were.
+			if (touch.dist > 0 && dist > 0) {
+				const dz = Math.log(dist / touch.dist);
+				if (dz)
+					gameExports.OpenRA.WasmProbe.GameLoop.PinchZoom(dz, cx, cy);
+			}
+		}
+
+		touch.x = cx; touch.y = cy; touch.dist = dist;
 	}
 }, { passive: false });
 
 canvas.addEventListener('touchend', e => {
 	e.preventDefault();
 	if (!touch) return;
-	
+
 	if (touch.fingers === 1) {
 		clearTimeout(touch.timer);
 		if (touch.dragging)
@@ -633,20 +664,19 @@ canvas.addEventListener('touchend', e => {
 			inputQueue.push([1, 0, buttonFlag(0), touch.x, touch.y, 0, 0, 0]);
 			inputQueue.push([1, 2, buttonFlag(0), touch.x, touch.y, 0, 0, 0]);
 		}
-	} else if (touch.fingers === 2) {
-		inputQueue.push([1, 2, buttonFlag(2), touch.x, touch.y, 0, 0, 0]);
 	}
-	
-	if (e.touches.length === 0) {
+	// fingers === 2 (pan/zoom): nothing to release -- PanViewport/PinchZoom
+	// already applied live in touchmove, there's no button-up order for a
+	// camera gesture. Dropping to null below (rather than "downgrading" to a
+	// 1-finger touch) also stops the remaining finger from being read as a
+	// fresh tap/drag using this gesture's stale start position.
+
+	if (e.touches.length === 0 || touch.fingers === 2)
 		touch = null;
-	}
 }, { passive: false });
 
 canvas.addEventListener('touchcancel', () => {
 	if (touch && touch.timer) clearTimeout(touch.timer);
-	if (touch && touch.fingers === 2) {
-		inputQueue.push([1, 2, buttonFlag(2), touch.x, touch.y, 0, 0, 0]);
-	}
 	touch = null;
 }, { passive: false });
 
@@ -663,6 +693,7 @@ try {
 	// Phase W3b: the browser owns the frame — requestAnimationFrame calls INTO
 	// managed code each frame until FrameLoop.OnFrame returns false.
 	const exports = await getAssemblyExports(getConfig().mainAssemblyName);
+	gameExports = exports; // unblocks the two-finger pan/pinch-zoom touch handlers above
 
 	// Autoplay toggle. ToggleAutoplay returns the resulting state, and returns
 	// false without doing anything when there's no local player yet (menu,
