@@ -21,11 +21,11 @@ if (!url) {
 }
 const terrain = process.argv[3] || '';
 const base = url.endsWith('/') ? url : `${url}/`;
-// rivals=1 always passed: the pre-game rival-count picker blocks PlayMode.Run
+// rivals=4 always passed: the pre-game rival-count picker blocks PlayMode.Run
 // on a real click, which this headless run never makes -- without the URL
 // bypass, "boot complete" would never print and this script would just sit
 // out its timeout.
-const playUrl = terrain ? `${base}?mode=play&terrain=${terrain}&rivals=1` : `${base}?mode=play&rivals=1`;
+const playUrl = terrain ? `${base}?mode=play&terrain=${terrain}&rivals=4` : `${base}?mode=play&rivals=4`;
 const screenshotPath = terrain ? `playwasm-smoke-screenshot-${terrain}.png` : 'playwasm-smoke-screenshot.png';
 
 // PlayMode's boot (MEMFS stage -> settings -> mods -> platform -> renderer ->
