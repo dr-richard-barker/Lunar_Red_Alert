@@ -245,7 +245,26 @@ namespace OpenRA.Platforms.Browser
 		public void SetData(byte[] colors, int width, int height)
 		{
 			GL.BindTexture(Handle);
-			GL.TexImage2D(width, height, colors);
+
+			// Sheet.cs packs every sheet's buffer as BGRA32 unconditionally (see
+			// Sheet.AsPng()'s explicit SpriteFrameType.Bgra32), and the desktop
+			// platform's Texture.SetData uploads it with GL_BGRA to match. WebGL/
+			// GLES has no core BGRA texture format, so the JS-side texImage2D is a
+			// plain RGBA passthrough (shared with OpenRA.WasmProbe's own raw-RGBA
+			// smoke test, which would break if it swapped) -- meaning this is the
+			// one place that has to convert incoming BGRA into real RGBA before
+			// upload. Its absence previously left every uploaded sprite/terrain
+			// sheet with red and blue silently swapped on screen.
+			var rgba = new byte[colors.Length];
+			for (var i = 0; i < colors.Length; i += 4)
+			{
+				rgba[i] = colors[i + 2];
+				rgba[i + 1] = colors[i + 1];
+				rgba[i + 2] = colors[i];
+				rgba[i + 3] = colors[i + 3];
+			}
+
+			GL.TexImage2D(width, height, rgba);
 			Size = new Size(width, height);
 		}
 
