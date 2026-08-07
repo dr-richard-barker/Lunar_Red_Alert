@@ -149,6 +149,17 @@ namespace OpenRA.Traits
 			fogEnabled = gs.OptionOrDefault("fog", info.FogCheckboxEnabled);
 
 			ExploreMapEnabled = gs.OptionOrDefault("explored", info.ExploredMapCheckboxEnabled);
+			if (OperatingSystem.IsBrowser())
+			{
+				var hasExplored = gs.LobbyOptions.TryGetValue("explored", out var exploredState);
+				var hasFog = gs.LobbyOptions.TryGetValue("fog", out var fogState);
+				Console.WriteLine($"[diag] Shroud.Created owner={self.Owner.InternalName} " +
+					$"info.ExploredMapCheckboxEnabled={info.ExploredMapCheckboxEnabled} info.FogCheckboxEnabled={info.FogCheckboxEnabled} " +
+					$"gs.hasExplored={hasExplored} gs.explored.IsEnabled={(hasExplored ? exploredState.IsEnabled.ToString() : "n/a")} " +
+					$"gs.hasFog={hasFog} gs.fog.IsEnabled={(hasFog ? fogState.IsEnabled.ToString() : "n/a")} " +
+					$"ExploreMapEnabled={ExploreMapEnabled} fogEnabled={fogEnabled}");
+			}
+
 			if (ExploreMapEnabled)
 				ExploreAll();
 
