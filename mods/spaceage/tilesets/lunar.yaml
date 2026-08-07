@@ -50,6 +50,7 @@ Templates:
 		Id: 255
 		Images: t255
 		Size: 1,1
+		PickAny: True
 		Categories: Terrain
 		Tiles:
 			0: Clear
@@ -72,6 +73,7 @@ Templates:
 		Id: 65535
 		Images: t65535
 		Size: 1,1
+		PickAny: True
 		Categories: Terrain
 		Tiles:
 			0: Clear
