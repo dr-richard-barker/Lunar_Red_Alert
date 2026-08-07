@@ -16,20 +16,28 @@
      to exactly fill the viewport (see getWindowSize in main.js), so margin
      would also just push it past the edge of the window. */
   canvas { display: block; image-rendering: pixelated; }
-  /* Autoplay toggle: hands the player's base to the mod's AI. Fixed to the
-     top-right so it stays clear of the engine's own sidebar hit areas, and
-     sized for a comfortable touch target on tablets. */
-  #autoplay { position: fixed; top: 8px; right: 8px; z-index: 9999; background: rgba(0,0,0,0.75); color: #6f6; border: 1px solid #6f6; border-radius: 4px; font: bold 13px/1 monospace; padding: 10px 14px; cursor: pointer; }
-  #autoplay.on { background: #6f6; color: #000; }
-  /* Terrain toggle: sits left of the autoplay button, same fixed top-right cluster. */
-  #terrain { position: fixed; top: 8px; right: 130px; z-index: 9999; background: rgba(0,0,0,0.75); color: #5ec8ff; border: 1px solid #5ec8ff; border-radius: 4px; font: bold 13px/1 monospace; padding: 10px 14px; cursor: pointer; }
-  /* Free Build toggle: left of the terrain button, same cluster. */
-  #freebuild { position: fixed; top: 8px; right: 260px; z-index: 9999; background: rgba(0,0,0,0.75); color: #ffd35e; border: 1px solid #ffd35e; border-radius: 4px; font: bold 13px/1 monospace; padding: 10px 14px; cursor: pointer; }
-  #freebuild.on { background: #ffd35e; color: #000; }
-  /* War/Peace toggle: left of Free Build, same cluster. */
-  #warpeace { position: fixed; top: 8px; right: 390px; z-index: 9999; background: rgba(0,0,0,0.75); color: #ff6b6b; border: 1px solid #ff6b6b; border-radius: 4px; font: bold 13px/1 monospace; padding: 10px 14px; cursor: pointer; }
+  /* HUD toggle cluster: top-LEFT, not top-right. The engine's own sidebar,
+     minimap and cash/power readout always render top-right (see every
+     smoke-test screenshot), so a fixed right-hand cluster sat directly on
+     top of the game's own chrome -- and hand-tuned `right:` offsets between
+     buttons drifted out of sync with each button's actual rendered width
+     the moment a label's text changed length, so buttons overlapped each
+     other too. Flexbox lays the row out from each button's real width with
+     no manual math, and wraps to a second line on narrow/mobile viewports
+     where four buttons don't fit in one row instead of overflowing. The
+     boot-time #log div sits below the always-full-viewport canvas once
+     play starts (normal block flow + body's overflow:hidden), so top-left
+     is clear of it too. */
+  #hud-toggles { position: fixed; top: 8px; left: 8px; z-index: 9999; display: flex; flex-wrap: wrap; gap: 8px; max-width: calc(100vw - 16px); }
+  #hud-toggles button { background: rgba(0,0,0,0.75); border-radius: 4px; font: bold 13px/1 monospace; padding: 10px 14px; cursor: pointer; white-space: nowrap; }
+  #warpeace { color: #ff6b6b; border: 1px solid #ff6b6b; }
   #warpeace.on { background: #6f6; color: #000; border-color: #6f6; }
-  
+  #freebuild { color: #ffd35e; border: 1px solid #ffd35e; }
+  #freebuild.on { background: #ffd35e; color: #000; }
+  #terrain { color: #5ec8ff; border: 1px solid #5ec8ff; }
+  #autoplay { color: #6f6; border: 1px solid #6f6; }
+  #autoplay.on { background: #6f6; color: #000; }
+
   /* League Table Overlay */
   #league-table { position: fixed; inset: 0; background: rgba(10,14,20,0.9); z-index: 10000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
   #league-table .inner { background: #121a24; border: 1px solid #233042; padding: 24px; border-radius: 8px; width: 90%; max-width: 700px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -47,10 +55,12 @@
 <body>
 <canvas id="canvas" width="256" height="256"></canvas>
 <div id="log">booting .NET wasm runtime…</div>
-<button id="warpeace" type="button">War: ON</button>
-<button id="freebuild" type="button">Free Build: OFF</button>
-<button id="terrain" type="button">Terrain: Earth</button>
-<button id="autoplay" type="button">AI: OFF</button>
+<div id="hud-toggles">
+	<button id="warpeace" type="button">War: ON</button>
+	<button id="freebuild" type="button">Free Build: OFF</button>
+	<button id="terrain" type="button">Terrain: Earth</button>
+	<button id="autoplay" type="button">AI: OFF</button>
+</div>
 <div id="league-table" style="display:none;">
 	<div class="inner">
 		<h2>League Table</h2>

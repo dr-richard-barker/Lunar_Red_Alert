@@ -192,6 +192,28 @@ namespace OpenRA.WasmProbe
 					other.EnemyPlayersMask = other.EnemyPlayersMask.Except(player.PlayerMask);
 				}
 
+				// Relationship alone stops the AI's squad manager picking new
+				// targets (SquadManagerBotModule.IsPreferredEnemyUnit checks
+				// RelationshipWith == Enemy), but anything already mid-raid
+				// keeps walking toward wherever it was headed. Send every
+				// mobile, non-Harvester unit home explicitly so "peace" reads
+				// as a real retreat, not just a ceasefire units ignore.
+				// Harvesters (and buildings) are left alone so the AI keeps
+				// its economy running -- "focus on building and growth" means
+				// production should carry on, not idle at home too.
+				foreach (var other in peaceModeAffected)
+				{
+					var retreating = other.World.Actors
+						.Where(a => a.Owner == other && !a.IsDead && a.IsInWorld
+							&& a.Info.HasTraitInfo<MobileInfo>() && !a.Info.HasTraitInfo<HarvesterInfo>())
+						.ToArray();
+
+					foreach (var actor in retreating)
+						world.IssueOrder(new Order("Move", actor, Target.FromCell(world, other.HomeLocation), false));
+
+					Console.WriteLine($"[play] '{other.PlayerName}' retreating {retreating.Length} unit(s) home to {other.HomeLocation}");
+				}
+
 				Console.WriteLine($"[play] peace mode on — ceasefire with {peaceModeAffected.Count} player(s)");
 			}
 			else
