@@ -1112,7 +1112,7 @@ namespace OpenRA
 			// here would force immediate enumeration, evaluating anything
 			// ExtraMapSetupOrders' orders reference (e.g. Game.LocalClientId)
 			// before JoinServer has even run, well before it's valid.
-			IEnumerable<Order> orders = new[] { Order.Command("option gamespeed default") };
+			IEnumerable<Order> orders = [Order.Command("option gamespeed default")];
 
 			if (ExtraMapSetupOrders != null)
 			{
