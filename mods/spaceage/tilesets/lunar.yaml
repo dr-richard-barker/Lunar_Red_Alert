@@ -44,11 +44,15 @@ Terrain:
 	TerrainType@CraterWall:
 		Type: CraterWall
 		Color: 3B342E
-	# Not painted by any template on these maps, but ra|rules/world.yaml's
-	# ResourceLayer/EditorResourceLayer traits reference "Ore"/"Gems" as
-	# terrain type NAMES unconditionally (not just where resources actually
-	# grow) -- every tileset needs both registered or WorldLoaded crashes
-	# outright (confirmed live: "Tileset 'LUNAR' lacks terrain type 'Ore'").
+	# Not painted by any template on these maps, but several ra|rules traits
+	# reference terrain type NAMES unconditionally, independent of whether
+	# any template actually paints them -- Ore/Gems via ResourceLayer /
+	# EditorResourceLayer (world.yaml), Tree via ^Tree's RadarColorFromTerrain
+	# / AppearsOnMapPreview (defaults.yaml, matched by the map's actual tree
+	# actors), Rock/Wall/River kept too so this list matches temperat.yaml's
+	# full set and any future map content referencing them won't crash the
+	# same way. Confirmed live, one crash at a time: "Tileset 'LUNAR' lacks
+	# terrain type 'Ore'" then 'Tree' after fixing Ore/Gems.
 	TerrainType@Ore:
 		Type: Ore
 		TargetTypes: Ground
@@ -57,6 +61,23 @@ Terrain:
 		Type: Gems
 		TargetTypes: Ground
 		Color: 8470FF
+	TerrainType@River:
+		Type: River
+		TargetTypes: Ground
+		Color: 5C8CB4
+	TerrainType@Rock:
+		Type: Rock
+		TargetTypes: Ground
+		Color: 44443C
+	TerrainType@Tree:
+		Type: Tree
+		TargetTypes: Ground
+		Color: 1C2024
+	TerrainType@Wall:
+		Type: Wall
+		TargetTypes: Ground
+		AcceptsSmudgeType: Crater, Scorch
+		Color: D0C0A0
 
 Templates:
 	Template@255:
