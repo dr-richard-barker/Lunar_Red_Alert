@@ -127,8 +127,28 @@ const webgl = {
 	createTexture: () => keep(gl.createTexture()),
 	bindTexture: t => gl.bindTexture(gl.TEXTURE_2D, handles.get(t)),
 
-	texImage2D: (w, h, rgba) => {
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(rgba));
+	// The engine's Sheet buffers are always packed BGRA32 (see Sheet.AsPng(),
+	// which declares SpriteFrameType.Bgra32 unconditionally, and the desktop
+	// platform's Texture.SetData, which explicitly uploads with GL_BGRA).
+	// WebGL/GLES has no core BGRA texture format -- the desktop-only GL_BGRA
+	// enum path isn't available here -- so the incoming bytes have to be
+	// swapped into real RGBA order before upload. readTexturePixels already
+	// does the mirror-image swap on the way back out; this was the missing
+	// other half, and its absence turned every uploaded sprite/terrain sheet
+	// into channel-swapped garbage (confirmed live: Earth's Indexed8 terrain
+	// tiles read a near-always-zero channel as their palette index --
+	// mostly index 0, i.e. solid black, with visible-static exceptions where
+	// incidental data landed in the misread channel; Lunar/Mars's direct-RGBA
+	// tiles came out solid black too since red and blue both being wrong
+	// still reads as black for this art's low-red, low-blue grey palette).
+	texImage2D: (w, h, bgra) => {
+		const px = new Uint8Array(bgra);
+		for (let i = 0; i < px.length; i += 4) {
+			const b = px[i];
+			px[i] = px[i + 2];
+			px[i + 2] = b;
+		}
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, px);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 	},
