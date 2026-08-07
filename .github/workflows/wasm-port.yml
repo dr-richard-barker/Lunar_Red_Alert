@@ -267,6 +267,17 @@ jobs:
       - name: Clone Repository
         uses: actions/checkout@v7
 
+      - name: Wait for GitHub Pages CDN propagation
+        # Confirmed live: probe-data.zip (the archive the whole game boots
+        # from) can still be served stale for a short window right after
+        # deploy-pages reports success, even once cache-busted with a
+        # per-build query param -- the *edge* GitHub Pages' CDN happens to
+        # route this job to can lag behind origin by more than the time
+        # "Install Playwright Chromium" below takes on its own. A step
+        # timestamped right after `needs: deploy` isn't proof the content is
+        # actually live everywhere yet.
+        run: sleep 60
+
       - name: Install Playwright Chromium
         run: |
           npm init -y > /dev/null
