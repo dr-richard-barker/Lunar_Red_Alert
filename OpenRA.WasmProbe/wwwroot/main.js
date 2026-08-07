@@ -128,21 +128,6 @@ const webgl = {
 	bindTexture: t => gl.bindTexture(gl.TEXTURE_2D, handles.get(t)),
 
 	texImage2D: (w, h, rgba) => {
-		// Diag: catch a sheet-sized upload (matches SheetSize: 1024 general
-		// sheets, or any large texture) once, and log whether the actual
-		// bytes handed to WebGL are non-trivial or effectively blank --
-		// terrain renders solid black despite correct C#-side sprite/palette
-		// data, so checking the real payload at the GL call boundary itself.
-		self.__texDiagCount = (self.__texDiagCount || 0);
-		if (self.__texDiagCount < 12 && w * h >= 65536) {
-			self.__texDiagCount++;
-			const arr = new Uint8Array(rgba);
-			let nonZero = 0;
-			for (let i = 0; i < arr.length; i++) if (arr[i] !== 0) nonZero++;
-			const sample = Array.from(arr.subarray(0, 24));
-			console.log(`[diag] texImage2D #${self.__texDiagCount} w=${w} h=${h} bytes=${arr.length} expectedRGBA=${w * h * 4} nonZeroBytes=${nonZero} sample[0..23]=${sample.join(',')}`);
-		}
-
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(rgba));
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
