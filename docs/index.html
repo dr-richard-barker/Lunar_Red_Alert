@@ -6,12 +6,27 @@
 <title>Lunar Red Alert — Space-Age RTS</title>
 <meta name="description" content="A cold-vacuum, low-gravity total conversion of the OpenRA engine. Manage oxygen, not fuel; bound in 1/6 gravity; shelter under pressurised domes. A GPLv3 desktop RTS.">
 <link rel="icon" type="image/png" href="assets/moon.png">
+<script>
+  (function() {
+    let theme = localStorage.getItem('cose_theme');
+    if (!theme) {
+      theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', theme);
+  })();
+</script>
 <style>
   :root{
     --bg:#0a0e14; --bg2:#0e141d; --panel:#121a24; --panel2:#16202c;
     --line:#233042; --text:#cdd6e2; --muted:#8b98a9; --dim:#5f6b7a;
     --o2:#5ec8ff; --o2dim:#2a6f95; --rim:#c3b9a5; --amber:#e3b341; --vac:#ff6b6b;
-    --max:1080px;
+    --max:1080px; --nav-bg:rgba(10,14,20,.82);
+  }
+  html[data-theme="light"] {
+    --bg:#ffffff; --bg2:#f7f9fc; --panel:#eef2f6; --panel2:#e2e8f0;
+    --line:#cbd5e1; --text:#1a2230; --muted:#5a6473; --dim:#8a8a8a;
+    --o2:#0284c7; --o2dim:#bae6fd; --rim:#7c2d12; --amber:#b45309; --vac:#dc2626;
+    --nav-bg:rgba(255,255,255,.82);
   }
   *{box-sizing:border-box}
   html{scroll-behavior:smooth}
@@ -29,7 +44,7 @@
 
   /* nav */
   nav{position:sticky;top:0;z-index:20;backdrop-filter:blur(10px);
-    background:rgba(10,14,20,.82);border-bottom:1px solid var(--line)}
+    background:var(--nav-bg);border-bottom:1px solid var(--line)}
   nav .wrap{display:flex;align-items:center;gap:20px;height:56px}
   nav .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.01em}
   nav .brand img{width:24px;height:24px}
@@ -126,6 +141,7 @@
     <a href="#roadmap">Roadmap</a>
     <a href="play/" style="color:var(--o2)">▶ Play</a>
     <a class="gh" href="https://github.com/dr-richard-barker/Lunar_Red_Alert">GitHub ↗</a>
+    <a href="#" onclick="toggleTheme(); return false;" id="themeToggleBtn" style="color:var(--text); font-family:ui-monospace,monospace; margin-left:10px;" title="Toggle Theme">🌓</a>
   </span>
 </div></nav>
 
@@ -302,5 +318,27 @@ make
   <a href="https://github.com/dr-richard-barker/Lunar_Red_Alert/blob/main/mods/spaceage/SPACE-AGE-DESIGN.md">Design doc</a>
 </div></footer>
 
+<script>
+  function toggleTheme() {
+    const htmlEl = document.documentElement;
+    const currentTheme = htmlEl.getAttribute('data-theme') || 'dark';
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    
+    htmlEl.setAttribute('data-theme', newTheme);
+    localStorage.setItem('cose_theme', newTheme);
+    
+    document.getElementById('themeToggleBtn').textContent = newTheme === 'dark' ? '☀️' : '🌙';
+  }
+
+  function initThemeIcon() {
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+    const btn = document.getElementById('themeToggleBtn');
+    if (btn) {
+      btn.textContent = currentTheme === 'dark' ? '☀️' : '🌙';
+    }
+  }
+  
+  initThemeIcon();
+</script>
 </body>
 </html>
