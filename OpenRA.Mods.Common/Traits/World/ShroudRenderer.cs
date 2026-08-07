@@ -344,15 +344,6 @@ namespace OpenRA.Mods.Common.Traits
 				if (fogSprite.Sprite != null)
 					fogPos += fogSprite.Sprite.Offset - 0.5f * fogSprite.Sprite.Size;
 
-				if (OperatingSystem.IsBrowser() && !loggedUpdateShroudOnce && uv.U > 55 && uv.U < 70 && uv.V > 30 && uv.V < 45)
-				{
-					loggedUpdateShroudOnce = true;
-					Console.WriteLine($"[diag] UpdateShroud cell={uv} edgesShroud={edgesShroud} edgesFog={edgesFog} " +
-						$"shroudSpriteNull={shroudSprite.Sprite == null} fogSpriteNull={fogSprite.Sprite == null} " +
-						$"shroudAlpha={shroudSprite.Alpha} fogAlpha={fogSprite.Alpha} " +
-						$"indexOffset0={edgesToSpriteIndexOffset[0]} cellVis={cellVisibility(puv)}");
-				}
-
 				shroudLayer.Update(uv, shroudSprite.Sprite, shroudPaletteReference, shroudPos, shroudSprite.Scale, shroudSprite.Alpha, true);
 				fogLayer.Update(uv, fogSprite.Sprite, fogPaletteReference, fogPos, fogSprite.Scale, fogSprite.Alpha, true);
 			}
@@ -360,51 +351,8 @@ namespace OpenRA.Mods.Common.Traits
 			anyCellDirty = false;
 		}
 
-		bool loggedRenderShroudOnce;
-		bool loggedUpdateShroudOnce;
-
 		void IRenderShroud.RenderShroud(WorldRenderer wr)
 		{
-			if (OperatingSystem.IsBrowser() && !loggedRenderShroudOnce)
-			{
-				loggedRenderShroudOnce = true;
-				var explored = 0;
-				var notExplored = 0;
-				var visible = 0;
-				var notVisible = 0;
-				var total = 0;
-				PPos firstBad = default;
-				var haveBad = false;
-				foreach (var puv in map.ProjectedCells)
-				{
-					total++;
-					var cv = cellVisibility != null ? cellVisibility(puv) : Shroud.CellVisibility.Hidden;
-					var isExplored = cv.HasFlag(Shroud.CellVisibility.Explored);
-					var isVisible = cv.HasFlag(Shroud.CellVisibility.Visible);
-					if (isExplored)
-						explored++;
-					else
-					{
-						notExplored++;
-						if (!haveBad)
-						{
-							haveBad = true;
-							firstBad = puv;
-						}
-					}
-
-					if (isVisible)
-						visible++;
-					else
-						notVisible++;
-				}
-
-				Console.WriteLine($"[diag] RenderShroud renderPlayer={world.RenderPlayer?.InternalName ?? "null"} " +
-					$"shroudRef={(shroud == null ? "null" : "set")} total={total} explored={explored} notExplored={notExplored} " +
-					$"visible={visible} notVisible={notVisible} firstBadCell={(haveBad ? firstBad.ToString() : "none")} " +
-					$"anyCellDirty={anyCellDirty} shroudExploredAll={shroud?.ExploreMapEnabled}");
-			}
-
 			UpdateShroud(map.ProjectedCells);
 			fogLayer.Draw(wr.Viewport);
 			shroudLayer.Draw(wr.Viewport);
