@@ -1090,13 +1090,38 @@ namespace OpenRA
 			benchmark = new Benchmark(prefix);
 		}
 
+		// Browser/WebAssembly support: a one-shot hook a caller can set just
+		// before InitializeMod to inject extra setup orders (e.g. "slot_bot"
+		// to add AI rivals) ahead of the "state Ready" order below, which is
+		// what actually starts the match -- ValidateCommand rejects most
+		// commands including slot_bot once ServerState.GameStarted, so
+		// there's no way to add a bot slot AFTER LoadMap by any other means.
+		// Evaluated lazily (a Func, not a materialized list) because at the
+		// point a caller sets this, LocalClientId/JoinServer/CreatePlayers
+		// haven't happened yet -- only once CreateAndStartLocalServer's own
+		// LobbyReady callback actually enumerates these orders is the
+		// client's own index (used as the bot's controller) known. Consumed
+		// and cleared here so it never leaks into a later, unrelated LoadMap
+		// call (e.g. returning to the shellmap).
+		public static Func<IEnumerable<Order>> ExtraMapSetupOrders;
+
 		public static void LoadMap(string launchMap)
 		{
-			var orders = new List<Order>
+			// Stays a lazy IEnumerable all the way to CreateAndStartLocalServer's
+			// own LobbyReady callback -- concatenating with List<T>.AddRange
+			// here would force immediate enumeration, evaluating anything
+			// ExtraMapSetupOrders' orders reference (e.g. Game.LocalClientId)
+			// before JoinServer has even run, well before it's valid.
+			IEnumerable<Order> orders = new[] { Order.Command("option gamespeed default") };
+
+			if (ExtraMapSetupOrders != null)
 			{
-				Order.Command("option gamespeed default"),
-				Order.Command($"state {Session.ClientState.Ready}")
-			};
+				var extra = ExtraMapSetupOrders;
+				ExtraMapSetupOrders = null;
+				orders = orders.Concat(extra());
+			}
+
+			orders = orders.Append(Order.Command($"state {Session.ClientState.Ready}"));
 
 			var map = ModData.MapCache.SingleOrDefault(m => m.Uid == launchMap || Path.GetFileName(m.Path) == launchMap);
 			if (map == null)

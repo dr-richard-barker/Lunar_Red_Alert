@@ -35,14 +35,6 @@ namespace OpenRA.WasmProbe
 
 		internal static bool Ready;
 
-		// Set by PlayMode before Game.InitializeMod, from the pre-game rival
-		// picker (or the ?rivals= bypass). Read once in ReportWorldOnce to
-		// decide how many of Multi1-4's always-auto-activated bots (every
-		// ysmir*.oramap PlayerReference@MultiN has Bot: normal, so
-		// Player.Activate() already fired for all four before this ever
-		// runs) to immediately disable again.
-		internal static int RivalCount = 4;
-
 		// W5 play mode: no gates, no stop — the engine owns the frame for good.
 		internal static bool PlayForever;
 		static int frames;
@@ -87,15 +79,6 @@ namespace OpenRA.WasmProbe
 			// Centre first: this is the actual fix, and it must not be hostage
 			// to the reporting below.
 			CenterOnSpawn(world, p);
-
-			try
-			{
-				ApplyRivalCountOnce(world);
-			}
-			catch (Exception e)
-			{
-				Console.WriteLine($"[diag] applying rival count failed (ignored): {e.Message}");
-			}
 
 			// Never let diagnostics take down the game loop -- an earlier
 			// version of this threw partway through and silently froze the
@@ -150,48 +133,6 @@ namespace OpenRA.WasmProbe
 			catch (Exception e)
 			{
 				Console.WriteLine($"[diag] centring the camera failed (ignored): {e.Message}");
-			}
-		}
-
-		static bool rivalCountApplied;
-
-		// ysmir*.oramap's PlayerReference@Multi1-4 are all Bot: normal, so
-		// Player.Activate() already ran for every one of them the instant
-		// the world was constructed (Player.cs: IsBot && Game.IsHost ->
-		// logic.Activate(this), well before this method ever gets a chance
-		// to run) -- there's no earlier hook to stop a slot from being
-		// created as a real bot in the first place. Instead, immediately
-		// disable whichever of Multi2-4 are beyond the player's chosen
-		// count, before the game loop has ticked them even once: same
-		// IsEnabled flip ToggleAutoplay already uses to stop a bot live,
-		// just applied at boot instead of from a button click. Multi1
-		// always stays active (RivalCount's selectable range is 1-4).
-		static void ApplyRivalCountOnce(World world)
-		{
-			if (rivalCountApplied)
-				return;
-
-			rivalCountApplied = true;
-
-			Console.WriteLine($"[diag] rival count apply: RivalCount={RivalCount}; world.Players=" +
-				string.Join(", ", world.Players.Select(p => $"{p.InternalName}(bot={p.IsBot},type={p.BotType})")));
-
-			var rivalNames = new[] { "Multi2", "Multi3", "Multi4" };
-			for (var i = 0; i < rivalNames.Length; i++)
-			{
-				if (i + 2 <= RivalCount)
-					continue;
-
-				var rival = world.Players.FirstOrDefault(p => p.InternalName == rivalNames[i]);
-				var bots = rival?.PlayerActor.TraitsImplementing<IBot>().ToArray() ?? [];
-				Console.WriteLine($"[diag]   {rivalNames[i]}: rival={(rival == null ? "null" : rival.InternalName)} bots=[{string.Join(",", bots.Select(b => b.Info.Type))}]");
-				var bot = bots.FirstOrDefault(b => b.Info.Type == "normal");
-				var modular = bot as ModularBot;
-				if (modular != null)
-				{
-					modular.IsEnabled = false;
-					Console.WriteLine($"[play] '{rivalNames[i]}' disabled (rival count {RivalCount})");
-				}
 			}
 		}
 

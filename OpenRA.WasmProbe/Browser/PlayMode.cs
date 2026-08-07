@@ -11,6 +11,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using OpenRA.Platforms.Browser;
@@ -68,13 +69,32 @@ namespace OpenRA.WasmProbe
 			{
 				// Blocks on the player's click (or resolves instantly for the
 				// ?rivals= CI/bookmark bypass -- see getRivalCount in main.js).
-				// ysmir*.oramap's Multi1-4 are all Bot: normal by default
-				// (real base, real army); GameLoop disables the ones beyond
-				// this count right after world load, same IsEnabled toggle
-				// ToggleAutoplay already uses to stop/start a bot live.
+				//
+				// PlayerReference@MultiN's own Bot: normal (ysmir*.oramap) turns
+				// out to do nothing on its own: CreateMapPlayers only builds a
+				// real Player for slots that have an actual Session.Client
+				// (world.LobbyInfo.ClientInSlot(slot) != null), and nothing in
+				// this ServerType.Local launch path (Game.LoadMap ->
+				// CreateAndStartLocalServer) ever adds one -- SkirmishLogic's
+				// auto-add-one-bot-on-join handler only fires for
+				// ServerType.Skirmish, which this isn't. Confirmed live: a
+				// direct world.Players dump showed only
+				// Neutral/Creeps/Multi0/Everyone, no Multi1-4 at all, no matter
+				// what Bot: said in the map. The only place left that can add a
+				// slot is a "slot_bot" server command issued BEFORE the
+				// server's "state Ready" order starts the match (after that,
+				// ValidateCommand rejects it) -- Game.ExtraMapSetupOrders
+				// (OpenRA.Game/Game.cs) is the hook LoadMap now offers for
+				// exactly this. The controller index has to be read lazily
+				// inside the lambda, not here -- Game.LocalClientId isn't valid
+				// until JoinServer runs, which LoadMap does AFTER capturing
+				// this Func.
 				Console.WriteLine("[play] waiting for rival count selection…");
-				GameLoop.RivalCount = await WebGL.GetRivalCount();
-				Console.WriteLine($"[play] rival count selected: {GameLoop.RivalCount}");
+				var rivalCount = await WebGL.GetRivalCount();
+				Console.WriteLine($"[play] rival count selected: {rivalCount}");
+
+				Game.ExtraMapSetupOrders = () => Enumerable.Range(1, rivalCount)
+					.Select(i => Order.Command($"slot_bot Multi{i} {Game.LocalClientId} normal"));
 			}
 
 			Game.InitializeMod(manifest, args);

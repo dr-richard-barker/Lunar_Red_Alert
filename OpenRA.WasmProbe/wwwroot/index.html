@@ -52,10 +52,10 @@
   #league-close:hover { background: #3a4b61; }
 
   /* Rival Count Overlay: shown once, before PlayMode boots the actual
-     match (GameLoop.ReadGroundPixelOnce -- no, see WebGL.GetRivalCount /
-     main.js's getRivalCount). Kept hidden by default and flipped to
-     flex only when JS is actually waiting on a pick, so it never flashes
-     for the non-"play" probe boot paths or the ?rivals=N CI bypass. */
+     match (see WebGL.GetRivalCount / main.js's getRivalCount). Kept
+     hidden by default and flipped to flex only when JS is actually
+     waiting on a pick, so it never flashes for the non-"play" probe
+     boot paths or the ?rivals=N CI bypass. */
   #rival-select { position: fixed; inset: 0; background: rgba(10,14,20,0.92); z-index: 10001; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
   #rival-select .inner { background: #121a24; border: 1px solid #233042; padding: 32px; border-radius: 8px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
   #rival-select h2 { margin: 0 0 8px; color: #ff6b6b; font-family: sans-serif; }
