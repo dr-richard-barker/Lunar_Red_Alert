@@ -53,13 +53,17 @@ Player:
 # per-instance from a map's Actors: list (no registered Init for it), so
 # the wider Range has to live on a real actor type instead. Self-contained
 # (not `Inherits: CAMERA`, ra|rules/misc.yaml) rather than a cross-file
-# inherit, matching CAMERA's own trait list exactly.
+# inherit, matching CAMERA's own trait list exactly. Range is capped at 50
+# (the engine's TileSearchRange limit -- confirmed live: a 70c0 range threw
+# "requested range (71) cannot exceed TileSearchRange (50)" every game-loop
+# tick after boot); the maps place a 3x3 grid of these to jointly cover the
+# full 90x90 playable area instead of one oversized camera.
 MAPCAMERA:
 	Interactable:
 	Immobile:
 		OccupiesSpace: false
 	RevealsShroud:
-		Range: 70c0
+		Range: 50c0
 		Type: CenterPosition
 	BodyOrientation:
 		QuantizedFacings: 1
