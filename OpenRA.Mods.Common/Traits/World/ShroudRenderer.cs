@@ -344,13 +344,13 @@ namespace OpenRA.Mods.Common.Traits
 				if (fogSprite.Sprite != null)
 					fogPos += fogSprite.Sprite.Offset - 0.5f * fogSprite.Sprite.Size;
 
-				if (OperatingSystem.IsBrowser() && !loggedUpdateShroudOnce)
+				if (OperatingSystem.IsBrowser() && !loggedUpdateShroudOnce && uv.U > 55 && uv.U < 70 && uv.V > 30 && uv.V < 45)
 				{
 					loggedUpdateShroudOnce = true;
 					Console.WriteLine($"[diag] UpdateShroud cell={uv} edgesShroud={edgesShroud} edgesFog={edgesFog} " +
 						$"shroudSpriteNull={shroudSprite.Sprite == null} fogSpriteNull={fogSprite.Sprite == null} " +
 						$"shroudAlpha={shroudSprite.Alpha} fogAlpha={fogSprite.Alpha} " +
-						$"indexOffset0={edgesToSpriteIndexOffset[0]}");
+						$"indexOffset0={edgesToSpriteIndexOffset[0]} cellVis={cellVisibility(puv)}");
 				}
 
 				shroudLayer.Update(uv, shroudSprite.Sprite, shroudPaletteReference, shroudPos, shroudSprite.Scale, shroudSprite.Alpha, true);
