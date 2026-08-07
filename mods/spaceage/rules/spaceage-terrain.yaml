@@ -1,46 +1,32 @@
-# Space-Age: make stock Red Alert maps read as lunar surface.
+# Space-Age: Lunar/Mars now have their own dedicated tilesets (tilesets/
+# lunar.yaml, tilesets/mars.yaml) with real generated art, and Earth uses
+# ysmir.oramap's stock TEMPERAT tileset unmodified -- so the three terrain
+# modes should look genuinely distinct (real green/water Earth, grey/ice
+# Lunar, orange/brown/snow Mars), not funnelled through one shared "make
+# everything read as lunar" reskin the way earlier passes did before the
+# dedicated tilesets existed.
 #
-# A full lunar TILESET (tilesets/lunar-template.yaml + generated tile sheets) is
-# still the end goal, but it needs an art pipeline to turn generated tiles into
-# a sheet the engine can load. This file gets most of the visual payoff without
-# that pipeline, so every existing RA map plays as Moon terrain today:
+# What used to live here (removed): a `terrain-temperat` palette override
+# to desert.pal, a whole-scene TintPostProcessEffect pulling green/blue
+# down, and an unconditional tree -> rock actor-type swap. All three
+# applied identically no matter which of the three maps (ysmir/-lunar/
+# -mars) was loaded, since rules are mod-wide, not per-map -- which
+# actively worked against Earth looking like Earth. The rock swap below
+# is kept, just moved onto separate T01ROCK.../TC05ROCK... actor types
+# that ONLY ysmir-lunar.oramap/ysmir-mars.oramap's own Actors: lists
+# reference (renamed there from t01/tc01/etc to t01rock/tc01rock/etc);
+# ysmir.oramap's Actors: list is untouched, so Earth keeps real t01..t17/
+# tc01..tc05 trees rendering as stock RA trees.
 #
-#   1. Trees become boulders/craters. Trees are the single strongest "Earth"
-#      signal on a map -- a vegetated battlefield can never read as lunar. The
-#      rock props already ship with the desert theatre content, so this is a
-#      sprite swap with no new art. Footprints are left alone so existing maps
-#      keep their pathing and cover exactly as authored.
-#   2. A cool, slightly darkened tint over the whole scene, which pushes RA's
-#      warm greens and browns toward airless grey.
-#
-# The rocks are drawn with the desert palette (as ra's own ^Rock does); that
-# palette is declared without a Tileset filter in ra|rules/palettes.yaml, so it
-# resolves on temperate/snow/interior maps too.
-
-# --- Regolith palette ------------------------------------------------------
-# The strongest lever available short of new tile art. Each tileset loads its
-# own terrain palette, and RA already ships a tan-grey one for the desert
-# theatre, so pointing snow/temperate/interior at desert.pal repaints the
-# actual ground rather than tinting it: green fields and blue snow come out as
-# dusty regolith. The tile GEOMETRY is still Earth (rivers, shorelines), which
-# is what the real lunar tileset in tilesets/lunar-template.yaml will replace.
+# Kept as-is: LUNAR/MARS still need a palette literally named "terrain" to
+# exist (TileSet.TerrainPaletteInternalName) or WorldLoaded crashes outright
+# (confirmed live earlier this session: "Palette `terrain` does not exist").
+# They have no base ra|rules/palettes.yaml entry to override (those tilesets
+# don't exist there), so these stay full definitions. Since the Lunar/Mars
+# tile art is RGBA PNG rather than indexed, this palette's actual colour
+# values don't drive the ground's look, only its presence -- desert.pal is
+# just a real, always-available .pal file to point at.
 ^Palettes:
-	PaletteFromFile@terrain-snow:
-		Filename: desert.pal
-	PaletteFromFile@terrain-temperat:
-		Filename: desert.pal
-	PaletteFromFile@terrain-interior:
-		Filename: desert.pal
-	# LUNAR/MARS have no base ra|rules/palettes.yaml entry to override (those
-	# tilesets don't exist there), so these are full definitions rather than
-	# Filename-only overrides. Every DefaultTerrain-derived tileset requires a
-	# palette literally named "terrain" to exist for its own Tileset filter or
-	# WorldLoaded crashes outright (confirmed live: "Palette `terrain` does
-	# not exist" from TerrainRenderer.UpdateCell on ysmir-lunar.oramap boot) --
-	# this was silently missing for both new tilesets. desert.pal matches this
-	# file's existing "closest thing to lunar regolith" choice above; since
-	# the Lunar/Mars tile art is RGBA PNG rather than indexed, this palette's
-	# actual colour values don't drive the ground's look, only its presence.
 	PaletteFromFile@terrain-lunar:
 		Name: terrain
 		Tileset: LUNAR
@@ -52,140 +38,141 @@
 		Filename: desert.pal
 		ShadowIndex: 3, 4
 
-World:
-	# Regolith cast. This effect can only scale each channel, so it cannot
-	# desaturate directly -- the way to neutralise colour is to pull DOWN the
-	# channels the source art is strongest in. RA's terrain is dominated by
-	# green (temperate) and blue (snow/water), so both come down while red
-	# stays full, which drags the palette toward the warm grey-tan of Apollo
-	# surface photography instead of tinting it.
-	#
-	# An earlier pass raised blue instead and simply made everything look like
-	# cold blue snow, which is the opposite of the intended read.
-	TintPostProcessEffect:
-		Red: 1.0
-		Green: 0.92
-		Blue: 0.82
-		Ambient: 0.97
+# --- Trees -> lunar/mars boulders and crater rims ---------------------------
+# Cycled across the seven rock props so a treeline becomes a varied rock
+# field rather than a row of identical stones. Inherits the real tree type
+# (footprint, husk-on-death, etc.) so pathing/cover is unaffected -- only
+# the rendered sprite changes.
 
-# A felled "tree" should leave broken rock, not a charred stump. Every tree
-# husk inherits this base, so one override covers all of them.
-^TreeHusk:
-	RenderSprites:
-		Image: rock2
-		Palette: desert
-
-# --- Trees -> lunar boulders and crater rims -------------------------------
-# Cycled across the seven rock props so a treeline becomes a varied rock field
-# rather than a row of identical stones.
-
-T01:
+T01ROCK:
+	Inherits: T01
 	RenderSprites:
 		Image: rock1
 		Palette: desert
 
-T02:
+T02ROCK:
+	Inherits: T02
 	RenderSprites:
 		Image: rock2
 		Palette: desert
 
-T03:
+T03ROCK:
+	Inherits: T03
 	RenderSprites:
 		Image: rock3
 		Palette: desert
 
-T04:
+T04ROCK:
+	Inherits: T04
 	RenderSprites:
 		Image: rock4
 		Palette: desert
 
-T05:
+T05ROCK:
+	Inherits: T05
 	RenderSprites:
 		Image: rock5
 		Palette: desert
 
-T06:
+T06ROCK:
+	Inherits: T06
 	RenderSprites:
 		Image: rock6
 		Palette: desert
 
-T07:
+T07ROCK:
+	Inherits: T07
 	RenderSprites:
 		Image: rock7
 		Palette: desert
 
-T08:
+T08ROCK:
+	Inherits: T08
 	RenderSprites:
 		Image: rock1
 		Palette: desert
 
-T09:
+T09ROCK:
+	Inherits: T09
 	RenderSprites:
 		Image: rock2
 		Palette: desert
 
-T10:
+T10ROCK:
+	Inherits: T10
 	RenderSprites:
 		Image: rock3
 		Palette: desert
 
-T11:
+T11ROCK:
+	Inherits: T11
 	RenderSprites:
 		Image: rock4
 		Palette: desert
 
-T12:
+T12ROCK:
+	Inherits: T12
 	RenderSprites:
 		Image: rock5
 		Palette: desert
 
-T13:
+T13ROCK:
+	Inherits: T13
 	RenderSprites:
 		Image: rock6
 		Palette: desert
 
-T14:
+T14ROCK:
+	Inherits: T14
 	RenderSprites:
 		Image: rock7
 		Palette: desert
 
-T15:
+T15ROCK:
+	Inherits: T15
 	RenderSprites:
 		Image: rock1
 		Palette: desert
 
-T16:
+T16ROCK:
+	Inherits: T16
 	RenderSprites:
 		Image: rock2
 		Palette: desert
 
-T17:
+T17ROCK:
+	Inherits: T17
 	RenderSprites:
 		Image: rock3
 		Palette: desert
 
 # Tree clumps -> larger boulder clusters.
-TC01:
+TC01ROCK:
+	Inherits: TC01
 	RenderSprites:
 		Image: rock4
 		Palette: desert
 
-TC02:
+TC02ROCK:
+	Inherits: TC02
 	RenderSprites:
 		Image: rock5
 		Palette: desert
 
-TC03:
+TC03ROCK:
+	Inherits: TC03
 	RenderSprites:
 		Image: rock6
 		Palette: desert
 
-TC04:
+TC04ROCK:
+	Inherits: TC04
 	RenderSprites:
 		Image: rock7
 		Palette: desert
 
-TC05:
+TC05ROCK:
+	Inherits: TC05
 	RenderSprites:
 		Image: rock1
 		Palette: desert
