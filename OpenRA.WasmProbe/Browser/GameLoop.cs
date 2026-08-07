@@ -67,7 +67,7 @@ namespace OpenRA.WasmProbe
 		// (see QuadDemo's own comment on this), so y is canvas-height-relative.
 		static void ReadGroundPixelOnce()
 		{
-			if (groundPixelRead || frames < 5)
+			if (groundPixelRead || frames < 180)
 				return;
 
 			groundPixelRead = true;
