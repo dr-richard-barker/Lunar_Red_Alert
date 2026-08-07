@@ -156,6 +156,55 @@ namespace OpenRA.WasmProbe
 			return $"{{\"WinState\":\"{winState}\",\"KillsCost\":{stats.KillsCost},\"DeathsCost\":{stats.DeathsCost},\"UnitsKilled\":{stats.UnitsKilled},\"UnitsDead\":{stats.UnitsDead},\"BuildingsKilled\":{stats.BuildingsKilled},\"BuildingsDead\":{stats.BuildingsDead},\"ArmyValue\":{stats.ArmyValue}}}";
 		}
 
+		// Diag: the camera-revealed area renders solid black instead of real
+		// terrain, even though TerrainRenderer draws the whole map
+		// unconditionally at WorldLoaded (independent of shroud) and no
+		// "references sprite that does not exist" warnings fire. Comparing a
+		// cell right at spawn (renders fine, always has) against one well
+		// outside the original small explored radius (renders black) to see
+		// where they actually diverge: tile data, sprite resolution, or
+		// something else entirely.
+		static bool reportedTerrainOnce;
+
+		static void ReportTerrainOnce(World world, Player p)
+		{
+			if (reportedTerrainOnce)
+				return;
+			reportedTerrainOnce = true;
+
+			try
+			{
+				var map = world.Map;
+				var renderer = world.WorldActor.TraitsImplementing<ITiledTerrainRenderer>().FirstOrDefault();
+				var goodCell = p.HomeLocation;
+				var farCell = p.HomeLocation + new CVec(-25, -10);
+
+				foreach (var (label, cell) in new[] { ("spawn", goodCell), ("far", farCell) })
+				{
+					if (!map.Contains(cell))
+					{
+						Console.WriteLine($"[diag] terrain[{label}] cell={cell} OUT OF MAP BOUNDS");
+						continue;
+					}
+
+					var tile = map.Tiles[cell];
+					var sprite = renderer?.TileSprite(tile, null);
+					var isMissing = renderer != null && sprite == renderer.MissingTile;
+					var puv = (PPos)cell.ToMPos(map);
+					var vis = p.Shroud?.GetVisibility(puv);
+
+					Console.WriteLine($"[diag] terrain[{label}] cell={cell} tileType={tile.Type} tileIndex={tile.Index} " +
+						$"spriteNull={sprite == null} isMissingTile={isMissing} " +
+						$"spriteSize={(sprite != null ? sprite.Size.ToString() : "n/a")} " +
+						$"shroudVis={vis}");
+				}
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine($"[diag] terrain report failed (ignored): {e}");
+			}
+		}
+
 		// Free Build: tops the local player's cash up to a floor whenever it
 		// drops below, so production is effectively free without touching
 		// per-item cost logic. Reuses the same ChangeCash the desktop debug
@@ -241,6 +290,17 @@ namespace OpenRA.WasmProbe
 				catch (Exception e)
 				{
 					Console.WriteLine($"[diag] world report threw (ignored): {e}");
+				}
+
+				try
+				{
+					var w = Game.ActiveWorld;
+					if (w?.LocalPlayer != null)
+						ReportTerrainOnce(w, w.LocalPlayer);
+				}
+				catch (Exception e)
+				{
+					Console.WriteLine($"[diag] terrain report threw (ignored): {e}");
 				}
 
 				try
