@@ -358,11 +358,41 @@ namespace OpenRA.Mods.Common.Traits
 			if (OperatingSystem.IsBrowser() && !loggedRenderShroudOnce)
 			{
 				loggedRenderShroudOnce = true;
-				var samplePuv = map.ProjectedCells.FirstOrDefault();
-				var vis = cellVisibility != null ? cellVisibility(samplePuv) : Shroud.CellVisibility.Hidden;
+				var explored = 0;
+				var notExplored = 0;
+				var visible = 0;
+				var notVisible = 0;
+				var total = 0;
+				PPos firstBad = default;
+				var haveBad = false;
+				foreach (var puv in map.ProjectedCells)
+				{
+					total++;
+					var cv = cellVisibility != null ? cellVisibility(puv) : Shroud.CellVisibility.Hidden;
+					var isExplored = cv.HasFlag(Shroud.CellVisibility.Explored);
+					var isVisible = cv.HasFlag(Shroud.CellVisibility.Visible);
+					if (isExplored)
+						explored++;
+					else
+					{
+						notExplored++;
+						if (!haveBad)
+						{
+							haveBad = true;
+							firstBad = puv;
+						}
+					}
+
+					if (isVisible)
+						visible++;
+					else
+						notVisible++;
+				}
+
 				Console.WriteLine($"[diag] RenderShroud renderPlayer={world.RenderPlayer?.InternalName ?? "null"} " +
-					$"shroudRef={(shroud == null ? "null" : "set")} sampleCell={samplePuv} visibility={vis} " +
-					$"shroudExplored={shroud?.IsExplored(samplePuv)} shroudExploredAll={shroud?.ExploreMapEnabled}");
+					$"shroudRef={(shroud == null ? "null" : "set")} total={total} explored={explored} notExplored={notExplored} " +
+					$"visible={visible} notVisible={notVisible} firstBadCell={(haveBad ? firstBad.ToString() : "none")} " +
+					$"anyCellDirty={anyCellDirty} shroudExploredAll={shroud?.ExploreMapEnabled}");
 			}
 
 			UpdateShroud(map.ProjectedCells);
