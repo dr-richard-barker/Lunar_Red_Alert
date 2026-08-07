@@ -167,49 +167,6 @@ namespace OpenRA.WasmProbe
 		// something else entirely.
 		static bool reportedTerrainOnce;
 
-		static bool reportedPaletteOnce;
-
-		static void ReportPaletteOnce()
-		{
-			if (reportedPaletteOnce)
-				return;
-			reportedPaletteOnce = true;
-
-			try
-			{
-				var wr = typeof(Game)
-					.GetField("worldRenderer", BindingFlags.NonPublic | BindingFlags.Static)
-					?.GetValue(null) as WorldRenderer;
-
-				if (wr == null)
-				{
-					Console.WriteLine("[diag] palette report: no world renderer yet");
-					return;
-				}
-
-				var pal = wr.Palette("terrain");
-				if (pal == null)
-				{
-					Console.WriteLine("[diag] palette 'terrain' -> Palette() returned NULL");
-					return;
-				}
-
-				var colors = string.Join(",", Enumerable.Range(0, 20).Select(i => pal.Palette[i].ToString("X8")));
-				Console.WriteLine($"[diag] palette 'terrain' textureIndex={pal.TextureIndex} colors[0..19]={colors}");
-
-				var shroudPal = wr.Palette("shroud");
-				if (shroudPal != null)
-				{
-					var shroudColors = string.Join(",", Enumerable.Range(0, 8).Select(i => shroudPal.Palette[i].ToString("X8")));
-					Console.WriteLine($"[diag] palette 'shroud' textureIndex={shroudPal.TextureIndex} colors[0..7]={shroudColors}");
-				}
-			}
-			catch (Exception e)
-			{
-				Console.WriteLine($"[diag] palette report failed (ignored): {e}");
-			}
-		}
-
 		static void ReportTerrainOnce(World world, Player p)
 		{
 			if (reportedTerrainOnce)
@@ -403,10 +360,7 @@ namespace OpenRA.WasmProbe
 					// too-early snapshot again.
 					var w = Game.ActiveWorld;
 					if (w?.LocalPlayer != null && w.WorldTick > 100)
-					{
 						ReportTerrainOnce(w, w.LocalPlayer);
-						ReportPaletteOnce();
-					}
 				}
 				catch (Exception e)
 				{
