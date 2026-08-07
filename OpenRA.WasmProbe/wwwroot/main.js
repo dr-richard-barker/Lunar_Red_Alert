@@ -32,6 +32,13 @@ const bootMode = (qmode === 'play' || qmode === 'autopilot') ? qmode : 'probe';
 const qterrain = new URLSearchParams(location.search).get('terrain');
 const terrainMode = (qterrain === 'lunar' || qterrain === 'mars') ? qterrain : 'earth';
 
+// ?rivals=1-4 bypasses the pre-game picker overlay entirely (no click, no
+// display:flex) -- used by the CI smoke test, which never clicks anything
+// and would otherwise sit out its own timeout waiting for "boot complete"
+// behind a modal nobody can dismiss. Real players just see the overlay.
+const qrivals = parseInt(new URLSearchParams(location.search).get('rivals'), 10);
+const rivalsOverride = (qrivals >= 1 && qrivals <= 4) ? qrivals : null;
+
 // Testing override: ?dpr=2 forces a devicePixelRatio, letting a standard
 // display session exercise the exact HiDPI code path that a Retina
 // laptop/iPad (dpr 2) hits for real. Real users never set this.
@@ -42,6 +49,26 @@ const webgl = {
 	hasDocument: () => true,
 	getBootMode: () => bootMode,
 	getTerrainMode: () => terrainMode,
+
+	// PlayMode awaits this before activating Multi2-4's bots (see
+	// WebGL.GetRivalCount / PlayMode.cs). A real Promise, not a plain
+	// getter: it has to wait on an actual player click, which the ?rivals=
+	// URL bypass above skips entirely (no overlay shown at all).
+	getRivalCount: () => new Promise(resolve => {
+		if (rivalsOverride) {
+			resolve(rivalsOverride);
+			return;
+		}
+
+		const overlay = document.getElementById('rival-select');
+		overlay.style.display = 'flex';
+		overlay.querySelectorAll('button[data-count]').forEach(btn => {
+			btn.addEventListener('click', () => {
+				overlay.style.display = 'none';
+				resolve(parseInt(btn.dataset.count, 10));
+			}, { once: true });
+		});
+	}),
 	getPersistedData: key => window.localStorage.getItem(key) || "",
 	setPersistedData: (key, value) => window.localStorage.setItem(key, value),
 

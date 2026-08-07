@@ -48,7 +48,7 @@ namespace OpenRA.WasmProbe
 			Game.Sound = new Sound(platform, Game.Settings.Sound);
 
 			Console.WriteLine("[play] booting Lunar Red Alert…");
-			
+
 			var mapFile = WebGL.GetTerrainMode() switch
 			{
 				"lunar" => "ysmir-lunar.oramap",
@@ -63,6 +63,18 @@ namespace OpenRA.WasmProbe
 				// Launching the shellmap as a regular map makes it a full game,
 				// or we can pass a specific map if one exists.
 				args = new Arguments("Launch.Map=shellmap");
+			}
+			else
+			{
+				// Blocks on the player's click (or resolves instantly for the
+				// ?rivals= CI/bookmark bypass -- see getRivalCount in main.js).
+				// ysmir*.oramap's Multi1-4 are all Bot: normal by default
+				// (real base, real army); GameLoop disables the ones beyond
+				// this count right after world load, same IsEnabled toggle
+				// ToggleAutoplay already uses to stop/start a bot live.
+				Console.WriteLine("[play] waiting for rival count selection…");
+				GameLoop.RivalCount = await WebGL.GetRivalCount();
+				Console.WriteLine($"[play] rival count selected: {GameLoop.RivalCount}");
 			}
 
 			Game.InitializeMod(manifest, args);

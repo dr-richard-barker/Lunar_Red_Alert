@@ -50,6 +50,19 @@
   #league-table .lost { color: #ff6b6b; }
   #league-close { display: block; margin: 20px auto 0; padding: 10px 20px; background: #233042; border: none; color: #fff; border-radius: 4px; cursor: pointer; font: 14px sans-serif; }
   #league-close:hover { background: #3a4b61; }
+
+  /* Rival Count Overlay: shown once, before PlayMode boots the actual
+     match (GameLoop.ReadGroundPixelOnce -- no, see WebGL.GetRivalCount /
+     main.js's getRivalCount). Kept hidden by default and flipped to
+     flex only when JS is actually waiting on a pick, so it never flashes
+     for the non-"play" probe boot paths or the ?rivals=N CI bypass. */
+  #rival-select { position: fixed; inset: 0; background: rgba(10,14,20,0.92); z-index: 10001; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+  #rival-select .inner { background: #121a24; border: 1px solid #233042; padding: 32px; border-radius: 8px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+  #rival-select h2 { margin: 0 0 8px; color: #ff6b6b; font-family: sans-serif; }
+  #rival-select p { margin: 0 0 20px; color: #8b98a9; font-family: sans-serif; font-size: 14px; }
+  #rival-select .counts { display: flex; gap: 12px; justify-content: center; }
+  #rival-select button { width: 56px; height: 56px; font: bold 22px/1 monospace; background: #1a2330; border: 2px solid #ff6b6b; color: #ff6b6b; border-radius: 8px; cursor: pointer; }
+  #rival-select button:hover { background: #ff6b6b; color: #000; }
 </style>
 </head>
 <body>
@@ -78,6 +91,18 @@
 			<tbody></tbody>
 		</table>
 		<button id="league-close">Close</button>
+	</div>
+</div>
+<div id="rival-select">
+	<div class="inner">
+		<h2>Incoming AI Rivals</h2>
+		<p>How many AI-controlled rivals should build a base and fight you?</p>
+		<div class="counts">
+			<button type="button" data-count="1">1</button>
+			<button type="button" data-count="2">2</button>
+			<button type="button" data-count="3">3</button>
+			<button type="button" data-count="4">4</button>
+		</div>
 	</div>
 </div>
 <!-- __BUILD_ID__ is replaced with the commit SHA at deploy time (see

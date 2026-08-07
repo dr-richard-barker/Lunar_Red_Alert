@@ -54,6 +54,14 @@ namespace OpenRA.WasmProbe
 		[JSImport("getTerrainMode", "webgl.js")]
 		internal static partial string GetTerrainMode();
 
+		// Pre-game rival count picker (1-4): shows the #rival-select overlay
+		// and resolves once the player clicks a count, so PlayMode can await
+		// it before activating Multi2-4's bots. A real Promise (like
+		// getWindowSize), not a plain getter -- the overlay needs the
+		// player's click, which can't be synchronous.
+		[JSImport("getRivalCount", "webgl.js")]
+		internal static partial Task<int> GetRivalCount();
+
 		internal static async Task<byte[]> FetchBinary(string url)
 		{
 			return Convert.FromBase64String(await FetchBase64(url));
