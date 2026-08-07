@@ -47,6 +47,30 @@ VacuumDamageTypeDecl:
 
 Player:
 	LeagueTableManager:
+	# Lets the War/Peace toggle (GameLoop.ToggleWarPeace) reach into the
+	# "normal" AI's own build/attack logic, not just the diplomatic
+	# relationship. Granted/revoked externally in C#, never by any trait
+	# here -- see ra|rules/ai.yaml's ModularBot@NormalAI for the bot type
+	# this gates, and the SquadManagerBotModule@normal/UnitBuilderBotModule@
+	# normal overrides below for what it actually disables.
+	ExternalCondition@PEACE:
+		Condition: peace-mode
+	# Overrides of ra|rules/ai.yaml's "normal" AI modules (same trait keys,
+	# MiniYaml field-level merge -- every other configured field, e.g.
+	# SquadSize, ProtectionTypes, is inherited unchanged from the base
+	# definition there). Peace mode should mean "focus on building and
+	# growth", not "still forms and launches attack squads that just have
+	# nobody to fight" -- so both the human's own autoplay AI
+	# (GameLoop.ToggleAutoplay) and any AI rival opponent stop RAISING new
+	# squads/combat units while at peace. ResourceMapBotModule,
+	# HarvesterBotModule@normal-turtle, BaseBuilderBotModule@normal and
+	# McvExpansionManagerBotModule@normal are untouched, so economy and base
+	# construction (including defensive structures already in that build
+	# order) keep running exactly as before.
+	SquadManagerBotModule@normal:
+		RequiresCondition: enable-normal-ai && !peace-mode
+	UnitBuilderBotModule@normal:
+		RequiresCondition: enable-normal-ai && !peace-mode
 
 # A wide-range camera for the browser build's "fully visible map" showcase
 # maps (ysmir/ysmir-lunar/ysmir-mars) -- RevealsShroud isn't overridable

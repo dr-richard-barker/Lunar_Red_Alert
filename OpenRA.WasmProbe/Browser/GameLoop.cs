@@ -167,6 +167,34 @@ namespace OpenRA.WasmProbe
 		static bool peaceMode;
 		static readonly List<Player> peaceModeAffected = [];
 
+		// Peace mode also reaches into the "normal" AI's own build/attack
+		// logic (spaceage-defaults.yaml's ExternalCondition@PEACE +
+		// SquadManagerBotModule@normal/UnitBuilderBotModule@normal
+		// RequiresCondition overrides): while it's granted, that AI stops
+		// raising new squads or combat units and just keeps its economy
+		// running, on whichever player it's granted to -- the human's own
+		// autoplay AI (ToggleAutoplay) and/or any AI rival opponent.
+		static readonly object PeaceConditionSource = new();
+		static readonly Dictionary<Actor, int> peaceConditionTokens = [];
+
+		static void SetPeaceCondition(Actor playerActor, bool enable)
+		{
+			var ec = playerActor.TraitsImplementing<ExternalCondition>().FirstOrDefault(e => e.Info.Condition == "peace-mode");
+			if (ec == null)
+				return;
+
+			if (enable)
+			{
+				if (!peaceConditionTokens.ContainsKey(playerActor))
+					peaceConditionTokens[playerActor] = ec.GrantCondition(playerActor, PeaceConditionSource);
+			}
+			else if (peaceConditionTokens.TryGetValue(playerActor, out var token))
+			{
+				ec.TryRevokeCondition(playerActor, PeaceConditionSource, token);
+				peaceConditionTokens.Remove(playerActor);
+			}
+		}
+
 		[JSExport]
 		public static bool ToggleWarPeace()
 		{
@@ -191,6 +219,15 @@ namespace OpenRA.WasmProbe
 					other.AlliedPlayersMask = other.AlliedPlayersMask.Union(player.PlayerMask);
 					other.EnemyPlayersMask = other.EnemyPlayersMask.Except(player.PlayerMask);
 				}
+
+				// Granted regardless of whether autoplay (ToggleAutoplay) is
+				// currently active on the local player, so the AI's strategy
+				// is always correct the moment it does take over -- and on
+				// every AI rival opponent too, so nobody keeps massing an
+				// army against a player they're no longer at war with.
+				SetPeaceCondition(player.PlayerActor, true);
+				foreach (var other in peaceModeAffected)
+					SetPeaceCondition(other.PlayerActor, true);
 
 				// Relationship alone stops the AI's squad manager picking new
 				// targets (SquadManagerBotModule.IsPreferredEnemyUnit checks
@@ -218,8 +255,10 @@ namespace OpenRA.WasmProbe
 			}
 			else
 			{
+				SetPeaceCondition(player.PlayerActor, false);
 				foreach (var other in peaceModeAffected)
 				{
+					SetPeaceCondition(other.PlayerActor, false);
 					player.AlliedPlayersMask = player.AlliedPlayersMask.Except(other.PlayerMask);
 					player.EnemyPlayersMask = player.EnemyPlayersMask.Union(other.PlayerMask);
 					other.AlliedPlayersMask = other.AlliedPlayersMask.Except(player.PlayerMask);
