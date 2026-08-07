@@ -31,6 +31,26 @@
 		Filename: desert.pal
 	PaletteFromFile@terrain-interior:
 		Filename: desert.pal
+	# LUNAR/MARS have no base ra|rules/palettes.yaml entry to override (those
+	# tilesets don't exist there), so these are full definitions rather than
+	# Filename-only overrides. Every DefaultTerrain-derived tileset requires a
+	# palette literally named "terrain" to exist for its own Tileset filter or
+	# WorldLoaded crashes outright (confirmed live: "Palette `terrain` does
+	# not exist" from TerrainRenderer.UpdateCell on ysmir-lunar.oramap boot) --
+	# this was silently missing for both new tilesets. desert.pal matches this
+	# file's existing "closest thing to lunar regolith" choice above; since
+	# the Lunar/Mars tile art is RGBA PNG rather than indexed, this palette's
+	# actual colour values don't drive the ground's look, only its presence.
+	PaletteFromFile@terrain-lunar:
+		Name: terrain
+		Tileset: LUNAR
+		Filename: desert.pal
+		ShadowIndex: 3, 4
+	PaletteFromFile@terrain-mars:
+		Name: terrain
+		Tileset: MARS
+		Filename: desert.pal
+		ShadowIndex: 3, 4
 
 World:
 	# Regolith cast. This effect can only scale each channel, so it cannot
