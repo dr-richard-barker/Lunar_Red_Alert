@@ -47,3 +47,12 @@ VacuumDamageTypeDecl:
 
 Player:
 	LeagueTableManager:
+
+# A wide-range camera for the browser build's "fully visible map" showcase
+# maps (ysmir/ysmir-lunar/ysmir-mars) -- RevealsShroud isn't overridable
+# per-instance from a map's Actors: list (no registered Init for it), so
+# the wider Range has to live on a real actor type instead.
+MAPCAMERA:
+	Inherits: CAMERA
+	RevealsShroud:
+		Range: 70c0
