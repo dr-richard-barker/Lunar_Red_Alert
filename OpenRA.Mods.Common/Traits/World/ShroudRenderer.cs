@@ -344,6 +344,15 @@ namespace OpenRA.Mods.Common.Traits
 				if (fogSprite.Sprite != null)
 					fogPos += fogSprite.Sprite.Offset - 0.5f * fogSprite.Sprite.Size;
 
+				if (OperatingSystem.IsBrowser() && !loggedUpdateShroudOnce)
+				{
+					loggedUpdateShroudOnce = true;
+					Console.WriteLine($"[diag] UpdateShroud cell={uv} edgesShroud={edgesShroud} edgesFog={edgesFog} " +
+						$"shroudSpriteNull={shroudSprite.Sprite == null} fogSpriteNull={fogSprite.Sprite == null} " +
+						$"shroudAlpha={shroudSprite.Alpha} fogAlpha={fogSprite.Alpha} " +
+						$"indexOffset0={edgesToSpriteIndexOffset[0]}");
+				}
+
 				shroudLayer.Update(uv, shroudSprite.Sprite, shroudPaletteReference, shroudPos, shroudSprite.Scale, shroudSprite.Alpha, true);
 				fogLayer.Update(uv, fogSprite.Sprite, fogPaletteReference, fogPos, fogSprite.Scale, fogSprite.Alpha, true);
 			}
@@ -352,6 +361,7 @@ namespace OpenRA.Mods.Common.Traits
 		}
 
 		bool loggedRenderShroudOnce;
+		bool loggedUpdateShroudOnce;
 
 		void IRenderShroud.RenderShroud(WorldRenderer wr)
 		{
