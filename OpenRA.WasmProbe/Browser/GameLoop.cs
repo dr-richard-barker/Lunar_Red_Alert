@@ -175,10 +175,6 @@ namespace OpenRA.WasmProbe
 
 			try
 			{
-				var cameras = world.Actors.Where(a => a.Info.Name == "mapcamera").ToArray();
-				Console.WriteLine($"[diag] mapcamera actors in world: {cameras.Length} " +
-					$"[{string.Join("; ", cameras.Select(a => $"{(a.OccupiesSpace != null ? a.Location.ToString() : "(no position)")} inWorld={a.IsInWorld} dead={a.IsDead} hasRevealsShroud={a.TraitsImplementing<RevealsShroud>().Any()}"))}]");
-
 				var map = world.Map;
 				var renderer = world.WorldActor.TraitsImplementing<ITiledTerrainRenderer>().FirstOrDefault();
 				var goodCell = p.HomeLocation;
