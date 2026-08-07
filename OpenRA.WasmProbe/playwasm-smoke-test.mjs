@@ -25,7 +25,7 @@ const base = url.endsWith('/') ? url : `${url}/`;
 // on a real click, which this headless run never makes -- without the URL
 // bypass, "boot complete" would never print and this script would just sit
 // out its timeout.
-const playUrl = terrain ? `${base}?mode=play&terrain=${terrain}&rivals=2` : `${base}?mode=play&rivals=2`;
+const playUrl = terrain ? `${base}?mode=play&terrain=${terrain}&rivals=4` : `${base}?mode=play&rivals=4`;
 const screenshotPath = terrain ? `playwasm-smoke-screenshot-${terrain}.png` : 'playwasm-smoke-screenshot.png';
 
 // PlayMode's boot (MEMFS stage -> settings -> mods -> platform -> renderer ->
