@@ -301,6 +301,15 @@ jobs:
         run: |
           node OpenRA.WasmProbe/playwasm-smoke-test.mjs "${{ needs.deploy.outputs.page_url }}play-wasm/" lunar 2>&1 | tee playwasm-smoke-lunar.log
 
+      - name: Capture the Mars terrain map too
+        # Same coverage as the Lunar capture above, for ysmir-mars.oramap --
+        # shares the identical reskin code path, so this is the formal check
+        # that the Lunar sprite-extension fix also covers Mars, not just an
+        # assumption based on the shared bug pattern.
+        continue-on-error: true
+        run: |
+          node OpenRA.WasmProbe/playwasm-smoke-test.mjs "${{ needs.deploy.outputs.page_url }}play-wasm/" mars 2>&1 | tee playwasm-smoke-mars.log
+
       - name: Upload smoke test artifacts
         if: always()
         uses: actions/upload-artifact@v7
@@ -311,5 +320,7 @@ jobs:
             playwasm-smoke-screenshot.png
             playwasm-smoke-lunar.log
             playwasm-smoke-screenshot-lunar.png
+            playwasm-smoke-mars.log
+            playwasm-smoke-screenshot-mars.png
           if-no-files-found: warn
           retention-days: 7
