@@ -578,15 +578,36 @@ const canvasXY = e => {
 // Temporary diagnostic: a click/tap misalignment report came in from real
 // Retina/iPad hardware after this file's dpr-scaling fix was already live,
 // which this session's own test tooling couldn't reproduce or disprove
-// cleanly. Logs real numbers from the actual device instead of guessing
-// again -- remove once the alignment is confirmed fixed for real. Capped at
-// 5 so it can't flood the console on repeated clicks.
-let clickDiagCount = 0;
+// cleanly. Prints the same numbers both to console (desktop devtools) AND
+// directly on the page (devtools access is awkward on iPad -- a screenshot
+// of #click-diag is enough) -- remove once the alignment is confirmed
+// fixed for real. The crosshair marker sits at the raw, unmodified
+// clientX/clientY of the last click/tap: if it doesn't land exactly under
+// the cursor/finger, the browser itself is misreporting the event position,
+// not this file's coordinate math.
+const clickDiagEl = document.getElementById('click-diag');
+const clickDiagMarker = document.getElementById('click-diag-marker');
 const logClickDiag = (source, e, x, y) => {
-	if (clickDiagCount++ >= 5)
-		return;
 	const r = canvas.getBoundingClientRect();
-	console.log(`[click-diag] ${source} clientX=${e.clientX} clientY=${e.clientY} rect.left=${r.left} rect.top=${r.top} rect.width=${r.width} rect.height=${r.height} canvas.width=${canvas.width} canvas.height=${canvas.height} dpr=${effectiveDpr()} realDpr=${window.devicePixelRatio} -> nativeX=${x} nativeY=${y} visualViewport=${window.visualViewport ? `${window.visualViewport.width}x${window.visualViewport.height}@${window.visualViewport.scale}` : 'n/a'}`);
+	const vv = window.visualViewport;
+	const text = `[click-diag] ${source}\n`
+		+ `clientX=${e.clientX} clientY=${e.clientY}\n`
+		+ `rect: left=${r.left} top=${r.top} width=${r.width} height=${r.height}\n`
+		+ `canvas: width=${canvas.width} height=${canvas.height}\n`
+		+ `dpr used=${effectiveDpr()} window.devicePixelRatio=${window.devicePixelRatio}\n`
+		+ `-> sent to engine: nativeX=${x} nativeY=${y}\n`
+		+ `visualViewport: ${vv ? `${vv.width}x${vv.height} scale=${vv.scale} offset=${vv.offsetLeft},${vv.offsetTop}` : 'n/a'}\n`
+		+ `window.innerWidth/Height: ${window.innerWidth}x${window.innerHeight}`;
+	console.log(text);
+	if (clickDiagEl) {
+		clickDiagEl.textContent = text;
+		clickDiagEl.style.display = 'block';
+	}
+	if (clickDiagMarker) {
+		clickDiagMarker.style.left = e.clientX + 'px';
+		clickDiagMarker.style.top = e.clientY + 'px';
+		clickDiagMarker.style.display = 'block';
+	}
 };
 
 canvas.addEventListener('mousedown', e => { const [x, y] = canvasXY(e); logClickDiag('mousedown', e, x, y); inputQueue.push([1, 0, buttonFlag(e.button), x, y, 0, 0, mods(e)]); });
