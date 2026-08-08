@@ -535,21 +535,28 @@ const keycodeOf = e => {
 };
 const buttonFlag = b => (b === 0 ? 1 : b === 2 ? 2 : b === 1 ? 4 : 0);
 
-// Map client coordinates to the engine's logical/effective coordinate space
-// (WINDOW_WIDTH/HEIGHT -- what every chrome YAML X/Y is expressed in), NOT
-// the physical pixel buffer: canvas.width is now devicePixelRatio times
-// larger than its CSS display size (see init/getDevicePixelRatio above), so
-// a raw CSS-relative offset already lands exactly in logical space without
-// any further scaling. Multiplying by canvas.width/rect.width here would
-// instead produce physical-pixel coordinates and misalign every click by
-// exactly the DPI scale factor. offsetX is padding-box relative and skews if
-// the canvas ever gets a border, hence going through getBoundingClientRect().
+// Map client coordinates to the engine's NATIVE pixel-buffer space -- NOT
+// the CSS/logical space this comment previously (and wrongly) claimed was
+// correct. Confirmed live: at dpr=1 an unscaled CSS-relative offset happens
+// to coincide with native space (they're the same number), which is why
+// this looked fine in every dpr=1 test session; at dpr=2 it doesn't, and
+// EVERY canvas click misses -- unit selection, sidebar icons, even the
+// settings-gear widget, all engine-rendered chrome included, not just the
+// world viewport. Root cause: Viewport.ViewToWorldPx/WorldToViewPx (OpenRA.
+// Game/Graphics/Viewport.cs) derive ViewportSize from Game.Renderer.
+// NativeResolution (== Window.NativeWindowSize, the dpr-scaled physical
+// buffer size), and sprites/widgets are ultimately positioned in that same
+// native buffer -- so mouse input has to be expressed in native pixels to
+// land where it visually appears. canvas.width is devicePixelRatio times
+// the CSS display size (see init/getDevicePixelRatio above); scaling the
+// CSS-relative offset by that same factor converts it into native space.
 const canvasXY = e => {
 	const r = canvas.getBoundingClientRect();
-	return [Math.round(e.clientX - r.left), Math.round(e.clientY - r.top)];
+	const dpr = effectiveDpr();
+	return [Math.round((e.clientX - r.left) * dpr), Math.round((e.clientY - r.top) * dpr)];
 };
 canvas.addEventListener('mousedown', e => { const [x, y] = canvasXY(e); inputQueue.push([1, 0, buttonFlag(e.button), x, y, 0, 0, mods(e)]); });
-canvas.addEventListener('mousemove', e => { const [x, y] = canvasXY(e); inputQueue.push([1, 1, 0, x, y, e.movementX, e.movementY, mods(e)]); });
+canvas.addEventListener('mousemove', e => { const [x, y] = canvasXY(e); const dpr = effectiveDpr(); inputQueue.push([1, 1, 0, x, y, Math.round(e.movementX * dpr), Math.round(e.movementY * dpr), mods(e)]); });
 canvas.addEventListener('mouseup', e => { const [x, y] = canvasXY(e); inputQueue.push([1, 2, buttonFlag(e.button), x, y, 0, 0, mods(e)]); });
 canvas.addEventListener('wheel', e => { const [x, y] = canvasXY(e); inputQueue.push([1, 3, 0, x, y, 0, Math.sign(-e.deltaY), mods(e)]); });
 canvas.addEventListener('contextmenu', e => e.preventDefault());
@@ -579,10 +586,13 @@ let touch = null;
 // without an actual touchscreen sending events.
 let gameExports = null;
 
-// Same logical-space reasoning as canvasXY above -- no buffer-size scaling.
+// Same native-space reasoning as canvasXY above: taps go through the same
+// inputQueue path as mouse clicks, and the 2-finger pan/pinch center feeds
+// Viewport.AdjustZoom -> ViewToWorldPx, which also expects native pixels.
 const touchXY = t => {
 	const r = canvas.getBoundingClientRect();
-	return [Math.round(t.clientX - r.left), Math.round(t.clientY - r.top)];
+	const dpr = effectiveDpr();
+	return [Math.round((t.clientX - r.left) * dpr), Math.round((t.clientY - r.top) * dpr)];
 };
 
 canvas.addEventListener('touchstart', e => {
