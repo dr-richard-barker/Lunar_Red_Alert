@@ -18,6 +18,7 @@ using OpenRA.Graphics;
 using OpenRA.Mods.Common.Activities;
 using OpenRA.Mods.Common.Traits;
 using OpenRA.Traits;
+using OpenRA.Widgets;
 
 namespace OpenRA.WasmProbe
 {
@@ -123,6 +124,43 @@ namespace OpenRA.WasmProbe
 			catch (Exception e)
 			{
 				return $"GetOwnUnitScreenPositions failed: {e.Message}";
+			}
+		}
+
+		// Companion diagnostic: real DOM mousedown/mouseup with correct
+		// coordinates (confirmed via a JS-side debug listener showing
+		// clientX/Y landing exactly on a unit's known screen position) still
+		// left World.Selection.Actors empty -- this checks whether the
+		// widget actually responsible for click-to-select
+		// (WorldInteractionControllerWidget, normally part of the standard
+		// "ingame" chrome) even exists in the loaded widget tree at all, and
+		// what widget (if any) currently holds mouse focus/rollover.
+		// Temporary; remove alongside the other selection diagnostics.
+		[JSExport]
+		public static string GetWidgetTreeInfo()
+		{
+			try
+			{
+				var names = new List<string>();
+				void Walk(Widget w, int depth)
+				{
+					names.Add(new string(' ', depth * 2) + w.GetType().Name + (string.IsNullOrEmpty(w.Id) ? "" : $"#{w.Id}"));
+					foreach (var c in w.Children)
+						Walk(c, depth + 1);
+				}
+
+				Walk(Ui.Root, 0);
+
+				var hasController = names.Any(n => n.Contains("WorldInteractionControllerWidget"));
+				var mouseOver = Ui.MouseOverWidget?.GetType().Name ?? "null";
+				var mouseFocus = Ui.MouseFocusWidget?.GetType().Name ?? "null";
+
+				return $"hasWorldInteractionControllerWidget={hasController}, MouseOverWidget={mouseOver}, MouseFocusWidget={mouseFocus}, treeSize={names.Count}\n" +
+					string.Join("\n", names.Take(60));
+			}
+			catch (Exception e)
+			{
+				return $"GetWidgetTreeInfo failed: {e.Message}";
 			}
 		}
 
