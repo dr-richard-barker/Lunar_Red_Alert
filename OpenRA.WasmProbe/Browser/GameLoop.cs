@@ -51,6 +51,35 @@ namespace OpenRA.WasmProbe
 			return Ready;
 		}
 
+		// Temporary diagnostic for the real click/tap misalignment investigation:
+		// pixel-color heuristics for "did a unit get selected" turned out
+		// unreliable (terrain/ore sprites false-positive on the same bright
+		// colors a selection health-bar or bracket uses, and camera panning
+		// contaminates before/after screenshot diffs) -- this reads the actual
+		// engine state directly instead of guessing from rendered pixels.
+		// Remove once the misalignment is confirmed fixed for real.
+		[JSExport]
+		public static string GetSelectionInfo()
+		{
+			try
+			{
+				var world = Game.ActiveWorld;
+				if (world == null)
+					return "no active world";
+
+				var actors = world.Selection.Actors;
+				if (actors.Count == 0)
+					return "0 actors selected";
+
+				return $"{actors.Count} actor(s) selected: " +
+					string.Join(", ", actors.Select(a => $"{a.Info.Name}@{(a.OccupiesSpace != null ? a.Location.ToString() : "?")}"));
+			}
+			catch (Exception e)
+			{
+				return $"GetSelectionInfo failed: {e.Message}";
+			}
+		}
+
 		static string reportedWorld;
 
 		// One-shot summary of each world the play loop takes over, to pin down
