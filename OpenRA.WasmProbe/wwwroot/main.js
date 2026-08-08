@@ -556,64 +556,26 @@ const buttonFlag = b => (b === 0 ? 1 : b === 2 ? 2 : b === 1 ? 4 : 0);
 
 // Map client coordinates to the engine's logical/effective coordinate space
 // (WINDOW_WIDTH/HEIGHT -- what every chrome YAML X/Y is expressed in), NOT
-// the physical pixel buffer. REVERTED from a dpr-scaled ("native pixel
-// space") version: that theory turned out wrong AND actively dangerous --
-// OpenRA.WasmProbe/Browser/InputFontDemo.cs's own boot-time self-test
-// (WebGL.SynthesizeTestInput -> synthesizeTestInput() below) dispatches a
-// synthetic click at a hard-coded CSS-relative offset (30,40) and asserts
-// the engine receives exactly (30,40); scaling by dpr sent (30*dpr,40*dpr)
-// instead, which on any real device with dpr != 1 threw an uncaught
-// InvalidOperationException from that assertion and HALTED BOOT ENTIRELY --
-// confirmed live via a user screenshot stuck at "booting .NET wasm
-// runtime..." with dpr=2.2. CI never caught this because GitHub Actions
-// runners are always dpr=1, where scaled and unscaled numbers coincide.
-// The real click/tap misalignment this was meant to fix is still open and
-// needs a different explanation -- see logClickDiag below for the ongoing
-// live diagnostic. canvas.width being devicePixelRatio times the CSS
-// display size (see init/getDevicePixelRatio above) is real, but scaling
-// mouse/touch input by it is NOT the fix; whatever the actual fix is, it
-// must not break InputFontDemo's (30,40) assumption.
+// the physical pixel buffer: canvas.width is devicePixelRatio times its CSS
+// display size (see init/getDevicePixelRatio above), so a raw CSS-relative
+// offset already lands exactly in logical space without any further
+// scaling. Confirmed correct on real Retina hardware at 100% browser zoom.
+// A dpr-scaled ("native pixel space") version was tried and reverted: it
+// didn't fix anything (a real misalignment report turned out to be caused
+// by the player's browser not being at 100% zoom, unrelated to this code
+// at all) and it broke OpenRA.WasmProbe/Browser/InputFontDemo.cs's
+// boot-time self-test, which dispatches a synthetic click at a hard-coded
+// CSS-relative offset (30,40) and asserts the engine receives exactly
+// that -- scaling by dpr sent (30*dpr,40*dpr) instead, throwing an
+// uncaught exception on any device with dpr != 1 (invisible in CI, where
+// GitHub Actions runners are always dpr=1). Any future change here must
+// not break that (30,40) assumption.
 const canvasXY = e => {
 	const r = canvas.getBoundingClientRect();
 	return [Math.round(e.clientX - r.left), Math.round(e.clientY - r.top)];
 };
 
-// Temporary diagnostic: a click/tap misalignment report came in from real
-// Retina/iPad hardware after this file's dpr-scaling fix was already live,
-// which this session's own test tooling couldn't reproduce or disprove
-// cleanly. Prints the same numbers both to console (desktop devtools) AND
-// directly on the page (devtools access is awkward on iPad -- a screenshot
-// of #click-diag is enough) -- remove once the alignment is confirmed
-// fixed for real. The crosshair marker sits at the raw, unmodified
-// clientX/clientY of the last click/tap: if it doesn't land exactly under
-// the cursor/finger, the browser itself is misreporting the event position,
-// not this file's coordinate math.
-const clickDiagEl = document.getElementById('click-diag');
-const clickDiagMarker = document.getElementById('click-diag-marker');
-const logClickDiag = (source, e, x, y) => {
-	const r = canvas.getBoundingClientRect();
-	const vv = window.visualViewport;
-	const text = `[click-diag] ${source}\n`
-		+ `clientX=${e.clientX} clientY=${e.clientY}\n`
-		+ `rect: left=${r.left} top=${r.top} width=${r.width} height=${r.height}\n`
-		+ `canvas: width=${canvas.width} height=${canvas.height}\n`
-		+ `effectiveDpr()=${effectiveDpr()} window.devicePixelRatio=${window.devicePixelRatio} (unused by coordinate math below -- see canvasXY revert note)\n`
-		+ `-> sent to engine: x=${x} y=${y}\n`
-		+ `visualViewport: ${vv ? `${vv.width}x${vv.height} scale=${vv.scale} offset=${vv.offsetLeft},${vv.offsetTop}` : 'n/a'}\n`
-		+ `window.innerWidth/Height: ${window.innerWidth}x${window.innerHeight}`;
-	console.log(text);
-	if (clickDiagEl) {
-		clickDiagEl.textContent = text;
-		clickDiagEl.style.display = 'block';
-	}
-	if (clickDiagMarker) {
-		clickDiagMarker.style.left = e.clientX + 'px';
-		clickDiagMarker.style.top = e.clientY + 'px';
-		clickDiagMarker.style.display = 'block';
-	}
-};
-
-canvas.addEventListener('mousedown', e => { const [x, y] = canvasXY(e); logClickDiag('mousedown', e, x, y); inputQueue.push([1, 0, buttonFlag(e.button), x, y, 0, 0, mods(e)]); });
+canvas.addEventListener('mousedown', e => { const [x, y] = canvasXY(e); inputQueue.push([1, 0, buttonFlag(e.button), x, y, 0, 0, mods(e)]); });
 canvas.addEventListener('mousemove', e => { const [x, y] = canvasXY(e); inputQueue.push([1, 1, 0, x, y, e.movementX, e.movementY, mods(e)]); });
 canvas.addEventListener('mouseup', e => { const [x, y] = canvasXY(e); inputQueue.push([1, 2, buttonFlag(e.button), x, y, 0, 0, mods(e)]); });
 canvas.addEventListener('wheel', e => { const [x, y] = canvasXY(e); inputQueue.push([1, 3, 0, x, y, 0, Math.sign(-e.deltaY), mods(e)]); });
@@ -658,7 +620,6 @@ canvas.addEventListener('touchstart', e => {
 	if (e.touches.length === 1) {
 		const t = e.touches[0];
 		const [x, y] = touchXY(t);
-		logClickDiag('touchstart', t, x, y);
 		touch = { fingers: 1, x, y, clientX: t.clientX, clientY: t.clientY, dragging: false, longPressed: false, timer: null };
 		touch.timer = setTimeout(() => {
 			if (!touch || touch.fingers !== 1 || touch.dragging) return;

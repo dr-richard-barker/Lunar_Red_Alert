@@ -44,22 +44,6 @@
   #autoplay { color: #6f6; border: 1px solid #6f6; }
   #autoplay.on { background: #6f6; color: #000; }
 
-  /* Temporary on-screen click/tap diagnostic (see main.js's logClickDiag):
-     a real-hardware misalignment report couldn't be reproduced by this
-     session's own test tooling, and devtools access is awkward on iPad --
-     this prints the same numbers directly on the page so a screenshot is
-     enough to read them off. Bottom-left, out of the way of the HUD
-     toggles (top-left) and sidebar (top-right). Remove once the alignment
-     is confirmed fixed for real. */
-  #click-diag { position: fixed; bottom: 8px; left: 8px; z-index: 9999; background: rgba(0,0,0,0.85); border: 1px solid #ff6b6b; border-radius: 4px; padding: 8px 10px; font: 11px/1.5 monospace; color: #ffd35e; white-space: pre; max-width: 96vw; overflow-x: auto; display: none; }
-  /* Crosshair pinned at the RAW clientX/clientY of the last click/tap --
-     if this doesn't sit exactly under your cursor/finger, the browser
-     itself (not the game) is misreporting the event position. */
-  #click-diag-marker { position: fixed; z-index: 9998; width: 20px; height: 20px; margin: -10px 0 0 -10px; pointer-events: none; display: none; }
-  #click-diag-marker::before, #click-diag-marker::after { content: ''; position: absolute; background: #0f6; }
-  #click-diag-marker::before { left: 9px; top: 0; width: 2px; height: 20px; }
-  #click-diag-marker::after { top: 9px; left: 0; width: 20px; height: 2px; }
-
   /* League Table Overlay */
   #league-table { position: fixed; inset: 0; background: rgba(10,14,20,0.9); z-index: 10000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
   #league-table .inner { background: #121a24; border: 1px solid #233042; padding: 24px; border-radius: 8px; width: 90%; max-width: 700px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -101,8 +85,6 @@
 <body>
 <canvas id="canvas" width="256" height="256"></canvas>
 <div id="log">booting .NET wasm runtime…</div>
-<div id="click-diag"></div>
-<div id="click-diag-marker"></div>
 <div id="hud-toggles">
 	<button id="warpeace" type="button">War: ON</button>
 	<button id="freebuild" type="button">Free Build: OFF</button>
