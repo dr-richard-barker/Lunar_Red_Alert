@@ -61,21 +61,15 @@ namespace OpenRA.WasmProbe
 			if (down.Event != MouseInputEvent.Down || down.Button != MouseButton.Left)
 				throw new InvalidOperationException("No left-button mouse-down was pumped");
 
-			// synthesizeTestInput() (wwwroot/main.js) dispatches at a CSS-relative
-			// offset of (30,40), but canvasXY scales that by devicePixelRatio
-			// before it reaches here -- the real game's click-to-select path
-			// (WorldInteractionControllerWidget.HandleMouseInput -> Viewport.
-			// ViewToWorldPx) needs native-pixel input because ViewportSize is
-			// derived from Game.Renderer.NativeResolution, so this expectation
-			// has to track the same scaling, not assume it away. Confirmed live
-			// this was the actual cause of a real click/tap misalignment
-			// (unscaled input landed on the wrong world position despite the
-			// browser reporting the correct screen position) -- see main.js's
-			// canvasXY comment for the full story.
-			var expectedX = (int)Math.Round(30 * window.NativeWindowScale);
-			var expectedY = (int)Math.Round(40 * window.NativeWindowScale);
-			if (down.Location.X != expectedX || down.Location.Y != expectedY)
-				throw new InvalidOperationException($"Mouse-down at ({down.Location.X},{down.Location.Y}), expected ({expectedX},{expectedY})");
+			// synthesizeTestInput() (wwwroot/main.js) dispatches a mousedown at
+			// a CSS-relative offset of exactly (30,40), and canvasXY no longer
+			// scales that by devicePixelRatio -- see main.js's canvasXY
+			// comment for why (widget hit-testing compares mi.Location against
+			// Bounds computed in logical space, so mouse/touch input has to
+			// stay in that same space; a dpr-scaled version silently missed
+			// every widget's bounds on any device with dpr != 1).
+			if (down.Location.X != 30 || down.Location.Y != 40)
+				throw new InvalidOperationException($"Mouse-down at ({down.Location.X},{down.Location.Y}), expected (30,40)");
 			if (!handler.Mouse.Any(m => m.Event == MouseInputEvent.Up))
 				throw new InvalidOperationException("No mouse-up was pumped");
 
