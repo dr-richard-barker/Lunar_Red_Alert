@@ -69,6 +69,17 @@
   #rival-select .counts { display: flex; gap: 12px; justify-content: center; }
   #rival-select button { width: 56px; height: 56px; font: bold 22px/1 monospace; background: #1a2330; border: 2px solid #ff6b6b; color: #ff6b6b; border-radius: 8px; cursor: pointer; }
   #rival-select button:hover { background: #ff6b6b; color: #000; }
+  /* Terrain row: same overlay, a second choice (battlefield) ahead of rival
+     count. Blue accent (matching the in-game #terrain HUD toggle) keeps it
+     visually distinct from the red rival-count buttons above/below it.
+     One .selected class at a time marks the active pick -- defaults to
+     Moon (see main.js's terrainMode default) so the pre-highlighted button
+     matches what actually launches if the player just clicks a rival count
+     without touching this row. */
+  #rival-select .terrains { display: flex; gap: 12px; justify-content: center; margin-bottom: 20px; }
+  #rival-select .terrains button { width: auto; height: auto; padding: 10px 18px; font: bold 15px/1 monospace; border-color: #5ec8ff; color: #5ec8ff; }
+  #rival-select .terrains button:hover { background: #5ec8ff; color: #000; }
+  #rival-select .terrains button.selected { background: #5ec8ff; color: #000; }
 </style>
 </head>
 <body>
@@ -102,6 +113,12 @@
 <div id="rival-select">
 	<div class="inner">
 		<h2>Incoming AI Rivals</h2>
+		<p>Choose a battlefield:</p>
+		<div class="terrains">
+			<button type="button" data-terrain="earth">Earth</button>
+			<button type="button" data-terrain="lunar" class="selected">Moon</button>
+			<button type="button" data-terrain="mars">Mars</button>
+		</div>
 		<p>How many AI-controlled rivals should build a base and fight you?</p>
 		<div class="counts">
 			<button type="button" data-count="1">1</button>

@@ -293,8 +293,12 @@ jobs:
         # not a synthetic probe path.
         run: |
           set -o pipefail
-          node OpenRA.WasmProbe/playwasm-smoke-test.mjs "${{ needs.deploy.outputs.page_url }}play-wasm/" 2>&1 | tee playwasm-smoke.log
-          
+          # Terrain pinned explicitly to earth: main.js's default terrainMode
+          # is now lunar (the Moon is the default battlefield), so omitting
+          # this would silently start testing lunar here instead and leave
+          # earth uncovered by the one blocking (non-continue-on-error) check.
+          node OpenRA.WasmProbe/playwasm-smoke-test.mjs "${{ needs.deploy.outputs.page_url }}play-wasm/" earth 2>&1 | tee playwasm-smoke.log
+
           MISSING=$(grep -c "\[warn\] Failed to resolve sprites" playwasm-smoke.log || true)
           if [ "$MISSING" -gt 5 ]; then
             echo "::error::Too many missing sprites in smoke test: $MISSING"
@@ -328,7 +332,7 @@ jobs:
           name: playwasm-smoke-output
           path: |
             playwasm-smoke.log
-            playwasm-smoke-screenshot.png
+            playwasm-smoke-screenshot-earth.png
             playwasm-smoke-lunar.log
             playwasm-smoke-screenshot-lunar.png
             playwasm-smoke-mars.log

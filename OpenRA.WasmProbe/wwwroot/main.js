@@ -27,10 +27,16 @@ const keep = obj => { handles.set(nextHandle, obj); return nextHandle++; };
 const qmode = new URLSearchParams(location.search).get('mode');
 const bootMode = (qmode === 'play' || qmode === 'autopilot') ? qmode : 'probe';
 
-// Terrain toggle: which reskinned ysmir-*.oramap to launch. Persists across
-// reloads via the query string (see the #terrain button below), not state.
+// Terrain toggle: which reskinned ysmir-*.oramap to launch. Defaults to the
+// Moon rather than Earth -- a `let`, not `const`, because the rival-select
+// overlay below also lets the player pick a terrain before launch, and that
+// choice has to land before PlayMode reads getTerrainMode() (which happens
+// only after the getRivalCount() promise resolves, so setting this from a
+// button click ahead of that read is always in time regardless of which
+// button the player clicks first). ?terrain= still wins outright, so direct
+// links / the in-game #terrain toggle's reload keep working unchanged.
 const qterrain = new URLSearchParams(location.search).get('terrain');
-const terrainMode = (qterrain === 'lunar' || qterrain === 'mars') ? qterrain : 'earth';
+let terrainMode = (qterrain === 'lunar' || qterrain === 'mars' || qterrain === 'earth') ? qterrain : 'lunar';
 
 // ?rivals=1-4 bypasses the pre-game picker overlay entirely (no click, no
 // display:flex) -- used by the CI smoke test, which never clicks anything
@@ -62,6 +68,19 @@ const webgl = {
 
 		const overlay = document.getElementById('rival-select');
 		overlay.style.display = 'flex';
+
+		// Terrain row: re-clickable (not {once:true}) -- the player can
+		// change their mind any number of times before finalizing with a
+		// rival-count click below. Sync the pre-highlighted button to
+		// whatever terrainMode already resolved to (?terrain= or the
+		// Moon default), not just the HTML's hardcoded starting markup.
+		const terrainBtns = overlay.querySelectorAll('button[data-terrain]');
+		terrainBtns.forEach(btn => btn.classList.toggle('selected', btn.dataset.terrain === terrainMode));
+		terrainBtns.forEach(btn => btn.addEventListener('click', () => {
+			terrainMode = btn.dataset.terrain;
+			terrainBtns.forEach(b => b.classList.toggle('selected', b === btn));
+		}));
+
 		overlay.querySelectorAll('button[data-count]').forEach(btn => {
 			btn.addEventListener('click', () => {
 				overlay.style.display = 'none';
@@ -555,7 +574,22 @@ const canvasXY = e => {
 	const dpr = effectiveDpr();
 	return [Math.round((e.clientX - r.left) * dpr), Math.round((e.clientY - r.top) * dpr)];
 };
-canvas.addEventListener('mousedown', e => { const [x, y] = canvasXY(e); inputQueue.push([1, 0, buttonFlag(e.button), x, y, 0, 0, mods(e)]); });
+
+// Temporary diagnostic: a click/tap misalignment report came in from real
+// Retina/iPad hardware after this file's dpr-scaling fix was already live,
+// which this session's own test tooling couldn't reproduce or disprove
+// cleanly. Logs real numbers from the actual device instead of guessing
+// again -- remove once the alignment is confirmed fixed for real. Capped at
+// 5 so it can't flood the console on repeated clicks.
+let clickDiagCount = 0;
+const logClickDiag = (source, e, x, y) => {
+	if (clickDiagCount++ >= 5)
+		return;
+	const r = canvas.getBoundingClientRect();
+	console.log(`[click-diag] ${source} clientX=${e.clientX} clientY=${e.clientY} rect.left=${r.left} rect.top=${r.top} rect.width=${r.width} rect.height=${r.height} canvas.width=${canvas.width} canvas.height=${canvas.height} dpr=${effectiveDpr()} realDpr=${window.devicePixelRatio} -> nativeX=${x} nativeY=${y} visualViewport=${window.visualViewport ? `${window.visualViewport.width}x${window.visualViewport.height}@${window.visualViewport.scale}` : 'n/a'}`);
+};
+
+canvas.addEventListener('mousedown', e => { const [x, y] = canvasXY(e); logClickDiag('mousedown', e, x, y); inputQueue.push([1, 0, buttonFlag(e.button), x, y, 0, 0, mods(e)]); });
 canvas.addEventListener('mousemove', e => { const [x, y] = canvasXY(e); const dpr = effectiveDpr(); inputQueue.push([1, 1, 0, x, y, Math.round(e.movementX * dpr), Math.round(e.movementY * dpr), mods(e)]); });
 canvas.addEventListener('mouseup', e => { const [x, y] = canvasXY(e); inputQueue.push([1, 2, buttonFlag(e.button), x, y, 0, 0, mods(e)]); });
 canvas.addEventListener('wheel', e => { const [x, y] = canvasXY(e); inputQueue.push([1, 3, 0, x, y, 0, Math.sign(-e.deltaY), mods(e)]); });
@@ -600,6 +634,7 @@ canvas.addEventListener('touchstart', e => {
 	if (e.touches.length === 1) {
 		const t = e.touches[0];
 		const [x, y] = touchXY(t);
+		logClickDiag('touchstart', t, x, y);
 		touch = { fingers: 1, x, y, clientX: t.clientX, clientY: t.clientY, dragging: false, longPressed: false, timer: null };
 		touch.timer = setTimeout(() => {
 			if (!touch || touch.fingers !== 1 || touch.dragging) return;
