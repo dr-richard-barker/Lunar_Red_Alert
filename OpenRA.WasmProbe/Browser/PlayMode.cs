@@ -36,8 +36,36 @@ namespace OpenRA.WasmProbe
 			Game.InitializeSettings(Arguments.Empty);
 			BrowserBoot.ApplyDefaults();
 
+			// Size the window in NATIVE pixels (devicePixelRatio times the CSS
+			// logical size), not logical/CSS pixels. Renderer's constructor
+			// passes this straight to platform.CreateWindow(...), which sets
+			// BrowserWindow.EffectiveWindowSize once, for good -- and
+			// Renderer.Resolution (Window.EffectiveWindowSize) is what every
+			// chrome widget's Bounds gets computed from at load time
+			// (Widget.Initialize's WINDOW_WIDTH/WINDOW_HEIGHT substitutions).
+			// Viewport.ViewportSize, used by Viewport.ViewToWorldPx to turn a
+			// click into a world position, is independently derived from
+			// Renderer.NativeResolution (Window.NativeWindowSize) -- normally
+			// devicePixelRatio times EffectiveWindowSize, i.e. the SAME native
+			// size, so the two already agree once WindowedSize starts native.
+			// Leaving WindowedSize at the logical size (as this used to) split
+			// those two into different scales: widget hit-testing (Widget.
+			// HandleMouseInputOuter -> EventBoundsContains) needs mi.Location
+			// in whatever space Bounds were computed in, while
+			// ViewToWorldPx needs it in whatever space ViewportSize was
+			// computed in -- confirmed live to be genuinely incompatible
+			// (widget dispatch needs logical, ViewToWorldPx needs native) as
+			// long as those two Resolutions disagree. Native/native keeps
+			// desktop's OWN convention where Resolution and NativeResolution
+			// are the same value throughout (SDL doesn't have this canvas-
+			// backing-buffer distinction at all) -- main.js's canvasXY sends
+			// native-pixel mouse/touch coordinates (scaled by
+			// devicePixelRatio) to match.
 			var windowSize = await BrowserPlatform.GetWindowSize();
-			Game.Settings.Graphics.WindowedSize = new int2(windowSize.Width, windowSize.Height);
+			var dpr = BrowserPlatform.GetDevicePixelRatio();
+			var nativeWidth = (int)Math.Round(windowSize.Width * dpr);
+			var nativeHeight = (int)Math.Round(windowSize.Height * dpr);
+			Game.Settings.Graphics.WindowedSize = new int2(nativeWidth, nativeHeight);
 
 			var installed = new InstalledMods([Platform.ResolvePath("^EngineDir|mods")], []);
 			typeof(Game).GetProperty(nameof(Game.Mods), BindingFlags.Public | BindingFlags.Static)

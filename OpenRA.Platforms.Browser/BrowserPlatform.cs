@@ -62,6 +62,15 @@ namespace OpenRA.Platforms.Browser
 			var wh = (await GL.GetWindowSize()).Split(',');
 			return new Size(int.Parse(wh[0]), int.Parse(wh[1]));
 		}
+
+		// Public wrapper for GL.GetDevicePixelRatio() (internal to this
+		// assembly): OpenRA.WasmProbe/Browser/PlayMode.cs needs this to size
+		// the window in native pixels from the start (see PlayMode.cs for
+		// why -- BrowserWindow.EffectiveWindowSize, which Renderer.Resolution
+		// and every widget's Bounds are computed from, is set once from
+		// whatever size Renderer's constructor passes to CreateWindow, and
+		// is never touched again).
+		public static double GetDevicePixelRatio() => GL.GetDevicePixelRatio();
 	}
 
 	sealed class BrowserWindow : IPlatformWindow

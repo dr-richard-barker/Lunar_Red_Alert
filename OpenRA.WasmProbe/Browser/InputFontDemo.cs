@@ -61,15 +61,17 @@ namespace OpenRA.WasmProbe
 			if (down.Event != MouseInputEvent.Down || down.Button != MouseButton.Left)
 				throw new InvalidOperationException("No left-button mouse-down was pumped");
 
-			// synthesizeTestInput() (wwwroot/main.js) dispatches a mousedown at
-			// a CSS-relative offset of exactly (30,40), and canvasXY no longer
-			// scales that by devicePixelRatio -- see main.js's canvasXY
-			// comment for why (widget hit-testing compares mi.Location against
-			// Bounds computed in logical space, so mouse/touch input has to
-			// stay in that same space; a dpr-scaled version silently missed
-			// every widget's bounds on any device with dpr != 1).
-			if (down.Location.X != 30 || down.Location.Y != 40)
-				throw new InvalidOperationException($"Mouse-down at ({down.Location.X},{down.Location.Y}), expected (30,40)");
+			// synthesizeTestInput() (wwwroot/main.js) dispatches at a CSS-relative
+			// offset of (30,40), and canvasXY scales that by devicePixelRatio to
+			// match the native-pixel space PlayMode.cs now sizes the real game's
+			// window in (see PlayMode.cs and main.js's canvasXY comments) --
+			// this probe window is unrelated to that (its own Size(256,256) is
+			// untouched), but it shares the same canvasXY code path, so the
+			// dispatched coordinate is scaled the same way regardless.
+			var expectedX = (int)Math.Round(30 * window.NativeWindowScale);
+			var expectedY = (int)Math.Round(40 * window.NativeWindowScale);
+			if (down.Location.X != expectedX || down.Location.Y != expectedY)
+				throw new InvalidOperationException($"Mouse-down at ({down.Location.X},{down.Location.Y}), expected ({expectedX},{expectedY})");
 			if (!handler.Mouse.Any(m => m.Event == MouseInputEvent.Up))
 				throw new InvalidOperationException("No mouse-up was pumped");
 
