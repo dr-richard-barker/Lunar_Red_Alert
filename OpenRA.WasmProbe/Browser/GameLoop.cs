@@ -80,6 +80,52 @@ namespace OpenRA.WasmProbe
 			}
 		}
 
+		// Companion to GetSelectionInfo: exact on-screen (viewport-relative,
+		// native-pixel) positions of the local player's own units, computed
+		// the same way the engine itself would (WorldRenderer.ScreenPxPosition
+		// -> Viewport.WorldToViewPx) -- removes all ambiguity from picking a
+		// unit to click by sprite color, which can't tell an owned unit from
+		// an enemy/neutral one at a glance. Divide by devicePixelRatio to get
+		// CSS-relative coordinates for a real click. Temporary; remove
+		// alongside GetSelectionInfo.
+		[JSExport]
+		public static string GetOwnUnitScreenPositions()
+		{
+			try
+			{
+				var world = Game.ActiveWorld;
+				if (world == null)
+					return "no active world";
+
+				var p = world.LocalPlayer;
+				if (p == null)
+					return "no local player";
+
+				var wr = typeof(Game)
+					.GetField("worldRenderer", BindingFlags.NonPublic | BindingFlags.Static)
+					?.GetValue(null) as WorldRenderer;
+				if (wr == null)
+					return "no world renderer yet";
+
+				var owned = world.Actors.Where(a => a.Owner == p && a.IsInWorld && a.OccupiesSpace != null).ToArray();
+				if (owned.Length == 0)
+					return "0 owned actors in world";
+
+				var entries = owned.Select(a =>
+				{
+					var screenPx = wr.ScreenPxPosition(a.CenterPosition);
+					var viewPx = wr.Viewport.WorldToViewPx(screenPx);
+					return $"{a.Info.Name}@view({viewPx.X},{viewPx.Y})";
+				});
+
+				return $"{owned.Length} owned actor(s): " + string.Join(", ", entries);
+			}
+			catch (Exception e)
+			{
+				return $"GetOwnUnitScreenPositions failed: {e.Message}";
+			}
+		}
+
 		static string reportedWorld;
 
 		// One-shot summary of each world the play loop takes over, to pin down
