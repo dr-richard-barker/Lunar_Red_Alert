@@ -80,6 +80,27 @@ namespace OpenRA.WasmProbe
 			// to the reporting below.
 			CenterOnSpawn(world, p);
 
+			// Reveal the whole map: same Shroud.Disabled flag the engine's own
+			// "Disable Shroud" developer-mode cheat flips (DeveloperMode.cs),
+			// an O(1) property that's checked per-query (Shroud.cs IsExplored/
+			// IsVisible/GetVisibility), NOT a bulk per-cell ExploreAll() sweep.
+			// A prior attempt at this used the map-level
+			// Rules: Player: Shroud: ExploredMapCheckboxEnabled override
+			// instead, which calls ExploreAll() for every player (including
+			// every AI bot) inside Shroud.Created() -- confirmed live to hang
+			// the whole match indefinitely after "Commander has joined the
+			// game" and never render a frame. This path is unrelated to that
+			// one and was already proven safe (it's the same mechanism real
+			// OpenRA sessions use every day via the debug menu).
+			try
+			{
+				p.Shroud.Disabled = true;
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine($"[diag] disabling shroud failed (ignored): {e.Message}");
+			}
+
 			// Never let diagnostics take down the game loop -- an earlier
 			// version of this threw partway through and silently froze the
 			// match at 00:00 with a black screen.
