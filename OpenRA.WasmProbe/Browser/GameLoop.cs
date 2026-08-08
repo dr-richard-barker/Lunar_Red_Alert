@@ -214,6 +214,39 @@ namespace OpenRA.WasmProbe
 				Console.WriteLine($"[diag] disabling shroud failed (ignored): {e.Message}");
 			}
 
+			// Root cause of the click-to-select investigation: coordinate math
+			// was confirmed exactly correct (a debug listener showed real
+			// clientX/Y landing precisely on a known unit's computed screen
+			// position), yet World.Selection.Actors stayed empty through both
+			// a precise click and a marquee drag. GetWidgetTreeInfo() (see
+			// above) showed why -- Ui.Root had zero children, meaning
+			// WorldInteractionControllerWidget (part of the standard
+			// "INGAME_ROOT" chrome, responsible for click-to-select) was
+			// never loaded at all. On desktop this happens automatically via
+			// LoadWidgetAtGameStart (OpenRA.Mods.Common.Traits.World; present
+			// in ra|rules/world.yaml, inherited by spaceage, confirmed not
+			// overridden), whose IWorldLoaded.WorldLoaded callback calls
+			// Game.LoadWidget(world, "INGAME_ROOT", Ui.Root, []) -- for
+			// reasons not yet root-caused, that callback doesn't appear to
+			// complete in this minimal WASM boot path (PlayMode.cs drives
+			// Game.InitializeMod directly, without the desktop menu/lobby
+			// flow). Loading it explicitly here reproduces exactly what that
+			// trait would have done, as a fallback for whenever it's missing.
+			try
+			{
+				if (Ui.Root.Children.Count == 0)
+				{
+					var widgetId = world.Type == WorldType.Shellmap ? "MAINMENU" :
+						world.Type == WorldType.Editor ? "EDITOR_ROOT" : "INGAME_ROOT";
+					Game.LoadWidget(world, widgetId, Ui.Root, []);
+					Console.WriteLine($"[diag] chrome widget tree was empty -- manually loaded '{widgetId}'");
+				}
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine($"[diag] manual chrome load failed (ignored): {e.Message}");
+			}
+
 			// Never let diagnostics take down the game loop -- an earlier
 			// version of this threw partway through and silently froze the
 			// match at 00:00 with a black screen.
