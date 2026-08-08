@@ -142,20 +142,33 @@ namespace OpenRA.WasmProbe
 			try
 			{
 				var names = new List<string>();
+				Widget controller = null;
+				Widget worldRoot = null;
 				void Walk(Widget w, int depth)
 				{
-					names.Add(new string(' ', depth * 2) + w.GetType().Name + (string.IsNullOrEmpty(w.Id) ? "" : $"#{w.Id}"));
+					var b = w.Bounds;
+					names.Add(new string(' ', depth * 2) + w.GetType().Name + (string.IsNullOrEmpty(w.Id) ? "" : $"#{w.Id}") + $" [{b.X},{b.Y},{b.Width}x{b.Height}]");
+					if (w.GetType().Name == "WorldInteractionControllerWidget")
+						controller = w;
+					if (w.Id == "WORLD_ROOT")
+						worldRoot = w;
 					foreach (var c in w.Children)
 						Walk(c, depth + 1);
 				}
 
 				Walk(Ui.Root, 0);
 
-				var hasController = names.Any(n => n.Contains("WorldInteractionControllerWidget"));
+				var hasController = controller != null;
 				var mouseOver = Ui.MouseOverWidget?.GetType().Name ?? "null";
 				var mouseFocus = Ui.MouseFocusWidget?.GetType().Name ?? "null";
+				var rootB = Ui.Root.Bounds;
+				var resW = Game.Renderer.Resolution.Width;
+				var resH = Game.Renderer.Resolution.Height;
 
 				return $"hasWorldInteractionControllerWidget={hasController}, MouseOverWidget={mouseOver}, MouseFocusWidget={mouseFocus}, treeSize={names.Count}\n" +
+					$"Ui.Root.Bounds=[{rootB.X},{rootB.Y},{rootB.Width}x{rootB.Height}], Game.Renderer.Resolution={resW}x{resH}\n" +
+					$"WORLD_ROOT.Bounds={(worldRoot != null ? $"[{worldRoot.Bounds.X},{worldRoot.Bounds.Y},{worldRoot.Bounds.Width}x{worldRoot.Bounds.Height}]" : "not found")}\n" +
+					$"controller.Bounds={(controller != null ? $"[{controller.Bounds.X},{controller.Bounds.Y},{controller.Bounds.Width}x{controller.Bounds.Height}], IsVisible={controller.IsVisible()}" : "not found")}\n" +
 					string.Join("\n", names.Take(60));
 			}
 			catch (Exception e)
