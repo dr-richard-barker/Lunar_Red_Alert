@@ -177,6 +177,41 @@ namespace OpenRA.WasmProbe
 			}
 		}
 
+		// Final diagnostic: with the chrome tree present and widget Bounds
+		// confirmed matching Game.Renderer.Resolution (logical space), and a
+		// real click confirmed landing at the correct clientX/Y and reaching
+		// widget dispatch, selection STILL doesn't happen. This tests
+		// Viewport.ViewToWorldPx directly against a caller-supplied view
+		// coordinate -- the exact conversion WorldInteractionControllerWidget.
+		// HandleMouseInput performs -- and reports what actor (if any)
+		// World.ScreenMap.ActorsAtMouse finds there, removing the last
+		// remaining guess about which coordinate space produces the correct
+		// world position. Temporary; remove alongside the other diagnostics.
+		[JSExport]
+		public static string TestViewToWorldPx(int viewX, int viewY)
+		{
+			try
+			{
+				var world = Game.ActiveWorld;
+				if (world == null)
+					return "no active world";
+
+				var viewport = GetViewport();
+				if (viewport == null)
+					return "no viewport";
+
+				var worldPx = viewport.ViewToWorldPx(new int2(viewX, viewY));
+				var actors = world.ScreenMap.ActorsAtMouse(worldPx).Select(ab => ab.Actor.Info.Name).ToArray();
+
+				return $"view=({viewX},{viewY}) -> worldPx=({worldPx.X},{worldPx.Y}) -> " +
+					(actors.Length == 0 ? "no actors at that point" : $"{actors.Length} actor(s): {string.Join(", ", actors)}");
+			}
+			catch (Exception e)
+			{
+				return $"TestViewToWorldPx failed: {e.Message}";
+			}
+		}
+
 		static string reportedWorld;
 
 		// One-shot summary of each world the play loop takes over, to pin down
