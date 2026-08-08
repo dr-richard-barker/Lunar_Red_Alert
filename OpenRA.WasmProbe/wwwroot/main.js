@@ -554,29 +554,31 @@ const keycodeOf = e => {
 };
 const buttonFlag = b => (b === 0 ? 1 : b === 2 ? 2 : b === 1 ? 4 : 0);
 
-// Map client coordinates to the engine's logical/effective coordinate space
-// (WINDOW_WIDTH/HEIGHT -- what every chrome YAML X/Y is expressed in), NOT
-// the physical pixel buffer: canvas.width is devicePixelRatio times its CSS
-// display size (see init/getDevicePixelRatio above), so a raw CSS-relative
-// offset already lands exactly in logical space without any further
-// scaling. Confirmed correct on real Retina hardware at 100% browser zoom.
-// A dpr-scaled ("native pixel space") version was tried and reverted: it
-// didn't fix anything (a real misalignment report turned out to be caused
-// by the player's browser not being at 100% zoom, unrelated to this code
-// at all) and it broke OpenRA.WasmProbe/Browser/InputFontDemo.cs's
-// boot-time self-test, which dispatches a synthetic click at a hard-coded
-// CSS-relative offset (30,40) and asserts the engine receives exactly
-// that -- scaling by dpr sent (30*dpr,40*dpr) instead, throwing an
-// uncaught exception on any device with dpr != 1 (invisible in CI, where
-// GitHub Actions runners are always dpr=1). Any future change here must
-// not break that (30,40) assumption.
+// Map client coordinates to the engine's NATIVE pixel-buffer space, NOT
+// CSS/logical space: canvas.width is devicePixelRatio times its CSS display
+// size (see init/getDevicePixelRatio above), and the real click-to-select
+// path (WorldInteractionControllerWidget.HandleMouseInput ->
+// Viewport.ViewToWorldPx, OpenRA.Game/Graphics/Viewport.cs) computes world
+// position using ViewportSize, which is derived from Game.Renderer.
+// NativeResolution -- the dpr-scaled physical buffer size. Feeding it
+// unscaled CSS-relative coordinates instead produces a systematically wrong
+// world position: confirmed live on real Retina hardware where the browser
+// reported the click at the visually correct screen position (a crosshair
+// diagnostic landed exactly on the intended unit) but the unit still never
+// got selected, because ViewToWorldPx was translating that CSS-space number
+// as if it were native-space. A previous attempt at this exact fix was
+// reverted because it broke OpenRA.WasmProbe/Browser/InputFontDemo.cs's
+// boot-time self-test (hard-coded to expect an unscaled (30,40)) -- that
+// assertion is now dpr-aware instead (InputFontDemo.cs), so this scaling
+// can stay. Any future change here must keep both sides in sync.
 const canvasXY = e => {
 	const r = canvas.getBoundingClientRect();
-	return [Math.round(e.clientX - r.left), Math.round(e.clientY - r.top)];
+	const dpr = effectiveDpr();
+	return [Math.round((e.clientX - r.left) * dpr), Math.round((e.clientY - r.top) * dpr)];
 };
 
 canvas.addEventListener('mousedown', e => { const [x, y] = canvasXY(e); inputQueue.push([1, 0, buttonFlag(e.button), x, y, 0, 0, mods(e)]); });
-canvas.addEventListener('mousemove', e => { const [x, y] = canvasXY(e); inputQueue.push([1, 1, 0, x, y, e.movementX, e.movementY, mods(e)]); });
+canvas.addEventListener('mousemove', e => { const [x, y] = canvasXY(e); const dpr = effectiveDpr(); inputQueue.push([1, 1, 0, x, y, Math.round(e.movementX * dpr), Math.round(e.movementY * dpr), mods(e)]); });
 canvas.addEventListener('mouseup', e => { const [x, y] = canvasXY(e); inputQueue.push([1, 2, buttonFlag(e.button), x, y, 0, 0, mods(e)]); });
 canvas.addEventListener('wheel', e => { const [x, y] = canvasXY(e); inputQueue.push([1, 3, 0, x, y, 0, Math.sign(-e.deltaY), mods(e)]); });
 canvas.addEventListener('contextmenu', e => e.preventDefault());
@@ -606,13 +608,13 @@ let touch = null;
 // without an actual touchscreen sending events.
 let gameExports = null;
 
-// Same logical-space reasoning as canvasXY above -- no buffer-size scaling
-// (see the revert note on canvasXY: the InputFontDemo self-test is mouse-
-// only, but touch feeds the exact same inputQueue path, so it has to use
-// the same convention canvasXY does regardless).
+// Same native-space reasoning as canvasXY above: taps go through the same
+// inputQueue path as mouse clicks, and the 2-finger pan/pinch center feeds
+// Viewport.AdjustZoom -> ViewToWorldPx, which also expects native pixels.
 const touchXY = t => {
 	const r = canvas.getBoundingClientRect();
-	return [Math.round(t.clientX - r.left), Math.round(t.clientY - r.top)];
+	const dpr = effectiveDpr();
+	return [Math.round((t.clientX - r.left) * dpr), Math.round((t.clientY - r.top) * dpr)];
 };
 
 canvas.addEventListener('touchstart', e => {
