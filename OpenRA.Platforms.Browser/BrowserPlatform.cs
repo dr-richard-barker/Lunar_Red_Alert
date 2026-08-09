@@ -101,11 +101,25 @@ namespace OpenRA.Platforms.Browser
 
 		public BrowserWindow(Size size)
 		{
+			// `size` is already the final native/physical pixel size the
+			// caller wants (PlayMode.cs pre-multiplies the CSS window size by
+			// devicePixelRatio before calling platform.CreateWindow(...) --
+			// see its own comment for why). Effective and Native must be the
+			// SAME value here: multiplying by dpr a second time (as this used
+			// to) silently doubled the backing buffer beyond what init(w,h)
+			// (wwwroot/main.js) then divides back down by dpr for the CSS
+			// display size, so the canvas rendered at 2x the real viewport
+			// (confirmed live via ?dpr=2: 1335x1221 viewport -> canvas
+			// displayed at 2670x2442, backing buffer 5340x4884) -- most of
+			// the map rendered off-screen, and every click coordinate was
+			// thrown off along with it. Desktop OpenRA has no such split
+			// (SDL's window size already IS the native pixel size); this
+			// keeps that same one-size convention for the browser too.
 			var dpr = (float)GL.GetDevicePixelRatio();
 			EffectiveWindowSize = size;
+			NativeWindowSize = size;
 			EffectiveWindowScale = dpr;
 			NativeWindowScale = dpr;
-			NativeWindowSize = new Size((int)Math.Round(size.Width * dpr), (int)Math.Round(size.Height * dpr));
 
 			if (GL.Init(NativeWindowSize.Width, NativeWindowSize.Height) == 0)
 				throw new InvalidOperationException("WebGL2 context creation failed");
