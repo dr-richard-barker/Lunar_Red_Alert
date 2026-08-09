@@ -52,6 +52,74 @@ namespace OpenRA.WasmProbe
 			return Ready;
 		}
 
+		// Temporary diagnostic, re-added for live re-verification after the
+		// dpr double-scaling fix (bac40a2c/8144d6e0): ground truth for
+		// whether a click actually selected a unit, since camera drift
+		// between screenshots makes the purely-visual (selection health-bar)
+		// check unreliable. Remove once the fix is confirmed for real.
+		[JSExport]
+		public static string GetSelectionInfo()
+		{
+			try
+			{
+				var world = Game.ActiveWorld;
+				if (world == null)
+					return "no active world";
+
+				var actors = world.Selection.Actors;
+				if (actors.Count == 0)
+					return "0 actors selected";
+
+				return $"{actors.Count} actor(s) selected: " +
+					string.Join(", ", actors.Select(a => $"{a.Info.Name}@{(a.OccupiesSpace != null ? a.Location.ToString() : "?")}"));
+			}
+			catch (Exception e)
+			{
+				return $"GetSelectionInfo failed: {e.Message}";
+			}
+		}
+
+		// Companion to GetSelectionInfo: exact on-screen (viewport-relative,
+		// native-pixel) positions of the local player's own units. Temporary;
+		// remove alongside GetSelectionInfo.
+		[JSExport]
+		public static string GetOwnUnitScreenPositions()
+		{
+			try
+			{
+				var world = Game.ActiveWorld;
+				if (world == null)
+					return "no active world";
+
+				var p = world.LocalPlayer;
+				if (p == null)
+					return "no local player";
+
+				var wr = typeof(Game)
+					.GetField("worldRenderer", BindingFlags.NonPublic | BindingFlags.Static)
+					?.GetValue(null) as WorldRenderer;
+				if (wr == null)
+					return "no world renderer yet";
+
+				var owned = world.Actors.Where(a => a.Owner == p && a.IsInWorld && a.OccupiesSpace != null).ToArray();
+				if (owned.Length == 0)
+					return "0 owned actors in world";
+
+				var entries = owned.Select(a =>
+				{
+					var screenPx = wr.ScreenPxPosition(a.CenterPosition);
+					var viewPx = wr.Viewport.WorldToViewPx(screenPx);
+					return $"{a.Info.Name}@view({viewPx.X},{viewPx.Y})";
+				});
+
+				return $"{owned.Length} owned actor(s): " + string.Join(", ", entries);
+			}
+			catch (Exception e)
+			{
+				return $"GetOwnUnitScreenPositions failed: {e.Message}";
+			}
+		}
+
 		static string reportedWorld;
 
 		// One-shot summary of each world the play loop takes over, to pin down
