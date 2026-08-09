@@ -115,10 +115,25 @@ namespace OpenRA.Platforms.Browser
 			// thrown off along with it. Desktop OpenRA has no such split
 			// (SDL's window size already IS the native pixel size); this
 			// keeps that same one-size convention for the browser too.
+			// EffectiveWindowScale must be 1, not dpr: Renderer.cs divides
+			// EffectiveWindowSize by this scale wherever it needs a
+			// "logical/point" size distinct from the native surface size
+			// (SetMaximumViewportSize, BeginWorld, BeginUI -- Apple's own
+			// HiDPI convention, which is exactly what this scale factor
+			// means there). Since EffectiveWindowSize is now already the
+			// native pixel size (no separate logical size exists any more),
+			// leaving this at dpr made Renderer.cs divide it down a second
+			// time, squeezing the whole world/UI render into a quarter of
+			// the canvas (confirmed live via ?dpr=2: a large black band
+			// above a shrunk, offset world view). NativeWindowScale stays
+			// dpr -- its only consumers (MouseAttachmentWidget,
+			// CursorManager's retina cursor-doubling, InputFontDemo's own
+			// probe self-test) are independent of this Resolution/
+			// NativeResolution unification and are unaffected by it.
 			var dpr = (float)GL.GetDevicePixelRatio();
 			EffectiveWindowSize = size;
 			NativeWindowSize = size;
-			EffectiveWindowScale = dpr;
+			EffectiveWindowScale = 1f;
 			NativeWindowScale = dpr;
 
 			if (GL.Init(NativeWindowSize.Width, NativeWindowSize.Height) == 0)
