@@ -4,6 +4,19 @@
 
 ---
 
+> **Superseded, read before §0 below.** §0/§4/§5's central claim — that an OpenRA
+> browser/WebAssembly port is "not a Phase-4 task... a multi-month engine subproject...
+> no one has shipped it" — turned out to be wrong. A real engine-in-browser port shipped:
+> see `WASM-PORT-PLAN.md` for the full status log, and
+> `https://dr-richard-barker.github.io/Lunar_Red_Alert/play-wasm/` for the live game. The
+> "Path A / Path B" fork this document recommends never happened; the actual OpenRA engine
+> now runs directly in-browser via WebAssembly. §1-3's design rationale (traits, YAML,
+> asset pipeline) is unaffected and still accurately describes the code that shipped —
+> only the web-portability sections below are stale. Left intact as the historical record
+> of the original reasoning.
+
+---
+
 ## 0. Reality check — read this before the roadmap
 
 Your 5-part brief is a good decomposition, but one premise in it is not true today and it changes everything downstream, so I'm putting it first rather than burying it in Phase 4.

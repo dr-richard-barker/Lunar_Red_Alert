@@ -12,9 +12,8 @@ ice deposits (the resource), crater floor, and crater-wall cliffs. Emits:
   * <out>/lunar_montage.png         labelled preview of the whole set
   * <out>/lunar_palette.png         the palette swatch
 
-Terrain types map 1:1 onto tilesets/lunar-template.yaml. Sprites still need the
-final .tmp/sheet import into OpenRA (via the editor or OpenRA.Utility) before the
-tileset loads in-engine; see PHASE3-NOTES.md.
+Terrain types map 1:1 onto tilesets/lunar.yaml and tilesets/mars.yaml, both of
+which are registered in mod.yaml and load in-engine already; see PHASE3-NOTES.md.
 
 Usage:
     python3 gen_lunar_terrain.py --palette moon --tile 48 --out ../artwork/lunar

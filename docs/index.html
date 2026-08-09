@@ -155,7 +155,7 @@
       <span class="badge on">● Desktop RTS</span>
       <span class="badge">Windows · Linux · macOS</span>
       <span class="badge">GPLv3 · open source</span>
-      <span class="badge warn">Status: in development — not yet compiled</span>
+      <span class="badge on">● CI-verified · playable browser alpha live</span>
     </div>
     <div class="cta">
       <a class="btn primary" href="play-wasm/?mode=play">▶ Real engine in browser <span style="opacity:.7;font-weight:400">· alpha</span></a>
@@ -226,7 +226,7 @@
     <figure><img src="assets/crater_map.png" alt="Color-coded crater-field skirmish map: grey plains, dark craters, cyan ice, spawn pads">
       <figcaption><b>Crater-field map</b> — a <code>gen_map.py</code> layout: plains, walled craters, ice, and corner spawn pads.</figcaption></figure>
   </div>
-  <div class="note"><span>ℹ️</span><span class="m">No gameplay screenshots yet — these are honest engine <b>assets</b>, not a running game. The tiles still need their final import into an OpenRA tileset (an in-editor step); real screenshots land here once it builds &amp; runs.</span></div>
+  <div class="note"><span>ℹ️</span><span class="m">These tiles are shipped as real, loaded OpenRA tilesets (<code>lunar.yaml</code>/<code>mars.yaml</code>) and are what the <a href="play-wasm/?mode=play">browser alpha</a> actually renders in a live skirmish — not just standalone art. No in-page gameplay screenshots here yet; go play the real thing above instead.</span></div>
 </div></section>
 
 <section id="built"><div class="wrap">
@@ -299,7 +299,10 @@ make
       <p>Air supply, vacuum damage, pressurised domes, the O₂ meter — all wired onto RA units.</p></div></div>
     <div class="phase"><div class="pnum">PHASE 3</div><div class="pbody">
       <h3>Lunar visuals &amp; terrain <span class="tagly next">In progress</span></h3>
-      <p>A seamless-tiling terrain generator (regolith, basalt, ice, crater floor &amp; cliffs) in a unified lunar palette is <b>done</b> — see the gallery above. Remaining: import the sprites into an OpenRA tileset, author crater-rim transition tiles, and wire ice as the harvestable resource.</p></div></div>
+      <p>A seamless-tiling terrain generator (regolith, basalt, ice, crater floor &amp; cliffs) in a unified lunar palette is <b>done</b> and shipped as real in-game tilesets — see the gallery above. Remaining: crater-rim transition tiles, ice as the harvestable resource, and cold-palette/black-sky lighting.</p></div></div>
+    <div class="phase"><div class="pnum">PHASE W</div><div class="pbody">
+      <h3>Real engine in your browser <span class="tagly done">Done</span></h3>
+      <p>The actual OpenRA engine — not a rebuild — compiled to WebAssembly and running live from this GitHub Pages site, no download required. <a href="play-wasm/?mode=play">Play it now</a>; full status log in <a href="https://github.com/dr-richard-barker/Lunar_Red_Alert/blob/main/WASM-PORT-PLAN.md">WASM-PORT-PLAN.md</a>.</p></div></div>
     <div class="phase"><div class="pnum">PHASE 4</div><div class="pbody">
       <h3>Compile, package &amp; release <span class="tagly todo">Planned</span></h3>
       <p>Build on a .NET machine, verify the checklist, then package desktop installers for Windows / Linux / macOS.</p></div></div>

@@ -70,6 +70,58 @@ verdict → iterate.
 
 ## Status log (see also the newest entries appended at the end)
 
+- **2026-08-09 (post-launch fixes — black screen, terrain toggle, HiDPI click-select):**
+  Four rounds of live-player-reported bugs on the deployed `/play-wasm/` page, each
+  root-caused and fixed:
+  1. **Black-screen on boot.** `ysmir.oramap` had no `Rules:` override, so it inherited
+     the engine's default fog-on/explored-off — the map looked empty beyond the spawn
+     radius. A first attempt (map-level `Rules: Player: Shroud: ExploredMapCheckboxEnabled`)
+     called `ExploreAll()` for every player including AI bots inside `Shroud.Created()` and
+     hung the match indefinitely. Fixed instead by flipping `Player.Shroud.Disabled = true`
+     directly once per world load in `GameLoop.ReportWorldOnce()` — the same O(1),
+     per-query flag the desktop debug menu's "Disable Shroud" cheat uses, not a bulk sweep.
+  2. **AI rivals never spawned.** `ysmir*.oramap`'s `Bot: normal` map setting does nothing
+     on its own — `CreateMapPlayers` only builds a real `Player` for slots with an actual
+     `Session.Client`, and this local-server launch path never adds one for `ServerType.Local`
+     (the auto-add-bot-on-join handler only fires for `ServerType.Skirmish`). Fixed via
+     `Game.ExtraMapSetupOrders` (a new engine hook) issuing `slot_bot MultiN <id> normal`
+     server commands before the match's "state Ready" order locks slot changes out.
+  3. **Lunar/Mars terrain toggle shipped.** `lunar.yaml`/`mars.yaml` clone every `Template`
+     block from RA's `temperat.yaml` 1:1 (same `Id`/`Size`/terrain type), repointing
+     `Images:` at a generated same-shaped PNG per template — so `ysmir.oramap`'s existing
+     binary tile grid (references template `Id`/index only, never pixels) stays valid
+     unchanged when cloned into `ysmir-lunar.oramap`/`ysmir-mars.oramap` with just the
+     `Tileset:` line swapped. `?terrain=lunar|mars|earth` + an in-game picker overlay
+     select which one `PlayMode.cs` launches.
+  4. **Click-to-select was misaligned/dead, HiDPI-only.** The deepest investigation of
+     the four: click-select worked in this session's dpr=1 test browser but stayed broken
+     on the reporting user's real (Retina, dpr=2) laptop — a live repro via this codebase's
+     own `?dpr=2` test override (`main.js`'s `effectiveDpr()`) proved why. Two stacked root
+     causes in `OpenRA.Platforms.Browser/BrowserPlatform.cs`'s `BrowserWindow`: (a)
+     `PlayMode.cs` already pre-multiplies the CSS window size by `devicePixelRatio` before
+     calling `platform.CreateWindow(...)`, but `BrowserWindow`'s constructor multiplied by
+     `dpr` a second time for `NativeWindowSize` — the canvas rendered at `dpr²` instead of
+     `dpr` (confirmed live: a 1335×1221 viewport produced a canvas *displayed* at
+     2670×2442, bleeding two-thirds of it off-screen, backing buffer 5340×4884). Fixed by
+     making `EffectiveWindowSize`/`NativeWindowSize` both equal the already-native `size`
+     parameter — the same one-pixel-space convention desktop OpenRA already uses (SDL has
+     no such split). (b) That fix alone squished the world/UI render into a corner:
+     `Renderer.cs`'s `SetMaximumViewportSize`/`BeginWorld`/`BeginUI` divide
+     `Window.EffectiveWindowSize` by `Window.EffectiveWindowScale` wherever they need a
+     "logical" size distinct from the native surface size (Apple's own HiDPI convention).
+     Since Effective/Native sizes are now unified, `EffectiveWindowScale` had to become `1`
+     (not `dpr`) too, or that code divided the already-native size down a second time.
+     `NativeWindowScale` stays `dpr` — its only consumers (retina cursor-doubling,
+     `InputFontDemo`'s own probe self-test) are unrelated to this unification. Verified live
+     under a forced `?dpr=2` via a temporary `GetSelectionInfo()` diagnostic (removed once
+     confirmed): `"0 actors selected"` → `"1 actor(s) selected: mcv@10,11"` on click, back
+     to `0` on deselect.
+
+- **Known open items (unverified, not yet reproduced):** a previously-reported bug about
+  units being able to wander past the map's playable bounds into the black void beyond it
+  has no reproduction, code reference, or prior commit in this repo as of 2026-08-09 —
+  flagged here for a future session to reproduce live before attempting a fix.
+
 - **2026-07-29 (W4/W5 sprint summary):** W4a staged OpenRA's own quickinstall
   freeware content in CI (SHA1-pinned, official mirrors) + shellmap maps —
   the full real boot. W4b: WebAudioSoundEngine (PCM->AudioBuffer, pan/

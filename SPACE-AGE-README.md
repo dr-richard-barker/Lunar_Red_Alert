@@ -6,13 +6,13 @@ A "Space-Age" total conversion of this OpenRA fork: units manage **oxygen** inst
 fuel, take **vacuum damage** when exposed and out of air, **bound in low gravity**, and
 survive only inside the **pressurised bubbles** projected by base structures.
 
-This is a **desktop** OpenRA mod (`spaceage`). OpenRA has no browser/WebAssembly build —
-see `mods/spaceage/SPACE-AGE-DESIGN.md` §0/§4 for why, and use GitHub Pages for the
-project's landing/download site rather than trying to run the engine in a browser.
+This is a **desktop** OpenRA mod (`spaceage`) that also ships as a real engine-in-browser
+build — see `WASM-PORT-PLAN.md` for the WebAssembly port's status log, and
+`https://dr-richard-barker.github.io/Lunar_Red_Alert/play-wasm/` for the live game.
 
-> **Status: wired, not yet built.** This machine has no .NET SDK, so the code was written
-> and cross-checked against this exact `bleed` checkout's API but **not compiled or
-> lint-run**. Build it and run the checklist below.
+> **Status: built and CI-verified.** Every push compiles and lint-checks this mod (see
+> `.github/workflows/ci.yml`); the WASM build additionally boots it to a playable skirmish
+> in-browser. Run the checklist below to verify the desktop build yourself.
 
 ## What was added / changed
 
@@ -41,8 +41,9 @@ in `mod.yaml` *after* the base `ra|` rules so they merge on top:
 > copy: `cp -r mods/ra mods/spaceage-full` then re-apply the four overlays — but try the
 > thin mount first; it uses the same `$id: id` directive RA already uses to mount itself.
 
-**Not yet loaded** (need art / a base-weapon-name pass): `tilesets/lunar-template.yaml`,
-`weapons/spaceage-template.yaml`. Procedural asset generators are in `mods/spaceage/tools/`.
+**Lunar/Mars tilesets are loaded** (`tilesets/lunar.yaml`, `tilesets/mars.yaml`, registered
+in `mod.yaml`). **Not yet loaded**: `weapons/spaceage-template.yaml` (needs a base-weapon-name
+pass). Procedural asset generators are in `mods/spaceage/tools/`.
 `Makefile` `test:` now also lint-checks the `spaceage` mod.
 
 ## Condition flow
