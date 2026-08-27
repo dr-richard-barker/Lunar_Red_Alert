@@ -128,8 +128,18 @@
   footer a{color:var(--muted)} footer a:hover{color:var(--text)}
   .sep{color:var(--line)}
 </style>
+<!-- CoSE Theme & DeepSpaceAg Hub Integration -->
+<link rel="stylesheet" href="https://dr-richard-barker.github.io/Plant_response_to_radiation/cose/cose-theme.css" />
+<link rel="stylesheet" href="https://dr-richard-barker.github.io/Plant_response_to_radiation/cose/cose-chrome.css" />
+<link rel="stylesheet" href="https://dr-richard-barker.github.io/Plant_response_to_radiation/cose/cose-map.css" />
+<style>
+  /* Layering CoSE rails above page components */
+  .topbar.cose-dark, .topbar.cose-light { z-index: 10001 !important; }
+  .sitebar.cose-dark, .sitebar.cose-light { z-index: 10000 !important; }
+  .map-scrim { z-index: 9999 !important; }
+</style>
 </head>
-<body>
+<body data-site-id="Lunar_Red_Alert" data-brand-logo="https://dr-richard-barker.github.io/Plant_response_to_radiation/cose/cose-logo.png">
 
 <nav><div class="wrap">
   <span class="brand"><img src="assets/moon.png" alt=""> Lunar Red Alert</span>
@@ -343,5 +353,8 @@ make
   
   initThemeIcon();
 </script>
+<!-- CoSE Theme Integration Scripts -->
+<script src="https://dr-richard-barker.github.io/Plant_response_to_radiation/cose/sites.js"></script>
+<script src="https://dr-richard-barker.github.io/Plant_response_to_radiation/cose/theme.js"></script>
 </body>
 </html>
