@@ -273,5 +273,6 @@ function restart(){ armed=false; armBeaconBtnReset(); setup(); }
 function frame(t){ const dt=Math.min(0.05,(t-last)/1000||0); last=t; if(loaded>=toLoad){ step(dt); draw(); } requestAnimationFrame(frame); }
 setup(); requestAnimationFrame(frame);
 </script>
+  <script defer src="https://visitor-analytics.astrobotany.workers.dev/a.js"></script>
 </body>
 </html>
